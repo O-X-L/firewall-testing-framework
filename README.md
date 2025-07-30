@@ -1,5 +1,8 @@
 # Firewall Testing-Framework
 
+[![Lint](https://github.com/O-X-L/firewall-testing-framework/actions/workflows/lint.yml/badge.svg?branch=latest)](https://github.com/O-X-L/firewall-testing-framework/actions/workflows/lint.yml)
+[![Test](https://github.com/O-X-L/firewall-testing-framework/actions/workflows/test.yml/badge.svg?branch=latest)](https://github.com/O-X-L/firewall-testing-framework/actions/workflows/test.yml)
+
 A framework for testing and troubleshooting firewall Layer 3-4 rulesets.
 
 **WARNING**: This project is still in the conception-phase.
