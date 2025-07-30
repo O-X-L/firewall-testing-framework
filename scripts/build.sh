@@ -13,7 +13,7 @@ VERSION="$1"
 
 cd "$(dirname "$0")/.."
 PATH_REPO="$(pwd)"
-rm -r ./dist/
+rm -rf ./dist/
 
 echo ''
 echo '### TESTING PIP-INSTALL ###'
