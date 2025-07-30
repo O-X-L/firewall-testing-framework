@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools >= 61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "firewall-test"
+authors = [
+    {name = "Rath Pascal", email = "contact@oxl.at"},
+]
+description = "OXL Firewall Testing Framework"
+readme = "README.md"
+requires-python = ">=3.11"
+keywords = ["firewall", "rulesets", "regression-testing", "cicd", "iac", "infrastructure-as-code", "network-security"]
+license = {file = "LICENSE.txt"}
+classifiers = [
+    'Programming Language :: Python :: 3',
+    'License :: OSI Approved :: MIT License',
+]
+dynamic = ["dependencies", "version"]
+
+[project.urls]
+Homepage = "https://www.oxl.at"
+Documentation = "https://github.com/O-X-L/firewall-testing-framework"
+Repository = "https://github.com/O-X-L/firewall-testing-framework.git"
+Issues = "https://github.com/O-X-L/firewall-testing-framework/issues"
+
+[tool.setuptools.dynamic]
+dependencies = {file = ["requirements.txt"]}
+version = {file = ["VERSION"]}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"*" = ["*.txt"]
+
+[project.scripts]
+firewall-test = "firewall_test.shell:main"
+firewall-test-ci = "firewall_test.ci:main"
