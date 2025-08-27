@@ -35,5 +35,6 @@ where = ["src"]
 "*" = ["*.txt"]
 
 [project.scripts]
-ftf = "firewall_test.shell:main"
+ftf = "firewall_test.cli:main"
+ftf-shell = "firewall_test.shell:main"
 ftf-ci = "firewall_test.ci:main"
