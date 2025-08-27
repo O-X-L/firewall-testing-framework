@@ -18,6 +18,8 @@ class PacketIP(Packet):
         super().__init__()
         self.src = ip_address(src)
         self.dst = ip_address(dst)
+        self.pre_nat_src = ip_address(src)
+        self.pre_nat_dst = ip_address(dst)
         self.l3_proto = l3_proto.lower()
 
     def validate(self):
@@ -35,6 +37,8 @@ class PacketIP(Packet):
             **super().dump(),
             'src': self.src,
             'dst': self.dst,
+            'pre_nat_src': None if self.src == self.pre_nat_src else self.pre_nat_src,
+            'pre_nat_dst': None if self.dst == self.pre_nat_dst else self.pre_nat_dst,
             'l3_proto': self.l3_proto,
         }
 
