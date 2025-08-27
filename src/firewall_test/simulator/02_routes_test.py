@@ -53,3 +53,6 @@ def test_router_src_route():
     assert r.net == ip_network('10.255.255.0/24')
     assert r.table == 'default'
 
+
+# todo: test other routing-edge cases
+# todo: test route-prioritization

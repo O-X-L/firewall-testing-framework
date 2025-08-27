@@ -6,6 +6,11 @@ class Packet:
         self.ni_in = None
         self.ni_out = None
 
+    def dump(self) -> dict:
+        return {
+            'ni_in': self.ni_in,
+            'ni_out': self.ni_out,
+        }
 
 
 class PacketIP(Packet):
@@ -24,6 +29,14 @@ class PacketIP(Packet):
         else:
             assert isinstance(self.src, IPv6Address)
             assert isinstance(self.dst, IPv6Address)
+
+    def dump(self) -> dict:
+        return {
+            **super().dump(),
+            'src': self.src,
+            'dst': self.dst,
+            'l3_proto': self.l3_proto,
+        }
 
 
 class PacketTCPUDP(PacketIP):
@@ -52,3 +65,45 @@ class PacketTCPUDP(PacketIP):
         assert isinstance(self.l4_sport, int)
         assert 0 <= self.l4_dport <= 65535
         assert 0 <= self.l4_sport <= 65535
+
+    def dump(self) -> dict:
+        return {
+            **super().dump(),
+            'l4_proto': self.l4_proto,
+            'l4_dport': self.l4_dport,
+            'l4_sport': self.l4_sport,
+        }
+
+
+class PacketICMP(PacketIP):
+    CODE_ECHO_REPLY = 0
+    CODE_ECHO_REQUEST = 8
+
+    CODE6_ECHO_REPLY = 0
+    CODE6_ECHO_REQUEST = 128
+
+    def __init__(
+            self, src: str, dst: str, l3_proto: str, l4_proto: str, icmp_code: int = None,
+    ):
+        super().__init__(src=src, dst=dst, l3_proto=l3_proto)
+        self.l4_proto = l4_proto.lower()
+        self.icmp_code = icmp_code
+        if icmp_code is None:
+            if self.l4_proto == 'icmp':
+                self.icmp_code = self.CODE_ECHO_REQUEST
+
+            else:
+                self.icmp_code = self.CODE6_ECHO_REQUEST
+
+    def validate(self):
+        super().validate()
+        assert self.l4_proto in ['icmp', 'icmpv6']
+        assert isinstance(self.icmp_code, int)
+        assert -1 < self.icmp_code < 256
+
+    def dump(self) -> dict:
+        return {
+            **super().dump(),
+            'l4_proto': self.l4_proto,
+            'icmp_code': self.icmp_code,
+        }

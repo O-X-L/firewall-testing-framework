@@ -18,7 +18,7 @@ To add another routing table:
 
 * Restart networking: `systemctl restart networking`  (on debian - might differ on other systems)
 * Add a routing-rule: `sudo ip rule add from 172.18.0.0/16 table test`
-* Add a route: `sudo ip route add 7.7.7.0/29 via 10.255.255.254 dev wlp0s20f3 table test`
+* Add a route: `sudo ip route add 7.7.7.0/29 via 10.255.255.254 dev wan table test`
 
 #### Translate - Interfaces
 

@@ -40,3 +40,23 @@ def test_packet_tcp_udp():
         l4_proto='tcp',
     )
     p.validate()
+
+
+def test_packet_icmp():
+    from simulator.packet import PacketICMP
+
+    p = PacketICMP(
+        src='10.0.0.1',
+        dst='10.0.0.2',
+        l3_proto='ip4',
+        l4_proto='icmp',
+    )
+    p.validate()
+
+    p = PacketICMP(
+        src='10.0.0.1',
+        dst='10.0.0.2',
+        l3_proto='ip4',
+        l4_proto='icmpv6',
+    )
+    p.validate()

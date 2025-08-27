@@ -9,12 +9,10 @@ class Router:
             system: type[FirewallSystem],
             routes: list[StaticRoute],
             route_rules: list[StaticRouteRule] = None,
-            routes_runtime: list[RuntimeRoute] = None,
     ):
         self.system: type[FirewallSystem] = system
         self.routes: list[StaticRoute] = routes
         self.route_rules: list[StaticRouteRule]|None = route_rules
-        self.routes_runtime: list[RuntimeRoute]|None = routes_runtime
 
         self.rule_route_mapping = self._build_rule_route_mapping()
         self.table_priority = self._build_table_priority()
@@ -37,8 +35,6 @@ class Router:
             return self._build_table_priority_by_rules()
 
         all_tables = [route.table for route in self.routes]
-        if self.system.ROUTE_RUNTIME:
-            all_tables.extend([route.table for route in self.routes_runtime])
 
         tables = []
         for table in list(set(all_tables)):
@@ -72,6 +68,8 @@ class Router:
         return rules
 
     def _get_matching_routes(self, packet: PacketIP, matching_rules: list[StaticRouteRule], src_route: bool = False) -> list[StaticRoute]:
+        # todo: ignore routes of interfaces that are down
+
         routes = []
         if len(matching_rules) > 0:
             for rule in matching_rules:
@@ -88,24 +86,25 @@ class Router:
                 if route_for in route.net:
                     routes.append(route)
 
-            if self.system.ROUTE_RUNTIME:
-                for route in self.routes_runtime:
-                    if route_for in route.dst:
-                        routes.append(route)
-
         return routes
 
     def _sort_routes(self, matching_routes: list[StaticRoute]) -> list[StaticRoute]:
-        # prio by: table-prio, route-metric, route-subnet-size
+        # prio by: table-prio, direct-attached, route-metric, route-subnet-size
         sorted_routes: list[StaticRoute] = []
 
         for table in self.table_priority:
+            for route in matching_routes:
+                if route.scope == 'link' and route not in sorted_routes:
+                    sorted_routes.append(route)
+
             metrics: list[int] = []
             route_size: dict = {}
 
             for route in matching_routes:
                 if route.table == table:
-                    metrics.append(route.metric)
+                    if route.metric is not None:
+                        metrics.append(route.metric)
+
                     route_size[route.ip_count()] = route
 
             route_ip_count = list(route_size.keys())
@@ -116,6 +115,11 @@ class Router:
                     route = route_size[n]
                     if route.metric == m and route not in sorted_routes:
                         sorted_routes.append(route)
+
+            for n in route_ip_count:
+                route = route_size[n]
+                if route.metric is None and route not in sorted_routes:
+                    sorted_routes.append(route)
 
         return sorted_routes
 

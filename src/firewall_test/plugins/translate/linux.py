@@ -85,6 +85,7 @@ class LinuxNetworkInterfaces(TranslatePluginNetworkInterfaces):
         return [
             NetworkInterface(**self._parse_ni(r))
             for r in self.raw
+            if 'linkdown' not in r.get('flags', [])
         ]
 
     @staticmethod

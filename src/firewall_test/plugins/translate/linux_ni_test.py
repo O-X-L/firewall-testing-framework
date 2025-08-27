@@ -1,8 +1,6 @@
-from pathlib import Path
-from ipaddress import ip_network
+from testdata_test import TESTDATA_FILE_NIS
 
-TESTDATA_DIR = Path(__file__).parent.parent.parent.parent.parent / 'testdata'
-with open(TESTDATA_DIR / 'plugin_translate_linux_interfaces.json', 'r', encoding='utf-8') as f:
+with open(TESTDATA_FILE_NIS, 'r', encoding='utf-8') as f:
     TESTDATA_NICS = f.read()
 
 
@@ -29,7 +27,7 @@ def test_linux_nis():
             assert len(ni.net4) == 0
             assert len(ni.net6) == 0
 
-        elif ni.name == 'wlp0s20f3':
+        elif ni.name == 'wan':
             assert ni.up
             assert [str(ip) for ip in ni.ip4] == ['10.255.255.48']
             assert [str(ip) for ip in ni.ip6] == ['2001:4bc9:1f9a:cfe6:aaaa:11e2:5f14:1793', 'fe80::a0d:5eeb:c78:aba7']

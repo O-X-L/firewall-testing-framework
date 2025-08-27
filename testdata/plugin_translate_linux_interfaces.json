@@ -57,7 +57,7 @@
   },
   {
     "ifindex": 4,
-    "ifname": "wlp0s20f3",
+    "ifname": "wan",
     "flags": [
       "BROADCAST",
       "MULTICAST",
@@ -81,7 +81,7 @@
         "scope": "global",
         "dynamic": true,
         "noprefixroute": true,
-        "label": "wlp0s20f3",
+        "label": "wan",
         "valid_life_time": 85754,
         "preferred_life_time": 85754
       },

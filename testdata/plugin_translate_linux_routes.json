@@ -2,7 +2,7 @@
   {
     "dst": "default",
     "gateway": "10.255.255.254",
-    "dev": "wlp0s20f3",
+    "dev": "wan",
     "protocol": "dhcp",
     "prefsrc": "10.255.255.48",
     "metric": 600,
@@ -10,18 +10,11 @@
   },
   {
     "dst": "10.255.255.0/24",
-    "dev": "wlp0s20f3",
+    "dev": "wan",
     "protocol": "kernel",
     "scope": "link",
     "prefsrc": "10.255.255.48",
     "metric": 600,
-    "flags": []
-  },
-  {
-    "dst": "169.254.0.0/16",
-    "dev": "wlp0s20f3",
-    "scope": "link",
-    "metric": 1000,
     "flags": []
   },
   {
@@ -30,14 +23,12 @@
     "protocol": "kernel",
     "scope": "link",
     "prefsrc": "172.17.0.1",
-    "flags": [
-      "linkdown"
-    ]
+    "flags": []
   },
   {
     "type": "local",
     "dst": "10.255.255.48",
-    "dev": "wlp0s20f3",
+    "dev": "wan",
     "table": "local",
     "protocol": "kernel",
     "scope": "host",
@@ -47,7 +38,7 @@
   {
     "type": "broadcast",
     "dst": "10.255.255.255",
-    "dev": "wlp0s20f3",
+    "dev": "wan",
     "table": "local",
     "protocol": "kernel",
     "scope": "link",
@@ -108,7 +99,7 @@
   },
   {
     "dst": "2001:4bc9:1f9a:cfe6:aaaa:11e2:5f14:1793",
-    "dev": "wlp0s20f3",
+    "dev": "wan",
     "protocol": "kernel",
     "metric": 600,
     "flags": [],
@@ -116,7 +107,7 @@
   },
   {
     "dst": "fe80::/64",
-    "dev": "wlp0s20f3",
+    "dev": "wan",
     "protocol": "kernel",
     "metric": 1024,
     "flags": [],
@@ -125,7 +116,7 @@
   {
     "dst": "default",
     "gateway": "fe80::7474:ceff:feb1:5347",
-    "dev": "wlp0s20f3",
+    "dev": "wan",
     "protocol": "ra",
     "metric": 600,
     "flags": [],
@@ -144,7 +135,7 @@
   {
     "type": "local",
     "dst": "2001:4bc9:1f9a:cfe6:aaaa:11e2:5f14:1793",
-    "dev": "wlp0s20f3",
+    "dev": "wan",
     "table": "local",
     "protocol": "kernel",
     "metric": 0,
@@ -154,7 +145,7 @@
   {
     "type": "local",
     "dst": "fe80::a0d:5eeb:c78:aba7",
-    "dev": "wlp0s20f3",
+    "dev": "wan",
     "table": "local",
     "protocol": "kernel",
     "metric": 0,
@@ -164,7 +155,7 @@
   {
     "type": "multicast",
     "dst": "ff00::/8",
-    "dev": "wlp0s20f3",
+    "dev": "wan",
     "table": "local",
     "protocol": "kernel",
     "metric": 256,
