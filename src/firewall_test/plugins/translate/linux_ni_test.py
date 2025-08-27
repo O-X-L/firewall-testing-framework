@@ -1,0 +1,38 @@
+from pathlib import Path
+from ipaddress import ip_network
+
+TESTDATA_DIR = Path(__file__).parent.parent.parent.parent.parent / 'testdata'
+with open(TESTDATA_DIR / 'plugin_translate_linux_interfaces.json', 'r', encoding='utf-8') as f:
+    TESTDATA_NICS = f.read()
+
+
+def test_linux_nis():
+    from plugins.translate.linux import LinuxNetworkInterfaces
+
+    r = LinuxNetworkInterfaces(TESTDATA_NICS)
+    o = r.get()
+
+    for ni in o:
+        ni.validate()
+
+        if ni.name == 'lo':
+            assert ni.up
+            assert [str(ip) for ip in ni.ip4] == ['127.0.0.1']
+            assert [str(ip) for ip in ni.ip6] == ['::1']
+            assert [str(ip) for ip in ni.net4] == ['127.0.0.0/8']
+            assert len(ni.net6) == 0
+
+        elif ni.name == 'enp0s31f6':
+            assert not ni.up
+            assert len(ni.ip4) == 0
+            assert len(ni.ip6) == 0
+            assert len(ni.net4) == 0
+            assert len(ni.net6) == 0
+
+        elif ni.name == 'wlp0s20f3':
+            assert ni.up
+            assert [str(ip) for ip in ni.ip4] == ['10.255.255.48']
+            assert [str(ip) for ip in ni.ip6] == ['2001:4bc9:1f9a:cfe6:aaaa:11e2:5f14:1793', 'fe80::a0d:5eeb:c78:aba7']
+            assert [str(ip) for ip in ni.net4] == ['10.255.255.0/24']
+            assert [str(ip) for ip in ni.net6] == ['fe80::/64']
+            assert ni.mac == 'a0:59:aa:15:4e:0b'

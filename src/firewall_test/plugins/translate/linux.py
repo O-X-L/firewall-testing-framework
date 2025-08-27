@@ -1,8 +1,8 @@
-from ipaddress import ip_network
+from ipaddress import ip_address, ip_network, IPv4Address
 from json import loads as json_loads
 
 from plugins.translate.abstract import TranslatePluginStaticRoutes, TranslatePluginStaticRouteRules, \
-    StaticRoute, StaticRouteRule
+    StaticRoute, StaticRouteRule, TranslatePluginNetworkInterfaces, NetworkInterface
 
 
 class LinuxRouteRules(TranslatePluginStaticRouteRules):
@@ -53,7 +53,7 @@ class LinuxRoutes(TranslatePluginStaticRoutes):
     def _parse_route(raw: dict) -> dict:
         r = {
             'scope': raw.get('scope', None),
-            'dev': raw.get('dev', None),
+            'ni': raw.get('dev', None),
             'metric': raw.get('metric', None),
             'src_pref': raw.get('prefsrc', None),
             'gw': raw.get('gateway', None),
@@ -63,15 +63,59 @@ class LinuxRoutes(TranslatePluginStaticRoutes):
 
         if raw.get('dst') == 'default':
             if r['gw'] is None:
-                r['dst'] = ip_network('0.0.0.0/0')
+                r['net'] = ip_network('0.0.0.0/0')
 
             elif r['gw'].find(':') == -1:
-                r['dst'] = ip_network('0.0.0.0/0')
+                r['net'] = ip_network('0.0.0.0/0')
 
             else:
-                r['dst'] = ip_network('::/0')
+                r['net'] = ip_network('::/0')
 
         else:
-            r['dst'] = ip_network(raw['dst'])
+            r['net'] = ip_network(raw['dst'])
+
+        return r
+
+
+class LinuxNetworkInterfaces(TranslatePluginNetworkInterfaces):
+    def __init__(self, raw: str):
+        super().__init__(json_loads(raw))
+
+    def get(self) -> list[NetworkInterface]:
+        return [
+            NetworkInterface(**self._parse_ni(r))
+            for r in self.raw
+        ]
+
+    @staticmethod
+    def _parse_ni(raw: dict) -> dict:
+        r = {
+            'name': raw.get('ifname'),
+            'mac': raw.get('address'),
+            'ip4': [],
+            'ip6': [],
+            'net4': [],
+            'net6': [],
+        }
+        r['up'] = raw.get('operstate') == 'UP' or r['name'] == 'lo'
+
+        for info in raw.get('addr_info'):
+            ip = ip_address(info['local'])
+            cidr = info['prefixlen']
+            if cidr in [32, 128]:
+                net = None
+
+            else:
+                net = ip_network(f"{ip}/{info['prefixlen']}", strict=False)
+
+            if isinstance(ip, IPv4Address):
+                r['ip4'].append(ip)
+                if net is not None:
+                    r['net4'].append(net)
+
+            else:
+                r['ip6'].append(ip)
+                if net is not None:
+                    r['net6'].append(net)
 
         return r

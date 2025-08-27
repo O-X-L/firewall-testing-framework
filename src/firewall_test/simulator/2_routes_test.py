@@ -1,0 +1,55 @@
+from pathlib import Path
+from ipaddress import ip_network
+
+TESTDATA_DIR = Path(__file__).parent.parent.parent.parent / 'testdata'
+with open(TESTDATA_DIR / 'plugin_translate_linux_routes.json', 'r', encoding='utf-8') as f:
+    TESTDATA_ROUTES = f.read()
+
+with open(TESTDATA_DIR / 'plugin_translate_linux_route-rules.json', 'r', encoding='utf-8') as f:
+    TESTDATA_RULES = f.read()
+
+
+def test_router_dst_route():
+    from simulator.routes import Router
+    from simulator.packet import PacketIP
+    from plugins.translate.linux import LinuxRouteRules, LinuxRoutes
+    from plugins.system.linux_netfilter import SystemLinuxNetfilter
+
+    routes = LinuxRoutes(TESTDATA_ROUTES).get()
+    route_rules = LinuxRouteRules(TESTDATA_RULES).get()
+
+    router = Router(routes=routes, route_rules=route_rules, system=SystemLinuxNetfilter)
+
+    packet = PacketIP(src='192.168.0.10', dst='1.1.1.1', l3_proto='ip4')
+    r = router.get_route(packet)
+    assert len(r) == 1
+    r = r[0]
+    assert r.net == ip_network('0.0.0.0/0')
+    assert r.table == 'default'
+
+
+def test_router_src_route():
+    from simulator.routes import Router
+    from simulator.packet import PacketIP
+    from plugins.translate.linux import LinuxRouteRules, LinuxRoutes
+    from plugins.system.linux_netfilter import SystemLinuxNetfilter
+
+    routes = LinuxRoutes(TESTDATA_ROUTES).get()
+    route_rules = LinuxRouteRules(TESTDATA_RULES).get()
+
+    router = Router(routes=routes, route_rules=route_rules, system=SystemLinuxNetfilter)
+
+    packet = PacketIP(src='192.168.0.10', dst='1.1.1.1', l3_proto='ip4')
+    r = router.get_src_route(packet)
+    assert len(r) == 1
+    r = r[0]
+    assert r.net == ip_network('0.0.0.0/0')
+    assert r.table == 'default'
+
+    packet = PacketIP(src='10.255.255.20', dst='1.1.1.1', l3_proto='ip4')
+    r = router.get_src_route(packet)
+    assert len(r) == 2
+    r = r[0]
+    assert r.net == ip_network('10.255.255.0/24')
+    assert r.table == 'default'
+

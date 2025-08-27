@@ -2,11 +2,15 @@ from ipaddress import ip_address, IPv4Address, IPv6Address
 
 
 class Packet:
-    pass
+    def __init__(self):
+        self.ni_in = None
+        self.ni_out = None
+
 
 
 class PacketIP(Packet):
     def __init__(self, src: str, dst: str, l3_proto: str):
+        super().__init__()
         self.src = ip_address(src)
         self.dst = ip_address(dst)
         self.l3_proto = l3_proto.lower()

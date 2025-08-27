@@ -17,7 +17,7 @@ class Router:
         self.routes_runtime: list[RuntimeRoute]|None = routes_runtime
 
         self.rule_route_mapping = self._build_rule_route_mapping()
-        self.table_priority = self._build_rule_table_priority()
+        self.table_priority = self._build_table_priority()
 
     def _build_rule_route_mapping(self) -> dict:
         m = {}
@@ -32,10 +32,23 @@ class Router:
 
         return m
 
-    def _build_rule_table_priority(self) -> list:
-        if not self.system.ROUTE_STATIC_RULES:
-            return []
+    def _build_table_priority(self) -> list[str]:
+        if self.system.ROUTE_STATIC_RULES:
+            return self._build_table_priority_by_rules()
 
+        all_tables = [route.table for route in self.routes]
+        if self.system.ROUTE_RUNTIME:
+            all_tables.extend([route.table for route in self.routes_runtime])
+
+        tables = []
+        for table in list(set(all_tables)):
+            if table != 'default':
+                tables.append(table)
+
+        tables.append('default')
+        return tables
+
+    def _build_table_priority_by_rules(self):
         priorities = [rule.priority for rule in self.route_rules]
         priorities.sort()
         tables = []
@@ -58,49 +71,68 @@ class Router:
 
         return rules
 
-    def _get_matching_routes(self, packet: PacketIP, matching_rules: list[StaticRouteRule]) -> list[StaticRoute]:
+    def _get_matching_routes(self, packet: PacketIP, matching_rules: list[StaticRouteRule], src_route: bool = False) -> list[StaticRoute]:
         routes = []
         if len(matching_rules) > 0:
             for rule in matching_rules:
                 for route in self.rule_route_mapping[rule]:
-                    if packet.dst in route.dst:
+                    if packet.dst in route.net:
                         routes.append(route)
 
         else:
+            route_for = packet.dst
+            if src_route:
+                route_for = packet.src
+
             for route in self.routes:
-                if packet.dst in route.dst:
+                if route_for in route.net:
                     routes.append(route)
 
             if self.system.ROUTE_RUNTIME:
                 for route in self.routes_runtime:
-                    if packet.dst in route.dst:
+                    if route_for in route.dst:
                         routes.append(route)
 
         return routes
 
     def _sort_routes(self, matching_routes: list[StaticRoute]) -> list[StaticRoute]:
+        # prio by: table-prio, route-metric, route-subnet-size
         sorted_routes: list[StaticRoute] = []
+
         for table in self.table_priority:
             metrics: list[int] = []
-            routes: list[StaticRoute] = []
+            route_size: dict = {}
+
             for route in matching_routes:
                 if route.table == table:
                     metrics.append(route.metric)
-                    routes.append(route)
+                    route_size[route.ip_count()] = route
 
+            route_ip_count = list(route_size.keys())
+            route_ip_count.sort()
             metrics.sort()
             for m in metrics:
-                for route in routes:
+                for n in route_ip_count:
+                    route = route_size[n]
                     if route.metric == m and route not in sorted_routes:
                         sorted_routes.append(route)
 
         return sorted_routes
 
-    def process(self, packet: PacketIP) -> list[StaticRoute]:
+    def get_route(self, packet: PacketIP) -> list[StaticRoute]:
         matching_rules = self._get_matching_rules(packet)
         matching_routes = self._get_matching_routes(packet, matching_rules)
 
         print(f"ROUTE RULES MATCHED: {matching_rules}")
+        print(f"ROUTES MATCHED: {matching_routes}")
+
+        sorted_routes = self._sort_routes(matching_routes)
+
+        print(f"ROUTES SORTED: {sorted_routes}")
+        return sorted_routes
+
+    def get_src_route(self, packet: PacketIP) -> list[StaticRoute]:
+        matching_routes = self._get_matching_routes(packet, [], src_route=True)
         print(f"ROUTES MATCHED: {matching_routes}")
 
         sorted_routes = self._sort_routes(matching_routes)

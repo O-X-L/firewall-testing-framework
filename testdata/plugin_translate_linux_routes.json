@@ -107,7 +107,7 @@
     ]
   },
   {
-    "dst": "2001:4bc9:1f9a:cfe6:d03c:11e2:5f14:1793",
+    "dst": "2001:4bc9:1f9a:cfe6:aaaa:11e2:5f14:1793",
     "dev": "wlp0s20f3",
     "protocol": "kernel",
     "metric": 600,
@@ -143,7 +143,7 @@
   },
   {
     "type": "local",
-    "dst": "2001:4bc9:1f9a:cfe6:d03c:11e2:5f14:1793",
+    "dst": "2001:4bc9:1f9a:cfe6:aaaa:11e2:5f14:1793",
     "dev": "wlp0s20f3",
     "table": "local",
     "protocol": "kernel",

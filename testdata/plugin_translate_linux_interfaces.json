@@ -70,7 +70,7 @@
     "group": "default",
     "txqlen": 1000,
     "link_type": "ether",
-    "address": "a0:59:50:15:4e:0b",
+    "address": "a0:59:aa:15:4e:0b",
     "broadcast": "ff:ff:ff:ff:ff:ff",
     "addr_info": [
       {
@@ -87,7 +87,7 @@
       },
       {
         "family": "inet6",
-        "local": "2001:4bc9:1f9a:cfe6:d03c:11e2:5f14:1793",
+        "local": "2001:4bc9:1f9a:cfe6:aaaa:11e2:5f14:1793",
         "prefixlen": 128,
         "scope": "global",
         "dynamic": true,
