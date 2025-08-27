@@ -22,7 +22,7 @@ class TranslateOutput(ABC):
 
 
 # ROUTES: static route
-class TranslateOutputStaticRoute(TranslateOutput):
+class StaticRoute(TranslateOutput):
     # pylint: disable=W0622
     def __init__(
         self, table: str, dst: str, scope: str, type: str, gw: str = None, src_pref: str = None,
@@ -85,18 +85,18 @@ class TranslatePluginStaticRoutes(TranslatePlugin):
         super().__init__(raw)
 
     @abstractmethod
-    def get(self) -> list[TranslateOutputStaticRoute]:
+    def get(self) -> list[StaticRoute]:
         routes = []
         for route in self.raw:
             routes.append(
-                TranslateOutputStaticRoute(**route)
+                StaticRoute(**route)
             )
 
         return routes
 
 
 # ROUTE-RULES: for source-based routing
-class TranslateOutputStaticRouteRule(TranslateOutput):
+class StaticRouteRule(TranslateOutput):
     def __init__(
         self, table: str, src: list[str], priority: int,
     ):
@@ -138,14 +138,19 @@ class TranslatePluginStaticRouteRules(TranslatePlugin):
         super().__init__(raw)
 
     @abstractmethod
-    def get(self) -> list[TranslateOutputStaticRouteRule]:
+    def get(self) -> list[StaticRouteRule]:
         return [
-            TranslateOutputStaticRouteRule(**rule) for rule in self.raw
+            StaticRouteRule(**rule) for rule in self.raw
         ]
 
 
+# ROUTE: Runtime/Dynamic
+class RuntimeRoute(StaticRoute):
+    pass
+
+
 # RULE: a firewall-rule
-class TranslateOutputRule(TranslateOutput):
+class Rule():
     def __init__(
         self, action: str,
     ):
@@ -166,7 +171,7 @@ class TranslatePluginRule(TranslatePlugin):
     def __init__(self, raw: dict):
         super().__init__(raw)
 
-    def get(self) -> TranslateOutputRule:
+    def get(self) -> Rule:
         # action: accept/drop/reject/jump/goto/...
         # action_delayed: pf-like lazy-matching (bsd)
         # l3_proto & invert
@@ -180,13 +185,13 @@ class TranslatePluginRule(TranslatePlugin):
         # icmp6_type & invert
         # icmp6_code & invert
         # ...
-        return TranslateOutputRule(**self.raw)
+        return Rule(**self.raw)
 
 
 # CHAIN: contains the actual rules
-class TranslateOutputChain(TranslateOutput):
+class Chain(TranslateOutput):
     def __init__(
-        self, name: str, hook: str, policy: str, rules: list[TranslateOutputRule], priority: int = 0,
+        self, name: str, hook: str, policy: str, rules: list[Rule], priority: int = 0,
     ):
         self.name = name
         self.hook = hook
@@ -212,20 +217,20 @@ class TranslatePluginChain(TranslatePlugin):
     def __init__(self, raw: dict):
         super().__init__(raw)
 
-    def get(self) -> TranslateOutputChain:
+    def get(self) -> Chain:
         rules = self.raw.pop('rules')
-        return TranslateOutputChain(
+        return Chain(
             **self.raw,
             rules=[
-                TranslateOutputRule(**rule) for rule in rules
+                Rule(**rule) for rule in rules
             ]
         )
 
 
 # TABLE: contains chains that contain the actual rules
-class TranslateOutputTable(TranslateOutput):
+class Table(TranslateOutput):
     def __init__(
-        self, name: str, chains: list[TranslateOutputChain], priority: int = 0,
+        self, name: str, chains: list[Chain], priority: int = 0,
     ):
         self.name = name
         self.priority = priority
@@ -247,19 +252,19 @@ class TranslatePluginTable(TranslatePlugin):
     def __init__(self, raw: dict):
         super().__init__(raw)
 
-    def get(self) -> TranslateOutputTable:
+    def get(self) -> Table:
         chains = self.raw.pop('chains')
-        return TranslateOutputTable(
+        return Table(
             **self.raw,
             chains=[
-                TranslateOutputChain(**chain) for chain in chains
+                Chain(**chain) for chain in chains
             ]
         )
 
 
 # RULESET: list of tables that contain chains that contain the actual rules
-class TranslateOutputRuleset(TranslateOutput):
-    def __init__(self, tables: list[TranslateOutputTable]):
+class Ruleset(TranslateOutput):
+    def __init__(self, tables: list[Table]):
         self.tables = tables
 
     def dump(self) -> dict:
@@ -277,7 +282,7 @@ class TranslatePluginRuleset(TranslatePlugin):
         super().__init__(raw)
 
     @abstractmethod
-    def get(self) -> list[TranslateOutputTable]:
+    def get(self) -> list[Table]:
         return [
-            TranslateOutputTable(**table) for table in self.raw['tables']
+            Table(**table) for table in self.raw['tables']
         ]

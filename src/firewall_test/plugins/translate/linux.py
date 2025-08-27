@@ -2,16 +2,16 @@ from ipaddress import ip_network
 from json import loads as json_loads
 
 from plugins.translate.abstract import TranslatePluginStaticRoutes, TranslatePluginStaticRouteRules, \
-    TranslateOutputStaticRoute, TranslateOutputStaticRouteRule
+    StaticRoute, StaticRouteRule
 
 
 class LinuxRouteRules(TranslatePluginStaticRouteRules):
     def __init__(self, raw: str):
         super().__init__(json_loads(raw))
 
-    def get(self) -> list[TranslateOutputStaticRouteRule]:
+    def get(self) -> list[StaticRouteRule]:
         return [
-            TranslateOutputStaticRouteRule(**self._parse_rule(r))
+            StaticRouteRule(**self._parse_rule(r))
             for r in self.raw
         ]
 
@@ -43,9 +43,9 @@ class LinuxRoutes(TranslatePluginStaticRoutes):
     def __init__(self, raw: str):
         super().__init__(json_loads(raw))
 
-    def get(self) -> list[TranslateOutputStaticRoute]:
+    def get(self) -> list[StaticRoute]:
         return [
-            TranslateOutputStaticRoute(**self._parse_route(r))
+            StaticRoute(**self._parse_route(r))
             for r in self.raw
         ]
 

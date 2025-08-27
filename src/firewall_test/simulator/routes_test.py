@@ -13,11 +13,12 @@ def test_router():
     from simulator.routes import Router
     from simulator.packet import PacketIP
     from plugins.translate.linux import LinuxRouteRules, LinuxRoutes
+    from plugins.system.linux_netfilter import SystemLinuxNetfilter
 
     routes = LinuxRoutes(TESTDATA_ROUTES).get()
     route_rules = LinuxRouteRules(TESTDATA_RULES).get()
 
-    router = Router(routes=routes, route_rules=route_rules)
+    router = Router(routes=routes, route_rules=route_rules, system=SystemLinuxNetfilter)
 
     packet = PacketIP(src='192.168.0.10', dst='1.1.1.1', l3_proto='ip4')
     r = router.process(packet)
