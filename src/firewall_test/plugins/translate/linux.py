@@ -1,6 +1,7 @@
 from ipaddress import ip_address, ip_network, IPv4Address
 from json import loads as json_loads
 
+from plugins.translate.config import DEFAULT_ROUTE_IP4, DEFAULT_ROUTE_IP6
 from plugins.translate.abstract import TranslatePluginStaticRoutes, TranslatePluginStaticRouteRules, \
     StaticRoute, StaticRouteRule, TranslatePluginNetworkInterfaces, NetworkInterface
 
@@ -28,8 +29,8 @@ class LinuxRouteRules(TranslatePluginStaticRouteRules):
 
         if src == 'all':
             r['src'] = [
-                ip_network('0.0.0.0/0'),
-                ip_network('::/0'),
+                DEFAULT_ROUTE_IP4,
+                DEFAULT_ROUTE_IP6,
             ]
 
         else:
@@ -63,13 +64,13 @@ class LinuxRoutes(TranslatePluginStaticRoutes):
 
         if raw.get('dst') == 'default':
             if r['gw'] is None:
-                r['net'] = ip_network('0.0.0.0/0')
+                r['net'] = DEFAULT_ROUTE_IP4
 
             elif r['gw'].find(':') == -1:
-                r['net'] = ip_network('0.0.0.0/0')
+                r['net'] = DEFAULT_ROUTE_IP4
 
             else:
-                r['net'] = ip_network('::/0')
+                r['net'] = DEFAULT_ROUTE_IP6
 
         else:
             r['net'] = ip_network(raw['dst'])

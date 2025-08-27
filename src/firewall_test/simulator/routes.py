@@ -1,6 +1,10 @@
+from os import environ
+
 from plugins.system.abstract import FirewallSystem
 from plugins.translate.abstract import StaticRouteRule, StaticRoute
+
 from simulator.packet import PacketIP
+from simulator.logger import log_debug
 
 
 class Router:
@@ -70,18 +74,18 @@ class Router:
     def _get_matching_routes(self, packet: PacketIP, matching_rules: list[StaticRouteRule], src_route: bool = False) -> list[StaticRoute]:
         # todo: ignore routes of interfaces that are down
 
+        route_for = packet.dst
+        if src_route:
+            route_for = packet.src
+
         routes = []
         if len(matching_rules) > 0:
             for rule in matching_rules:
                 for route in self.rule_route_mapping[rule]:
-                    if packet.dst in route.net:
+                    if route_for in route.net:
                         routes.append(route)
 
         else:
-            route_for = packet.dst
-            if src_route:
-                route_for = packet.src
-
             for route in self.routes:
                 if route_for in route.net:
                     routes.append(route)
@@ -123,23 +127,25 @@ class Router:
 
         return sorted_routes
 
-    def get_route(self, packet: PacketIP) -> list[StaticRoute]:
-        matching_rules = self._get_matching_rules(packet)
-        matching_routes = self._get_matching_routes(packet, matching_rules)
+    def get_route(self, packet: PacketIP) -> (StaticRoute, None):
+        rules = self._get_matching_rules(packet)
+        routes = self._get_matching_routes(packet, rules)
+        routes = self._sort_routes(routes)
+        if 'DEBUG' in environ:
+            log_debug('Router', f'Packet {packet.dump()} | Destination routes: {[r.dump() for r in routes]}')
 
-        print(f"ROUTE RULES MATCHED: {matching_rules}")
-        print(f"ROUTES MATCHED: {matching_routes}")
+        if len(routes) == 0:
+            return None
 
-        sorted_routes = self._sort_routes(matching_routes)
+        return routes[0]
 
-        print(f"ROUTES SORTED: {sorted_routes}")
-        return sorted_routes
+    def get_src_route(self, packet: PacketIP) -> (StaticRoute, None):
+        routes = self._get_matching_routes(packet, [], src_route=True)
+        routes = self._sort_routes(routes)
+        if 'DEBUG' in environ:
+            log_debug('Router', f'Packet {packet.dump()} | Source routes: {[r.dump() for r in routes]}')
 
-    def get_src_route(self, packet: PacketIP) -> list[StaticRoute]:
-        matching_routes = self._get_matching_routes(packet, [], src_route=True)
-        print(f"ROUTES MATCHED: {matching_routes}")
+        if len(routes) == 0:
+            return None
 
-        sorted_routes = self._sort_routes(matching_routes)
-
-        print(f"ROUTES SORTED: {sorted_routes}")
-        return sorted_routes
+        return routes[0]

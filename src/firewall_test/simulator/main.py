@@ -3,9 +3,11 @@ from ipaddress import IPv4Address, IPv6Address
 
 from simulator.packet import PacketIP
 from simulator.routes import Router
+from simulator.logger import log_info, log_error, log_ok
 
-from plugins.translate.abstract import NetworkInterface, StaticRoute, StaticRouteRule
 from plugins.system.abstract import FirewallSystem
+from plugins.translate.config import DEFAULT_ROUTES
+from plugins.translate.abstract import NetworkInterface, StaticRoute, StaticRouteRule
 
 FLOW_INPUT = 'input'
 FLOW_OUTPUT = 'output'
@@ -29,37 +31,61 @@ class SimulatorRun:
         self.local_src, packet.ni_in = self._is_ip_local(packet.src)
         self.local_dst, packet.ni_out = self._is_ip_local(packet.dst)
         self.flow_type = self._get_flow_type()
+        # log_info('Firewall', f'Flow-type: {self.flow_type}')
 
         self.route_src = self._s.router.get_src_route(self.packet)
         self._update_packet_ni_in()
+        if packet.ni_in is not None:
+            log_info('Firewall', f'Packet inbound-interface: {packet.ni_in}')
 
         if self.route_src is None:
-            raise ConnectionError('No Source-Route found')
+            log_error('Router', 'No Source-Route found')
+            return
 
+        # todo: prerouting firewall-filters
         # todo: DNAT
         self._dnat_done = True
         self.dnat = None
+        if self.dnat is not None:
+            log_info('Firewall', f'Performed DNAT: {self.dnat}')
 
         self.local_dst, packet.ni_out = self._is_ip_local(packet.dst)
         self.flow_type = self._get_flow_type()
+
         self.route_dst = self._s.router.get_route(self.packet)
         self._update_packet_ni_out()
+        if packet.ni_out is not None:
+            log_info('Firewall', f'Packet outbound-interface: {packet.ni_out}')
 
         if self.route_dst is None:
-            raise ConnectionError('No Destination-Route found')
+            log_error('Router', 'No Destination-Route found')
+            return
+
+        log_info('Firewall', f'Flow-type: {self.flow_type}')
+
+        if self._is_bogon_to_wan() and self._s.system.FIREWALL_WAN_DROP_BOGONS:
+            log_error('Firewall', 'Dropping traffic to WAN targeting bogons')
+            return
+
+        # todo: main firewall-filters
 
         # todo: SNAT
         self.snat = None
+        if self.snat is not None:
+            log_info('Firewall', f'Performed SNAT: {self.snat}')
+
+        # todo: egress firewall-filters
+
+        log_ok('Firewall', 'Packet passed')
 
     def dump(self) -> dict:
         return {
             'packet': self.packet.dump(),
-            'ipp': self._ipp,
             'src_is_local': self.local_src,
             'dst_is_local': self.local_dst,
             'flow_type': self.flow_type,
-            'route_src': [route.dump() for route in self.route_src],
-            'route_dst': [route.dump() for route in self.route_dst],
+            'route_src': self.route_src.dump() if self.route_src is not None else None,
+            'route_dst': self.route_dst.dump() if self.route_dst is not None else None,
             'dnat': self.dnat,
             'snat': self.snat,
         }
@@ -91,19 +117,26 @@ class SimulatorRun:
         if self.packet.ni_in is not None:
             return
 
-        if len(self.route_src) == 0:
+        if self.route_src is None:
             return
 
-        self.packet.ni_in = self.route_src[0].ni
+        self.packet.ni_in = self.route_src.ni
 
     def _update_packet_ni_out(self) -> (str, None):
         if self.packet.ni_out is not None:
             return
 
-        if len(self.route_dst) == 0:
+        if self.route_dst is None:
             return
 
-        self.packet.ni_out = self.route_dst[0].ni
+        self.packet.ni_out = self.route_dst.ni
+
+    def _is_bogon_to_wan(self) -> bool:
+        if self.route_dst.net in DEFAULT_ROUTES and \
+                not self.packet.dst.is_global:
+            return True
+
+        return False
 
 
 class Simulator:

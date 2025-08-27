@@ -23,7 +23,7 @@ def test_basic():
     assert r.packet.ni_out == 'wan'
     assert r.flow_type == FLOW_FORWARD
 
-    assert r.route_src[0].net == ip_network('172.17.0.0/16')
-    assert r.route_src[0].ni == 'docker0'
-    assert r.route_dst[0].net == ip_network('0.0.0.0/0')
-    assert r.route_dst[0].ni == 'wan'
+    assert r.route_src.net == ip_network('172.17.0.0/16')
+    assert r.route_src.ni == 'docker0'
+    assert r.route_dst.net == ip_network('0.0.0.0/0')
+    assert r.route_dst.ni == 'wan'

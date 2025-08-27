@@ -1,3 +1,4 @@
+from os import environ
 from os import path as os_path
 from sys import path as sys_path
 from argparse import ArgumentParser
@@ -76,6 +77,7 @@ def main():
             l4_proto=args.proto_l4,
         )
 
+    print()
     loaded = load(
         system=args.firewall_system,
         file_interfaces=args.file_interfaces,
@@ -84,7 +86,11 @@ def main():
     )
     s = Simulator(**loaded)
     r = s.run(packet)
-    print('\n', r.to_json())
+
+    if 'DEBUG' in environ:
+        print('\n', r.to_json())
+
+    print()
 
 
 if __name__ == '__main__':

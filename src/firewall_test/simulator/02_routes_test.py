@@ -22,8 +22,7 @@ def test_router_dst_route():
 
     packet = PacketIP(src='192.168.0.10', dst='1.1.1.1', l3_proto='ip4')
     r = router.get_route(packet)
-    assert len(r) == 1
-    r = r[0]
+    assert r is not None
     assert r.net == ip_network('0.0.0.0/0')
     assert r.table == 'default'
 
@@ -41,15 +40,13 @@ def test_router_src_route():
 
     packet = PacketIP(src='192.168.0.10', dst='1.1.1.1', l3_proto='ip4')
     r = router.get_src_route(packet)
-    assert len(r) == 1
-    r = r[0]
+    assert r is not None
     assert r.net == ip_network('0.0.0.0/0')
     assert r.table == 'default'
 
     packet = PacketIP(src='10.255.255.20', dst='1.1.1.1', l3_proto='ip4')
     r = router.get_src_route(packet)
-    assert len(r) == 2
-    r = r[0]
+    assert r is not None
     assert r.net == ip_network('10.255.255.0/24')
     assert r.table == 'default'
 
