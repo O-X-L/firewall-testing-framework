@@ -1,0 +1,174 @@
+[
+  {
+    "dst": "default",
+    "gateway": "10.255.255.254",
+    "dev": "wlp0s20f3",
+    "protocol": "dhcp",
+    "prefsrc": "10.255.255.48",
+    "metric": 600,
+    "flags": []
+  },
+  {
+    "dst": "10.255.255.0/24",
+    "dev": "wlp0s20f3",
+    "protocol": "kernel",
+    "scope": "link",
+    "prefsrc": "10.255.255.48",
+    "metric": 600,
+    "flags": []
+  },
+  {
+    "dst": "169.254.0.0/16",
+    "dev": "wlp0s20f3",
+    "scope": "link",
+    "metric": 1000,
+    "flags": []
+  },
+  {
+    "dst": "172.17.0.0/16",
+    "dev": "docker0",
+    "protocol": "kernel",
+    "scope": "link",
+    "prefsrc": "172.17.0.1",
+    "flags": [
+      "linkdown"
+    ]
+  },
+  {
+    "type": "local",
+    "dst": "10.255.255.48",
+    "dev": "wlp0s20f3",
+    "table": "local",
+    "protocol": "kernel",
+    "scope": "host",
+    "prefsrc": "10.255.255.48",
+    "flags": []
+  },
+  {
+    "type": "broadcast",
+    "dst": "10.255.255.255",
+    "dev": "wlp0s20f3",
+    "table": "local",
+    "protocol": "kernel",
+    "scope": "link",
+    "prefsrc": "10.255.255.48",
+    "flags": []
+  },
+  {
+    "type": "local",
+    "dst": "127.0.0.0/8",
+    "dev": "lo",
+    "table": "local",
+    "protocol": "kernel",
+    "scope": "host",
+    "prefsrc": "127.0.0.1",
+    "flags": []
+  },
+  {
+    "type": "local",
+    "dst": "127.0.0.1",
+    "dev": "lo",
+    "table": "local",
+    "protocol": "kernel",
+    "scope": "host",
+    "prefsrc": "127.0.0.1",
+    "flags": []
+  },
+  {
+    "type": "broadcast",
+    "dst": "127.255.255.255",
+    "dev": "lo",
+    "table": "local",
+    "protocol": "kernel",
+    "scope": "link",
+    "prefsrc": "127.0.0.1",
+    "flags": []
+  },
+  {
+    "type": "local",
+    "dst": "172.17.0.1",
+    "dev": "docker0",
+    "table": "local",
+    "protocol": "kernel",
+    "scope": "host",
+    "prefsrc": "172.17.0.1",
+    "flags": []
+  },
+  {
+    "type": "broadcast",
+    "dst": "172.17.255.255",
+    "dev": "docker0",
+    "table": "local",
+    "protocol": "kernel",
+    "scope": "link",
+    "prefsrc": "172.17.0.1",
+    "flags": [
+      "linkdown"
+    ]
+  },
+  {
+    "dst": "2001:4bc9:1f9a:cfe6:d03c:11e2:5f14:1793",
+    "dev": "wlp0s20f3",
+    "protocol": "kernel",
+    "metric": 600,
+    "flags": [],
+    "pref": "medium"
+  },
+  {
+    "dst": "fe80::/64",
+    "dev": "wlp0s20f3",
+    "protocol": "kernel",
+    "metric": 1024,
+    "flags": [],
+    "pref": "medium"
+  },
+  {
+    "dst": "default",
+    "gateway": "fe80::7474:ceff:feb1:5347",
+    "dev": "wlp0s20f3",
+    "protocol": "ra",
+    "metric": 600,
+    "flags": [],
+    "pref": "medium"
+  },
+  {
+    "type": "local",
+    "dst": "::1",
+    "dev": "lo",
+    "table": "local",
+    "protocol": "kernel",
+    "metric": 0,
+    "flags": [],
+    "pref": "medium"
+  },
+  {
+    "type": "local",
+    "dst": "2001:4bc9:1f9a:cfe6:d03c:11e2:5f14:1793",
+    "dev": "wlp0s20f3",
+    "table": "local",
+    "protocol": "kernel",
+    "metric": 0,
+    "flags": [],
+    "pref": "medium"
+  },
+  {
+    "type": "local",
+    "dst": "fe80::a0d:5eeb:c78:aba7",
+    "dev": "wlp0s20f3",
+    "table": "local",
+    "protocol": "kernel",
+    "metric": 0,
+    "flags": [],
+    "pref": "medium"
+  },
+  {
+    "type": "multicast",
+    "dst": "ff00::/8",
+    "dev": "wlp0s20f3",
+    "table": "local",
+    "protocol": "kernel",
+    "metric": 256,
+    "flags": [],
+    "pref": "medium"
+  }
+]

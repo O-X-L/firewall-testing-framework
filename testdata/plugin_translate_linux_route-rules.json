@@ -1,0 +1,23 @@
+[
+  {
+    "priority": 0,
+    "src": "all",
+    "table": "local"
+  },
+  {
+    "priority": 32765,
+    "src": "172.18.0.0",
+    "srclen": 16,
+    "table": "test"
+  },
+  {
+    "priority": 32766,
+    "src": "all",
+    "table": "main"
+  },
+  {
+    "priority": 32767,
+    "src": "all",
+    "table": "default"
+  }
+]
