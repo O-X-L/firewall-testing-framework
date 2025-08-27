@@ -153,11 +153,6 @@ class TranslatePluginStaticRouteRules(TranslatePlugin):
         ]
 
 
-# ROUTE: Runtime/Dynamic
-class RuntimeRoute(StaticRoute):
-    pass
-
-
 # INTERFACES
 class NetworkInterface(TranslateOutput):
     # pylint: disable=W0622

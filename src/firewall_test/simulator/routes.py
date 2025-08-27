@@ -1,5 +1,5 @@
 from plugins.system.abstract import FirewallSystem
-from plugins.translate.abstract import StaticRouteRule, StaticRoute, RuntimeRoute
+from plugins.translate.abstract import StaticRouteRule, StaticRoute
 from simulator.packet import PacketIP
 
 

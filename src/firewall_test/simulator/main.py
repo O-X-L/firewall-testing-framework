@@ -4,7 +4,7 @@ from ipaddress import IPv4Address, IPv6Address
 from simulator.packet import PacketIP
 from simulator.routes import Router
 
-from plugins.translate.abstract import NetworkInterface, StaticRoute, StaticRouteRule, RuntimeRoute
+from plugins.translate.abstract import NetworkInterface, StaticRoute, StaticRouteRule
 from plugins.system.abstract import FirewallSystem
 
 FLOW_INPUT = 'input'
