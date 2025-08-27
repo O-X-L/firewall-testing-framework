@@ -3,3 +3,5 @@ venv/
 VERSION
 src/*.egg-info
 dist/
+.idea/
+.vscode/
