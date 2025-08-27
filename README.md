@@ -26,12 +26,13 @@ Maintaining these might be time-consuming. You might also face some challenges:
 * **Automated Regression-Tests**:
 
   Why would you want to do ruleset-regression-tests?
-  * If you utilize Infrastructure-as-Code and change-reviews for updating your ruleset you might want to 
   * You may want/need to periodically verify that the currently active rulesets actually allow/deny the traffic you expect
     This can be a tedious task - you might overlook some edge-case.
   * Especially when a ruleset is administered by teams of engineers over a long time period - it can be a challenge to:
     * detect configuration errors/mistakes before they can be exploited
     * make sure the design-choices for the ruleset are adhered to
+
+  * If you already utilize Infrastructure-as-Code and change-reviews for updating your rulesets you might want to also validate the functionality of that ruleset via automated CI-jobs.
 
   How do regression-tests work?
   * You define test-cases that simulate traffic over one or multiple firewalls
