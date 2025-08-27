@@ -41,8 +41,8 @@ python3 -m pip install -r ./requirements_build.txt >/dev/null
 python3 -m build
 if [ -f "./dist/firewall-test-${VERSION}.tar.gz" ]
 then
-  mv "./dist/firewall-test-${VERSION}.tar.gz" "./dist/dnsbl_check-${VERSION}.tar.gz"
+  mv "./dist/firewall-test-${VERSION}.tar.gz" "./dist/firewall-test-${VERSION}.tar.gz"
 fi
-rm -rf ./src/dnsbl_check.egg-info/
+rm -rf ./src/*.egg-info
 
 # python3 -m twine upload --repository pypi dist/*

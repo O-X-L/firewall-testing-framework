@@ -1,8 +1,5 @@
 .coverage
-__pycache__
-*.egg-info
-.venv
+venv/
 VERSION
+src/*.egg-info
 dist/
-.coverage*
-docs/build/
