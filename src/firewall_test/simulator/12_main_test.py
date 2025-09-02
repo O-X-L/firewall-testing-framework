@@ -1,7 +1,7 @@
 import pytest
 from ipaddress import ip_network
 
-from testdata_test import TESTDATA_FILE_ROUTES, TESTDATA_FILE_ROUTE_RULES, TESTDATA_FILE_NIS
+from testdata_test import TESTDATA_FILE_ROUTES, TESTDATA_FILE_ROUTE_RULES, TESTDATA_FILE_NIS, TESTDATA_FILE_NF_RULESET
 
 from simulator.main import SimulatorRun
 
@@ -17,6 +17,7 @@ def _init_test(src: str, dst: str) -> SimulatorRun:
         file_interfaces=TESTDATA_FILE_NIS,
         file_routes=TESTDATA_FILE_ROUTES,
         file_route_rules=TESTDATA_FILE_ROUTE_RULES,
+        file_ruleset=TESTDATA_FILE_NF_RULESET,
     )
     s = Simulator(**loaded)
     r = s.run(packet)

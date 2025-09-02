@@ -6,6 +6,7 @@ from plugins.system.config import SYSTEM_MAPPING, COMPONENT_MAPPING
 def load(
         system: str,
         file_interfaces: (str, Path),
+        file_ruleset: (str, Path),
         file_routes: (str, Path),
         file_route_rules: (str, Path) = None,
 ) -> dict:
@@ -23,6 +24,7 @@ def load(
         'nis': file_interfaces,
         'routes': file_routes,
         'route_rules': file_route_rules,
+        'ruleset': file_ruleset,
     }.items():
         if file is None:
             continue

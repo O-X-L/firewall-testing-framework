@@ -3,16 +3,14 @@ from ipaddress import IPv4Address, IPv6Address
 
 from simulator.packet import PacketIP
 from simulator.routes import Router
+from simulator.firewall import Firewall
 from simulator.logger import log_info, log_error, log_ok
 
+from config import DEFAULT_ROUTES, FLOW_INPUT, FLOW_OUTPUT, FLOW_FORWARD, FLOW_INPUT_FORWARD
 from plugins.system.abstract import FirewallSystem
-from plugins.translate.config import DEFAULT_ROUTES
-from plugins.translate.abstract import NetworkInterface, StaticRoute, StaticRouteRule
+from plugins.translate.abstract import NetworkInterface, StaticRoute, StaticRouteRule, Ruleset
 
-FLOW_INPUT = 'input'
-FLOW_OUTPUT = 'output'
-FLOW_FORWARD = 'forward'
-FLOW_INPUT_FORWARD = 'input_forward'  # before DNAT we might not yet know
+
 
 MODE_INTERACTIVE = 1
 MODE_CI = 2
@@ -44,12 +42,16 @@ class SimulatorRun:
 
         self._log_route(out=False, route=self.route_src)
 
-        # todo: prerouting firewall-filters
-        # todo: DNAT
+        if self.flow_type != FLOW_OUTPUT:
+            result, rule = self._s.fw.process_pre_routing(packet=packet, flow=self.flow_type)
+            if not result:
+                log_error('Firewall', f'Packet blocked by rule: {rule.dump()}')
+                return
+
+        _, self.dnat = self._s.fw.process_dnat(packet=packet, flow=self.flow_type)
         self._dnat_done = True
-        self.dnat = None
         if self.dnat is not None:
-            log_info('Firewall', f'Performed DNAT: {self.dnat}')
+            log_info('Firewall', f'Performed DNAT: {self.dnat.dump()}')
 
         self.local_dst, packet.ni_out = self._is_ip_local(packet.dst)
         self.flow_type = self._get_flow_type()
@@ -164,6 +166,7 @@ class Simulator:
             self,
             system: type[FirewallSystem],
             nis: list[NetworkInterface],
+            ruleset: Ruleset,
             routes: list[StaticRoute],
             route_rules: list[StaticRouteRule] = None,
             mode: int = MODE_INTERACTIVE,
@@ -175,6 +178,10 @@ class Simulator:
             system=system,
             routes=routes,
             route_rules=route_rules,
+        )
+        self.fw = Firewall(
+            system=system,
+            ruleset=ruleset,
         )
 
     def run(self, packet: PacketIP) -> SimulatorRun:

@@ -2,6 +2,9 @@ from abc import ABC, abstractmethod
 from ipaddress import ip_network, ip_address, IPv4Network, IPv6Network, IPv4Address, IPv6Address
 from re import compile as regex_compile
 
+from config import PROTO_L3_IP4, PROTO_L3_IP6, PROTOS_L4, PROTOS_L3, PROTO_L3_IP4_IP6
+from simulator.logger import log_warn
+
 REGEX_MAC_ADDRESS = regex_compile(r'^[\da-f]{2}:[\da-f]{2}:[\da-f]{2}:[\da-f]{2}:[\da-f]{2}:[\da-f]{2}$')
 
 
@@ -190,8 +193,8 @@ class NetworkInterface(TranslateOutput):
         return {
             'name': self.name,
             'up': self.up,
-            'ip4': ip4,
-            'ip6': ip6,
+            PROTO_L3_IP4: ip4,
+            PROTO_L3_IP6: ip6,
             'net4': net4,
             'net6': net6,
             'mac': self.mac,
@@ -203,10 +206,10 @@ class NetworkInterface(TranslateOutput):
         if r['mac'] is not None:
             assert REGEX_MAC_ADDRESS.match(r['mac']) is not None
 
-        for ip in r['ip4']:
+        for ip in r[PROTO_L3_IP4]:
             assert isinstance(ip, IPv4Address)
 
-        for ip in r['ip6']:
+        for ip in r[PROTO_L3_IP6]:
             assert isinstance(ip, IPv6Address)
 
         for net in r['net4']:
@@ -227,28 +230,150 @@ class TranslatePluginNetworkInterfaces(TranslatePlugin):
         ]
 
 
+# RULE-MATCH
+class RuleMatch(TranslateOutput):
+    MATCH_NI = 'ni'
+    MATCH_IP_NET = 'ip'
+    MATCH_PROTO_L3 = 'proto_l3'
+    MATCH_PROTO_L4 = 'proto_l4'
+    MATCH_ICMP_CODE = 'icmp_code'
+    MATCH_PORT = 'port'
+
+    OP_EQ = '='
+    OP_NE = '!='
+    OP_GT = '>'
+    OP_LT = '<'
+
+    FIELD_IP_SRC = 'saddr'
+    FIELD_IP_DST = 'daddr'
+    FIELD_PORT_SRC = 'sport'
+    FIELD_PORT_DST = 'dport'
+
+    PORT_RANGE_SEP = ['-', ':']
+
+    # pylint: disable=W0622
+    def __init__(self, type: str, operator: str, compare: list, field: str = None):
+        self.match_type = type
+        self.operator = operator
+        self.compare = compare
+        self.field = field
+
+    def _prepare_ports(self) -> list[int]:
+        compare = []
+        for c in self.compare:
+            if isinstance(c, int):
+                compare.append(c)
+                continue
+
+            if c.isnumeric():
+                compare.append(int(c))
+                continue
+
+            # explode port-ranges
+            port_range = False
+            for range_char in self.PORT_RANGE_SEP:
+                if port_range:
+                    break
+
+                port_range = True
+                if c.find(range_char) != -1:
+                    p1, p2 = c.split(range_char, 1)
+                    if p1.isnumeric() and p2.isnumeric():
+                        compare.extend(p for p in range(int(p1), int(p2) + 1))
+
+            if not port_range:
+                log_warn('Firewall', f"Unable to parse port-match: '{c}'")
+
+        return compare
+
+    def dump(self) -> dict:
+        compare = self.compare
+        if self.match_type == self.MATCH_IP_NET:
+            compare = []
+            for c in self.compare:
+                compare.append(ip_network(c))
+
+        elif self.match_type == self.MATCH_PORT:
+            compare = self._prepare_ports()
+
+        return {
+            'type': self.match_type,
+            'operator': self.operator,
+            'field': self.field,
+            'compare': compare,
+        }
+
+    def validate(self):
+        r = self.dump()
+        assert r['type'] in [
+            self.MATCH_IP_NET, self.MATCH_ICMP_CODE, self.MATCH_NI,
+            self.MATCH_PROTO_L3, self.MATCH_PROTO_L4, self.MATCH_PORT,
+        ]
+        if r['type'] == self.MATCH_PORT and len(r['compare']) == 1:
+            assert r['operator'] in [self.OP_EQ, self.OP_NE, self.OP_LT, self.OP_GT]
+
+        else:
+            assert r['operator'] in [self.OP_EQ, self.OP_NE]
+
+        assert r['field'] in [
+            None,
+            self.FIELD_IP_SRC,
+            self.FIELD_IP_DST,
+            self.FIELD_PORT_SRC,
+            self.FIELD_PORT_DST,
+        ]
+
+        assert r['compare'] is not None
+        assert len(r['compare']) > 0
+        if r['type'] == self.MATCH_IP_NET:
+            assert r['field'] in [self.FIELD_IP_SRC, self.FIELD_IP_DST]
+            for ip_net in r['compare']:
+                assert isinstance(ip_net, (IPv4Network, IPv6Network))
+
+        if r['type'] == self.MATCH_PORT:
+            assert r['field'] in [self.FIELD_PORT_SRC, self.FIELD_PORT_DST]
+            for port in r['compare']:
+                assert isinstance(port, int)
+                assert 0 < port < 65536
+
+        if r['type'] == self.MATCH_PROTO_L3:
+            for proto_l3 in r['compare']:
+                assert proto_l3 in PROTOS_L3
+
+        if r['type'] == self.MATCH_PROTO_L4:
+            for proto_l4 in r['compare']:
+                assert proto_l4 in PROTOS_L4
+
+
 # RULE: a firewall-rule
 class Rule(TranslateOutput):
     def __init__(
-        self, action: str,
+            self, action: str, seq: int, matches: list[RuleMatch],
+            comment: str,
     ):
         self.action = action
-        # todo: extend
+        self.seq = seq  # sequence inside chain
+        self.matches: list[RuleMatch] = matches
+        self.comment = comment  # comment or log-msg
 
     def dump(self) -> dict:
         return {
             'action': self.action,
+            'seq': self.seq,
+            'comment': self.comment,
+            'matches': [match.dump() for match in self.matches],
         }
 
     def validate(self):
-        # r = self.dump()
-        pass
+        r = self.dump()
+        assert r['action'] in ['accept', 'drop', 'reject', 'jump', 'goto']
+        assert isinstance(r['seq'], int)
+        assert isinstance(r['matches'], list)
+        assert len(r['matches']) > 0
+        assert isinstance(r['matches'][0], list)
 
 
 class TranslatePluginRule(TranslatePlugin):
-    def __init__(self, raw: any):
-        super().__init__(raw)
-
     @abstractmethod
     def get(self) -> Rule:
         # action: accept/drop/reject/jump/goto/...
@@ -269,33 +394,54 @@ class TranslatePluginRule(TranslatePlugin):
 
 # CHAIN: contains the actual rules
 class Chain(TranslateOutput):
+    TYPE_FILTER = 'filter'
+    TYPE_NAT = 'nat'
+    TYPE_ROUTE = 'route'
+
+    FAMILY_IP = PROTO_L3_IP4_IP6
+    FAMILY_IP4 = PROTO_L3_IP4
+    FAMILY_IP6 = PROTO_L3_IP6
+
+    # pylint: disable=W0622
     def __init__(
         self, name: str, hook: str, policy: str, rules: list[Rule], priority: int = 0,
+            type: str = 'filter', family: str = PROTO_L3_IP4_IP6,
     ):
         self.name = name
+        self.type = type
+        self.family = family
         self.hook = hook
-        self.policy = policy  # (accept/drop/reject)
         self.priority = priority
+        self.policy = policy
         self.rules = rules
 
     def dump(self) -> dict:
         return {
             "name": self.name,
+            "type": self.type,
             "hook": self.hook,
             "policy": self.policy,
             "priority": self.priority,
+            "family": self.family,
             "rules": [r.dump() for r in self.rules],
         }
 
     def validate(self):
-        # r = self.dump()
-        pass
+        r = self.dump()
+        assert isinstance(r['name'], str)
+        assert len(r['name']) > 0
+        assert r['policy'] in ['accept', 'drop', 'reject']
+        assert isinstance(r['priority'], int)
+        assert r['type'] in [self.TYPE_FILTER, self.TYPE_NAT, self.TYPE_ROUTE]
+        if len(r['rules']) > 0:
+            for r in r['rules']:
+                assert isinstance(r, dict)
+
+        assert r['family'] in [self.FAMILY_IP, self.FAMILY_IP4, self.FAMILY_IP6]
+        # todo: check if hook in system.FIREWALL_HOOKS
 
 
 class TranslatePluginChain(TranslatePlugin):
-    def __init__(self, raw: any):
-        super().__init__(raw)
-
     @abstractmethod
     def get(self) -> Chain:
         rules = self.raw.pop('rules')
@@ -309,29 +455,46 @@ class TranslatePluginChain(TranslatePlugin):
 
 # TABLE: contains chains that contain the actual rules
 class Table(TranslateOutput):
+    TYPE_FILTER = 'filter'
+    TYPE_NAT = 'nat'
+
+    FAMILY_IP = PROTO_L3_IP4_IP6
+    FAMILY_IP4 = PROTO_L3_IP4
+    FAMILY_IP6 = PROTO_L3_IP6
+
+    # pylint: disable=W0622
     def __init__(
-        self, name: str, chains: list[Chain], priority: int = 0,
+        self, name: str, chains: list[Chain], priority: int = 0, family: str = PROTO_L3_IP4_IP6, type: str = 'filter',
     ):
         self.name = name
+        self.type = type
         self.priority = priority
         self.chains = chains
+        self.family = family
 
     def dump(self) -> dict:
         return {
             "name": self.name,
+            "type": self.type,
             "priority": self.priority,
+            "family": self.family,
             "chains": [r.dump() for r in self.chains],
         }
 
     def validate(self):
-        # r = self.dump()
-        pass
+        r = self.dump()
+        assert isinstance(r['name'], str)
+        assert len(r['name']) > 0
+        assert isinstance(r['priority'], int)
+        assert r['type'] in [self.TYPE_FILTER, self.TYPE_NAT]
+        if len(r['chains']) > 0:
+            for c in r['chains']:
+                assert isinstance(c, dict)
+
+        assert r['family'] in [self.FAMILY_IP, self.FAMILY_IP4, self.FAMILY_IP6]
 
 
 class TranslatePluginTable(TranslatePlugin):
-    def __init__(self, raw: any):
-        super().__init__(raw)
-
     @abstractmethod
     def get(self) -> Table:
         chains = self.raw.pop('chains')
@@ -354,14 +517,13 @@ class Ruleset(TranslateOutput):
         }
 
     def validate(self):
-        # r = self.dump()
-        pass
+        r = self.dump()
+        if len(r['tables']) > 0:
+            for t in r['tables']:
+                assert isinstance(t, dict)
 
 
 class TranslatePluginRuleset(TranslatePlugin):
-    def __init__(self, raw: any):
-        super().__init__(raw)
-
     @abstractmethod
     def get(self) -> list[Table]:
         return [

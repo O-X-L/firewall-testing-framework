@@ -40,23 +40,28 @@ def main():
     )
 
     parser.add_argument(
-        '-w', '--firewall-system', help='Kind of firewall system',
+        '-v', '--firewall-system', help='Kind of firewall system',
         choices=list(SYSTEM_MAPPING.keys()),
         required = True,
     )
     parser.add_argument(
-        '-x', '--file-interfaces',
+        '-w', '--file-interfaces',
         help='Path to the file containing the network-interface information',
         required=True,
     )
     parser.add_argument(
-        '-y', '--file-routes',
+        '-x', '--file-routes',
         help='Path to the file containing the network-route information',
         required=True,
     )
     parser.add_argument(
-        '-z', '--file-route-rules',
+        '-y', '--file-route-rules',
         help='Path to the file containing the network-route-rule information',
+    )
+    parser.add_argument(
+        '-z', '--file-ruleset',
+        help='Path to the file containing the firewall-ruleset information',
+        required=True,
     )
 
     args = parser.parse_args()
@@ -83,6 +88,7 @@ def main():
         file_interfaces=args.file_interfaces,
         file_routes=args.file_routes,
         file_route_rules=args.file_route_rules,
+        file_ruleset=args.file_ruleset,
     )
     s = Simulator(**loaded)
     r = s.run(packet)

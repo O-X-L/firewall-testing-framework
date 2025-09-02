@@ -8,7 +8,7 @@ from plugins.translate.netfilter.elements import NftBase, NftTable, NftChain, Nf
 HANDLE_SEPARATOR = ' # handle '
 
 
-class NFT:
+class NetfilterPreParse:
     def __init__(self, raw: str):
         self.raw = json_loads(raw)['nftables']
 

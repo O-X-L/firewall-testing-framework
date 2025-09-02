@@ -1,4 +1,7 @@
+# pylint: disable=R0801
 from abc import ABC
+
+from config import FLOW_INPUT, FLOW_OUTPUT, FLOW_FORWARD
 
 
 class FirewallSystem(ABC):
@@ -17,33 +20,41 @@ class FirewallSystem(ABC):
     # the firewall supports connection-tracking (ct-state)
     FIREWALL_CT = True
 
+    # if lower table/chain/... priorities are rated better than larger ones
+    FIREWALL_PRIO_LOWER_BETTER = True
+
+    # if a table has a better priority => process all of its chains before any other table
+    #   else all chain-priorities of all tables will be evaluated simultaneously; while the table-priority will impact the chain-priority
+    FIREWALL_PRIO_TABLE_FULL = False
+
     # input = src is remote & dst is local
     # output = src is local
     # forward = src is remote & dst is remote
     FIREWALL_HOOKS = {
-        'input': [],
-        'output': [],
-        'forward': [],
+        FLOW_INPUT: [],
+        FLOW_OUTPUT: [],
+        FLOW_FORWARD: [],
+        'full': [],
     }
 
     # last chain before we need to perform the routing-lookup
     FIREWALL_PRE_ROUTING = {
-        'input': {},
-        'output': {},
-        'forward': {},
+        FLOW_INPUT: {},
+        FLOW_OUTPUT: {},
+        FLOW_FORWARD: {},
     }
 
     # chains where NAT-operations are performed
     FIREWALL_NAT = {
-        'input': {
+        FLOW_INPUT: {
             'dnat': {},
             'snat': {},
         },
-        'output': {
+        FLOW_OUTPUT: {
             'dnat': {},
             'snat': {},
         },
-        'forward': {
+        FLOW_FORWARD: {
             'dnat': {},
             'snat': {},
         },

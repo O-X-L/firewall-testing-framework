@@ -19,6 +19,7 @@ class NftTable(NftBase):
         NftBase.__init__(self=self, raw=raw)
         self.family = raw.get('family', None)
         self.name = raw.get('name', None)
+        self.prio = raw.get('prio', None)
 
     def __repr__(self) -> str:
         return f"Table: '{self.name}' {self.family} | ID {self.handle}"
@@ -27,9 +28,9 @@ class NftTable(NftBase):
 class NftChain(NftBase):
     def __init__(self, raw: dict, table: NftTable):
         NftBase.__init__(self=self, raw=raw, table=table)
-        self.family = raw.get('family', None)
         self.name = raw.get('name', None)
         self.type = raw.get('type', None)
+        self.family = raw.get('family', None)
         self.hook = raw.get('hook', None)
         self.prio = raw.get('prio', None)
         self.dev = raw.get('dev', None)

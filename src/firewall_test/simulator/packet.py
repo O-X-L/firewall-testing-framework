@@ -14,6 +14,9 @@ class Packet:
 
 
 class PacketIP(Packet):
+    PROTO_IP4 = 'ip4'
+    PROTO_IP6 = 'ip6'
+
     def __init__(self, src: str, dst: str, l3_proto: str):
         super().__init__()
         self.src = ip_address(src)
@@ -23,8 +26,8 @@ class PacketIP(Packet):
         self.l3_proto = l3_proto.lower()
 
     def validate(self):
-        assert self.l3_proto in ['ip4', 'ip6']
-        if self.l3_proto == 'ip4':
+        assert self.l3_proto in [self.PROTO_IP4, self.PROTO_IP6]
+        if self.l3_proto == self.PROTO_IP4:
             assert isinstance(self.src, IPv4Address)
             assert isinstance(self.dst, IPv4Address)
 

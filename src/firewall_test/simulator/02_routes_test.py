@@ -1,11 +1,11 @@
-from pathlib import Path
 from ipaddress import ip_network
 
-TESTDATA_DIR = Path(__file__).parent.parent.parent.parent / 'testdata'
-with open(TESTDATA_DIR / 'plugin_translate_linux_routes.json', 'r', encoding='utf-8') as f:
+from testdata_test import TESTDATA_FILE_ROUTES, TESTDATA_FILE_ROUTE_RULES
+
+with open(TESTDATA_FILE_ROUTES, 'r', encoding='utf-8') as f:
     TESTDATA_ROUTES = f.read()
 
-with open(TESTDATA_DIR / 'plugin_translate_linux_route-rules.json', 'r', encoding='utf-8') as f:
+with open(TESTDATA_FILE_ROUTE_RULES, 'r', encoding='utf-8') as f:
     TESTDATA_RULES = f.read()
 
 
