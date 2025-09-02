@@ -27,10 +27,6 @@ def main():
         required=True,
     )
     parser.add_argument(
-        '-3', '--proto-l3', help='Packet Layer-3 protocol',
-        choices=['ip4', 'ip6'], default='ip4',
-    )
-    parser.add_argument(
         '-4', '--proto-l4', help='Packet Layer-4 protocol',
         choices=['tcp', 'udp', 'icmp', 'icmpv6'], default='tcp',
     )
@@ -70,7 +66,6 @@ def main():
         packet = PacketTCPUDP(
             src=args.src_ip,
             dst=args.dst_ip,
-            l3_proto=args.proto_l3,
             l4_proto=args.proto_l4,
         )
 
@@ -78,7 +73,6 @@ def main():
         packet = PacketICMP(
             src=args.src_ip,
             dst=args.dst_ip,
-            l3_proto=args.proto_l3,
             l4_proto=args.proto_l4,
         )
 

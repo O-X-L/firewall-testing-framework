@@ -30,6 +30,7 @@ class FirewallSystem(ABC):
     # input = src is remote & dst is local
     # output = src is local
     # forward = src is remote & dst is remote
+    # full = all chains combined in theoretical sequence
     FIREWALL_HOOKS = {
         FLOW_INPUT: [],
         FLOW_OUTPUT: [],
@@ -37,9 +38,15 @@ class FirewallSystem(ABC):
         'full': [],
     }
 
-    # last chain before we need to perform the routing-lookup
-    FIREWALL_PRE_ROUTING = {
+    # last chain before we need to perform the routing-lookup and DNAT
+    FIREWALL_INGRESS = {
         FLOW_INPUT: {},
+        FLOW_OUTPUT: {},
+        FLOW_FORWARD: {},
+    }
+
+    # chains after we performed SNAT
+    FIREWALL_EGRESS = {
         FLOW_OUTPUT: {},
         FLOW_FORWARD: {},
     }

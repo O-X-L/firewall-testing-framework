@@ -20,22 +20,22 @@ class SystemLinuxNetfilter(FirewallSystem):
         FLOW_OUTPUT: ['output', 'postrouting', 'egress'],
         'full': ['ingress', 'prerouting', 'input', 'forward', 'output', 'postrouting', 'egress'],
     }
-    FIREWALL_PRE_ROUTING = {
-        FLOW_INPUT: {'hook': 'prerouting', 'priority': -100},
-        FLOW_FORWARD: {'hook': 'prerouting', 'priority': -100},
+    FIREWALL_INGRESS = {
+        FLOW_INPUT: {'hook': 'prerouting', 'priority': 1000},
+        FLOW_FORWARD: {'hook': 'prerouting', 'priority': 1000},
         FLOW_OUTPUT: {'hook': 'output', 'priority': -100},
     }
     FIREWALL_NAT = {
         FLOW_INPUT: {
-            'dnat': {'type': 'nat', **FIREWALL_PRE_ROUTING[FLOW_INPUT]},
+            'dnat': {'hook': 'prerouting', 'priority': -100},
         },
         FLOW_FORWARD: {
-            'dnat': {'type': 'nat', **FIREWALL_PRE_ROUTING[FLOW_FORWARD]},
-            'snat': {'hook': 'postrouting', 'type': 'nat', 'priority': 100},
+            'dnat': {'hook': 'prerouting', 'priority': -100},
+            'snat': {'hook': 'postrouting', 'priority': 100},
         },
         FLOW_OUTPUT: {
-            'dnat': {'type': 'nat', **FIREWALL_PRE_ROUTING[FLOW_OUTPUT]},
-            'snat': {'hook': 'postrouting', 'type': 'nat', 'priority': 100},
+            'dnat': FIREWALL_INGRESS[FLOW_OUTPUT],
+            'snat': {'hook': 'postrouting', 'priority': 100},
         },
     }
 

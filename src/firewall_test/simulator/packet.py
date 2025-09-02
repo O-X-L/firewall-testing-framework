@@ -1,5 +1,7 @@
 from ipaddress import ip_address, IPv4Address, IPv6Address
 
+from config import PROTO_L3_IP4, PROTO_L3_IP6
+
 
 class Packet:
     def __init__(self):
@@ -14,20 +16,23 @@ class Packet:
 
 
 class PacketIP(Packet):
-    PROTO_IP4 = 'ip4'
-    PROTO_IP6 = 'ip6'
-
-    def __init__(self, src: str, dst: str, l3_proto: str):
+    def __init__(self, src: str, dst: str):
         super().__init__()
         self.src = ip_address(src)
         self.dst = ip_address(dst)
         self.pre_nat_src = ip_address(src)
         self.pre_nat_dst = ip_address(dst)
-        self.l3_proto = l3_proto.lower()
+
+    @property
+    def l3_proto(self) -> str:
+        if isinstance(self.src, IPv6Address):
+            return PROTO_L3_IP6
+
+        return PROTO_L3_IP4
 
     def validate(self):
-        assert self.l3_proto in [self.PROTO_IP4, self.PROTO_IP6]
-        if self.l3_proto == self.PROTO_IP4:
+        assert self.l3_proto in [PROTO_L3_IP4, PROTO_L3_IP6]
+        if self.l3_proto == PROTO_L3_IP4:
             assert isinstance(self.src, IPv4Address)
             assert isinstance(self.dst, IPv4Address)
 
@@ -48,9 +53,9 @@ class PacketIP(Packet):
 
 class PacketTCPUDP(PacketIP):
     def __init__(
-            self, src: str, dst: str, l3_proto: str, l4_proto: str, l4_dport: int = None, l4_sport: int = None,
+            self, src: str, dst: str, l4_proto: str, l4_dport: int = None, l4_sport: int = None,
     ):
-        super().__init__(src=src, dst=dst, l3_proto=l3_proto)
+        super().__init__(src=src, dst=dst)
         self.l4_proto = l4_proto.lower()
         self.l4_dport = l4_dport
         self.l4_sport = l4_sport
@@ -90,9 +95,9 @@ class PacketICMP(PacketIP):
     CODE6_ECHO_REQUEST = 128
 
     def __init__(
-            self, src: str, dst: str, l3_proto: str, l4_proto: str, icmp_code: int = None,
+            self, src: str, dst: str, l4_proto: str, icmp_code: int = None,
     ):
-        super().__init__(src=src, dst=dst, l3_proto=l3_proto)
+        super().__init__(src=src, dst=dst)
         self.l4_proto = l4_proto.lower()
         self.icmp_code = icmp_code
         if icmp_code is None:

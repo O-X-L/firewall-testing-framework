@@ -1,6 +1,6 @@
 from typing import Callable
 
-from config import FLOW_INPUT_FORWARD, FLOW_INPUT
+from config import FLOW_INPUT_FORWARD, FLOW_INPUT, PROTO_L3_IP4, PROTO_L3_IP6
 from plugins.system.abstract import FirewallSystem
 from plugins.translate.abstract import Ruleset, Table, Chain, Rule
 from simulator.packet import PacketIP
@@ -20,10 +20,10 @@ class Firewall:
         if table.family == table.FAMILY_IP:
             return True
 
-        if table.family == table.FAMILY_IP4 and packet.l3_proto == packet.PROTO_IP4:
+        if table.family == PROTO_L3_IP4 == packet.l3_proto:
             return True
 
-        if table.family == table.FAMILY_IP6 and packet.l3_proto == packet.PROTO_IP6:
+        if table.family == PROTO_L3_IP6 == packet.l3_proto:
             return True
 
         return False
@@ -42,10 +42,10 @@ class Firewall:
         if chain.family == chain.FAMILY_IP:
             return True
 
-        if chain.family == chain.FAMILY_IP4 and packet.l3_proto == packet.PROTO_IP4:
+        if chain.family == PROTO_L3_IP4 == packet.l3_proto:
             return True
 
-        if chain.family == chain.FAMILY_IP6 and packet.l3_proto == packet.PROTO_IP6:
+        if chain.family == PROTO_L3_IP6 == packet.l3_proto:
             return True
 
         return False
@@ -94,22 +94,32 @@ class Firewall:
 
     def _sort_chains_by_hook_and_priority(self, chains: list[Chain]) -> list[Chain]:
         sorted_chains = []
-        for hook in self.system.FIREWALL_HOOKS:
-            chains = [chain for chain in chains if chain.hook == hook]
-            sorted_chains.extend(self.__sort_chains_by_priority(chains))
+        for hook in self.system.FIREWALL_HOOKS['full']:
+            chains_filtered = [chain for chain in chains if chain.hook == hook]
+            sorted_chains.extend(self.__sort_chains_by_priority(chains_filtered))
 
         return sorted_chains
 
+    # todo: handle chains without hooks (jump/goto/...)
     def _is_chain_before_eq(self, chain: Chain, hook: str, priority: int) -> bool:
         if chain.hook is None:
             return False
 
         is_idx = self.system.FIREWALL_HOOKS['full'].index(chain.hook)
         check_idx = self.system.FIREWALL_HOOKS['full'].index(hook)
-        if not is_idx > check_idx:
+        if is_idx > check_idx:
             return False
 
-        return priority >= chain.priority
+        if is_idx == check_idx:
+            return priority >= chain.priority
+
+        return True
+
+    def _is_chain_after(self, chain: Chain, hook: str, priority: int) -> bool:
+        if chain.hook is None:
+            return False
+
+        return not self._is_chain_before_eq(chain=chain, hook=hook, priority=priority)
 
     @staticmethod
     def _inherit_table_priority_to_chain(table: Table, chain: Chain):
@@ -164,13 +174,14 @@ class Firewall:
         return True, None
 
     def process_pre_routing(self, packet: PacketIP, flow: str) -> (bool, (Rule, None)):
-        log_info('Firewall', 'Processing Pre-Routing Hooks')
+        log_info('Firewall', 'Processing Pre-Routing Filter-Hooks')
         if flow == FLOW_INPUT_FORWARD:
-            # should not make a difference.. we cannot know for sure until we DNAT
+            # before DNAT we cannot know for sure
             flow = FLOW_INPUT
 
         def _chain_filter(chain: Chain) -> bool:
-            return self._is_chain_before_eq(chain=chain, **self.system.FIREWALL_PRE_ROUTING[flow])
+            before_dnat = self._is_chain_before_eq(chain=chain, **self.system.FIREWALL_NAT[flow]['dnat'])
+            return chain.type != chain.TYPE_NAT and before_dnat
 
         tables = self._get_tables(packet=packet, ignore_type=[Table.TYPE_NAT])
         if self.system.FIREWALL_PRIO_TABLE_FULL:
@@ -179,18 +190,80 @@ class Firewall:
         return self._process_by_chain_prio(tables=tables, callback_chain_filter=_chain_filter)
 
     def process_dnat(self, packet: PacketIP, flow: str) -> (bool, (Rule, None)):
-        log_info('Firewall', 'Processing DNAT')
         if flow == FLOW_INPUT_FORWARD:
-            # should not make a difference.. we cannot know for sure until we DNAT
+            # before DNAT we cannot know for sure
             flow = FLOW_INPUT
+
+        if 'dnat' not in self.system.FIREWALL_NAT[flow]:
+            return False, None
+
+        log_info('Firewall', 'Processing DNAT')
 
         def _chain_filter(chain: Chain) -> bool:
             chain_dnat = self.system.FIREWALL_NAT[flow]['dnat']
-            return chain.type == chain_dnat['type'] and \
+            return chain.type == chain.TYPE_NAT and \
                 chain.hook == chain_dnat['hook'] and \
                 chain.priority == chain_dnat['priority']
 
         tables = self._get_tables(packet=packet)
+        if self.system.FIREWALL_PRIO_TABLE_FULL:
+            result, rule = self._process_by_table_prio(tables=tables, callback_chain_filter=_chain_filter)
+
+        else:
+            result, rule = self._process_by_chain_prio(tables=tables, callback_chain_filter=_chain_filter)
+
+        return not result, rule
+
+    def process_main(self, packet: PacketIP, flow: str) -> (bool, (Rule, None)):
+        log_info('Firewall', 'Processing Main Filter-Hooks')
+
+        def _chain_filter(chain: Chain) -> bool:
+            after_dnat = self._is_chain_after(chain=chain, **self.system.FIREWALL_NAT[flow]['dnat'])
+            before_snat = True
+            if 'snat' in self.system.FIREWALL_NAT[flow]:
+                before_snat = self._is_chain_before_eq(chain=chain, **self.system.FIREWALL_NAT[flow]['snat'])
+
+            return chain.type != chain.TYPE_NAT and after_dnat and before_snat
+
+        tables = self._get_tables(packet=packet, ignore_type=[Table.TYPE_NAT])
+        if self.system.FIREWALL_PRIO_TABLE_FULL:
+            return self._process_by_table_prio(tables=tables, callback_chain_filter=_chain_filter)
+
+        return self._process_by_chain_prio(tables=tables, callback_chain_filter=_chain_filter)
+
+    def process_snat(self, packet: PacketIP, flow: str) -> (bool, (Rule, None)):
+        if 'snat' not in self.system.FIREWALL_NAT[flow]:
+            return False, None
+
+        log_info('Firewall', 'Processing SNAT')
+
+        def _chain_filter(chain: Chain) -> bool:
+            chain_snat = self.system.FIREWALL_NAT[flow]['snat']
+            return chain.type == chain.TYPE_NAT and \
+                chain.hook == chain_snat['hook'] and \
+                chain.priority == chain_snat['priority']
+
+        tables = self._get_tables(packet=packet)
+        if self.system.FIREWALL_PRIO_TABLE_FULL:
+            result, rule = self._process_by_table_prio(tables=tables, callback_chain_filter=_chain_filter)
+
+        else:
+            result, rule = self._process_by_chain_prio(tables=tables, callback_chain_filter=_chain_filter)
+
+        return not result, rule
+
+    def process_egress(self, packet: PacketIP, flow: str) -> (bool, (Rule, None)):
+        if 'snat' not in self.system.FIREWALL_NAT[flow]:
+            # already processed all chains
+            return True, None
+
+        log_info('Firewall', 'Processing Egress Filter-Hooks')
+
+        def _chain_filter(chain: Chain) -> bool:
+            after_snat = self._is_chain_after(chain=chain, **self.system.FIREWALL_NAT[flow]['snat'])
+            return chain.type != chain.TYPE_NAT and after_snat
+
+        tables = self._get_tables(packet=packet, ignore_type=[Table.TYPE_NAT])
         if self.system.FIREWALL_PRIO_TABLE_FULL:
             return self._process_by_table_prio(tables=tables, callback_chain_filter=_chain_filter)
 

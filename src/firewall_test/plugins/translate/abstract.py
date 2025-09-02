@@ -402,6 +402,10 @@ class Chain(TranslateOutput):
     FAMILY_IP4 = PROTO_L3_IP4
     FAMILY_IP6 = PROTO_L3_IP6
 
+    POLICY_ACCEPT = 'accept'
+    POLICY_DROP = 'drop'
+    POLICY_REJECT = 'reject'
+
     # pylint: disable=W0622
     def __init__(
         self, name: str, hook: str, policy: str, rules: list[Rule], priority: int = 0,
@@ -430,7 +434,7 @@ class Chain(TranslateOutput):
         r = self.dump()
         assert isinstance(r['name'], str)
         assert len(r['name']) > 0
-        assert r['policy'] in ['accept', 'drop', 'reject']
+        assert r['policy'] in [self.POLICY_ACCEPT, self.POLICY_DROP, self.POLICY_REJECT]
         assert isinstance(r['priority'], int)
         assert r['type'] in [self.TYPE_FILTER, self.TYPE_NAT, self.TYPE_ROUTE]
         if len(r['rules']) > 0:

@@ -11,7 +11,7 @@ def _init_test(src: str, dst: str) -> SimulatorRun:
     from simulator.packet import PacketIP
     from simulator.main import Simulator
 
-    packet = PacketIP(src=src, dst=dst, l3_proto='ip4')
+    packet = PacketIP(src=src, dst=dst)
     loaded = load(
         system='linux_netfilter',
         file_interfaces=TESTDATA_FILE_NIS,

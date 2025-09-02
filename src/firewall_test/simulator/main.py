@@ -42,11 +42,10 @@ class SimulatorRun:
 
         self._log_route(out=False, route=self.route_src)
 
-        if self.flow_type != FLOW_OUTPUT:
-            result, rule = self._s.fw.process_pre_routing(packet=packet, flow=self.flow_type)
-            if not result:
-                log_error('Firewall', f'Packet blocked by rule: {rule.dump()}')
-                return
+        result, rule = self._s.fw.process_pre_routing(packet=packet, flow=self.flow_type)
+        if not result:
+            log_error('Firewall', f'Packet blocked by rule: {rule.dump()}')
+            return
 
         _, self.dnat = self._s.fw.process_dnat(packet=packet, flow=self.flow_type)
         self._dnat_done = True
@@ -73,14 +72,19 @@ class SimulatorRun:
             log_error('Firewall', 'Dropping traffic to WAN targeting bogons')
             return
 
-        # todo: main firewall-filters
+        result, rule = self._s.fw.process_main(packet=packet, flow=self.flow_type)
+        if not result:
+            log_error('Firewall', f'Packet blocked by rule: {rule.dump()}')
+            return
 
-        # todo: SNAT
-        self.snat = None
+        _, self.snat = self._s.fw.process_snat(packet=packet, flow=self.flow_type)
         if self.snat is not None:
             log_info('Firewall', f'Performed SNAT: {self.snat}')
 
-        # todo: egress firewall-filters
+        result, rule = self._s.fw.process_egress(packet=packet, flow=self.flow_type)
+        if not result:
+            log_error('Firewall', f'Packet blocked by rule: {rule.dump()}')
+            return
 
         log_ok('Firewall', 'Packet passed')
 
