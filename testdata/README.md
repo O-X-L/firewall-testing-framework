@@ -23,7 +23,7 @@ To add another routing table:
 #### Translate - Interfaces
 
 ```
-ip -j address show > interfaces.json
+ip -j address show | jq > interfaces.json
 ```
 
 ----
@@ -33,5 +33,5 @@ ip -j address show > interfaces.json
 #### Translate - Ruleset
 
 ```
-sudo nft -j list ruleset > ruleset.json
+sudo nft -j list ruleset | jq > ruleset.json
 ```

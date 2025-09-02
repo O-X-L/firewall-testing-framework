@@ -21,7 +21,7 @@ def log_debug(label: str, msg: str):
 
 
 def log_ok(label: str, msg: str):
-    _log(label=label, msg=msg, color=COLOR_OK, symbol=' ✓')
+    _log(label=label, msg=msg, color=COLOR_OK, symbol='✓')
 
 
 def log_info(label: str, msg: str):
@@ -33,4 +33,4 @@ def log_warn(label: str, msg: str):
 
 
 def log_error(label: str, msg: str):
-    _log(label=label, msg=msg, color=COLOR_ERROR, symbol=' ✖')
+    _log(label=label, msg=msg, color=COLOR_ERROR, symbol='✖')

@@ -6,7 +6,7 @@ REGEX_MAC_ADDRESS = regex_compile(r'^[\da-f]{2}:[\da-f]{2}:[\da-f]{2}:[\da-f]{2}
 
 
 class TranslatePlugin(ABC):
-    def __init__(self, raw: (str, dict, list[dict])):
+    def __init__(self, raw: any):
         self.raw = raw
 
     @abstractmethod
@@ -81,6 +81,7 @@ class StaticRoute(TranslateOutput):
 
         assert r['table'] in ['default', 'main', 'local', 'test']
         assert r['type'] in ['default', 'local', 'broadcast', 'multicast']
+        assert r['scope'] in ['link', 'host', 'global', 'remote']
 
     def ip_count(self) -> int:
         cidr = int(str(self.net).split('/')[1])
@@ -245,9 +246,10 @@ class Rule(TranslateOutput):
 
 
 class TranslatePluginRule(TranslatePlugin):
-    def __init__(self, raw: dict):
+    def __init__(self, raw: any):
         super().__init__(raw)
 
+    @abstractmethod
     def get(self) -> Rule:
         # action: accept/drop/reject/jump/goto/...
         # action_delayed: pf-like lazy-matching (bsd)
@@ -291,9 +293,10 @@ class Chain(TranslateOutput):
 
 
 class TranslatePluginChain(TranslatePlugin):
-    def __init__(self, raw: dict):
+    def __init__(self, raw: any):
         super().__init__(raw)
 
+    @abstractmethod
     def get(self) -> Chain:
         rules = self.raw.pop('rules')
         return Chain(
@@ -326,9 +329,10 @@ class Table(TranslateOutput):
 
 
 class TranslatePluginTable(TranslatePlugin):
-    def __init__(self, raw: dict):
+    def __init__(self, raw: any):
         super().__init__(raw)
 
+    @abstractmethod
     def get(self) -> Table:
         chains = self.raw.pop('chains')
         return Table(
@@ -355,7 +359,7 @@ class Ruleset(TranslateOutput):
 
 
 class TranslatePluginRuleset(TranslatePlugin):
-    def __init__(self, raw: list[dict]):
+    def __init__(self, raw: any):
         super().__init__(raw)
 
     @abstractmethod

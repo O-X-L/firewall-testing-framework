@@ -36,11 +36,13 @@ class SimulatorRun:
         self.route_src = self._s.router.get_src_route(self.packet)
         self._update_packet_ni_in()
         if packet.ni_in is not None:
-            log_info('Firewall', f'Packet inbound-interface: {packet.ni_in}')
+            log_info('Router', f'Packet inbound-interface: {packet.ni_in}')
 
         if self.route_src is None:
             log_error('Router', 'No Source-Route found')
             return
+
+        self._log_route(out=False, route=self.route_src)
 
         # todo: prerouting firewall-filters
         # todo: DNAT
@@ -55,11 +57,13 @@ class SimulatorRun:
         self.route_dst = self._s.router.get_route(self.packet)
         self._update_packet_ni_out()
         if packet.ni_out is not None:
-            log_info('Firewall', f'Packet outbound-interface: {packet.ni_out}')
+            log_info('Router', f'Packet outbound-interface: {packet.ni_out}')
 
         if self.route_dst is None:
             log_error('Router', 'No Destination-Route found')
             return
+
+        self._log_route(out=True, route=self.route_dst)
 
         log_info('Firewall', f'Flow-type: {self.flow_type}')
 
@@ -138,6 +142,22 @@ class SimulatorRun:
 
         return False
 
+    def _log_route(self, out: bool, route: StaticRoute):
+        in_out = 'outbound'
+        if not out:
+            in_out = 'inbound'
+
+        msg = f'Packet {in_out}-route: {route.net}'
+        for field in ['gw', 'metric', 'scope']:
+            value = getattr(route, field)
+            if value is not None:
+                msg += f', {field} {value}'
+
+        if out and self.flow_type == FLOW_OUTPUT and route.src_pref is not None:
+            msg += f', preferred-source-IP {route.src_pref}'
+
+        log_info('Router', msg)
+
 
 class Simulator:
     def __init__(
@@ -158,6 +178,10 @@ class Simulator:
         )
 
     def run(self, packet: PacketIP) -> SimulatorRun:
+        # todo: implement multi-run handling
+        #   for traffic that is flow-type 'output => input' (local to local)
+        #   for multiple firewalls
+
         return SimulatorRun(
             packet=packet,
             simulator=self,

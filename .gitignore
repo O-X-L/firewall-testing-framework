@@ -5,3 +5,7 @@ src/*.egg-info
 dist/
 .idea/
 .vscode/
+
+testdata/custom_*
+scripts/cli_custom.sh
+tmp/

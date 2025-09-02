@@ -53,7 +53,7 @@ class LinuxRoutes(TranslatePluginStaticRoutes):
     @staticmethod
     def _parse_route(raw: dict) -> dict:
         r = {
-            'scope': raw.get('scope', None),
+            'scope': raw.get('scope', 'remote'),
             'ni': raw.get('dev', None),
             'metric': raw.get('metric', None),
             'src_pref': raw.get('prefsrc', None),
