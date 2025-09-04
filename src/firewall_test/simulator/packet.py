@@ -1,6 +1,6 @@
 from ipaddress import ip_address, IPv4Address, IPv6Address
 
-from config import PROTO_L3_IP4, PROTO_L3_IP6
+from config import ProtoL3IP4, ProtoL3IP6
 
 
 class Packet:
@@ -26,13 +26,13 @@ class PacketIP(Packet):
     @property
     def l3_proto(self) -> str:
         if isinstance(self.src, IPv6Address):
-            return PROTO_L3_IP6
+            return ProtoL3IP6
 
-        return PROTO_L3_IP4
+        return ProtoL3IP4
 
     def validate(self):
-        assert self.l3_proto in [PROTO_L3_IP4, PROTO_L3_IP6]
-        if self.l3_proto == PROTO_L3_IP4:
+        assert self.l3_proto in [ProtoL3IP4, ProtoL3IP6]
+        if self.l3_proto == ProtoL3IP4:
             assert isinstance(self.src, IPv4Address)
             assert isinstance(self.dst, IPv4Address)
 

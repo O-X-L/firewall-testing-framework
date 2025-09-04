@@ -1,20 +1,68 @@
+from abc import ABC
 from ipaddress import ip_network
 
 DEFAULT_ROUTE_IP4 = ip_network('0.0.0.0/0')
 DEFAULT_ROUTE_IP6 = ip_network('::/0')
 DEFAULT_ROUTES = [DEFAULT_ROUTE_IP4, DEFAULT_ROUTE_IP6]
 
-PROTO_L3_IP4 = 'ip4'
-PROTO_L3_IP6 = 'ip6'
-PROTO_L3_IP4_IP6 = 'ip'
-PROTOS_L3 = [PROTO_L3_IP4, PROTO_L3_IP6]
 
-PROTO_L4_TCP = 'tcp'
-PROTO_L4_UDP = 'udp'
-PROTO_L4_ICMP = 'icmp'
-PROTOS_L4 = [PROTO_L4_TCP, PROTO_L4_UDP, PROTO_L4_ICMP]
+class Proto(ABC):
+    N = 'Abstract Protocol'
 
-FLOW_INPUT = 'input'
-FLOW_OUTPUT = 'output'
-FLOW_FORWARD = 'forward'
-FLOW_INPUT_FORWARD = 'input_forward'  # before DNAT we might not yet know
+
+class ProtoL3(Proto):
+    N = 'Abstract L3 Protocol'
+
+
+class ProtoL3IP4(ProtoL3):
+    N = 'ip4'
+
+
+class ProtoL3IP6(ProtoL3):
+    N = 'ip6'
+
+
+class ProtoL3IP4IP6(ProtoL3):
+    N = 'ip'
+
+
+PROTOS_L3 = [ProtoL3IP4, ProtoL3IP6]
+
+class ProtoL4(Proto):
+    N = 'Abstract L4 Protocol'
+
+
+class ProtoL4TCP(ProtoL4):
+    N = 'tcp'
+
+
+class ProtoL4UDP(ProtoL4):
+    N = 'udp'
+
+
+class ProtoL4ICMP(ProtoL4):
+    N = 'icmp'
+
+
+PROTOS_L4 = [ProtoL4TCP, ProtoL4UDP, ProtoL4ICMP]
+
+
+class Flow(ABC):
+    N = 'Abstract Flow'
+
+
+class FlowInput(Flow):
+    N = 'input'
+
+
+class FlowOutput(Flow):
+    N = 'output'
+
+
+class FlowForward(Flow):
+    N = 'forward'
+
+
+class FlowInputForward(FlowInput):
+    # before DNAT we might not yet know
+    N = 'input_forward'

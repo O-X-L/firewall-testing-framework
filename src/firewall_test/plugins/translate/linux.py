@@ -1,7 +1,7 @@
 from ipaddress import ip_address, ip_network, IPv4Address
 from json import loads as json_loads
 
-from config import DEFAULT_ROUTE_IP4, DEFAULT_ROUTE_IP6, PROTO_L3_IP4, PROTO_L3_IP6
+from config import DEFAULT_ROUTE_IP4, DEFAULT_ROUTE_IP6, ProtoL3IP4, ProtoL3IP6
 from plugins.translate.abstract import TranslatePluginStaticRoutes, TranslatePluginStaticRouteRules, \
     StaticRoute, StaticRouteRule, TranslatePluginNetworkInterfaces, NetworkInterface
 
@@ -94,8 +94,8 @@ class LinuxNetworkInterfaces(TranslatePluginNetworkInterfaces):
         r = {
             'name': raw.get('ifname'),
             'mac': raw.get('address'),
-            'ip4': [],
-            'ip6': [],
+            ProtoL3IP4.N: [],
+            ProtoL3IP6.N: [],
             'net4': [],
             'net6': [],
         }
@@ -111,12 +111,12 @@ class LinuxNetworkInterfaces(TranslatePluginNetworkInterfaces):
                 net = ip_network(f"{ip}/{info['prefixlen']}", strict=False)
 
             if isinstance(ip, IPv4Address):
-                r[PROTO_L3_IP4].append(ip)
+                r[ProtoL3IP4.N].append(ip)
                 if net is not None:
                     r['net4'].append(net)
 
             else:
-                r[PROTO_L3_IP6].append(ip)
+                r[ProtoL3IP6.N].append(ip)
                 if net is not None:
                     r['net6'].append(net)
 

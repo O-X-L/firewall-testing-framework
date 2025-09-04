@@ -1,4 +1,4 @@
-from config import PROTO_L3_IP4, PROTO_L3_IP4_IP6
+from config import ProtoL3IP4, ProtoL3IP4IP6, ProtoL3IP6
 from plugins.system.linux_netfilter import SystemLinuxNetfilter
 from plugins.translate.abstract import TranslatePluginRuleset, TranslatePluginTable, TranslatePluginChain, \
     TranslatePluginRule, Ruleset, Table, Chain, Rule
@@ -14,9 +14,8 @@ class NetfilterRule(TranslatePluginRule):
 
 
 class NetfilterChainOutput(Chain):
-    def validate(self):
-        super().validate()
-        assert self.hook in SystemLinuxNetfilter.FIREWALL_HOOKS
+    def _validate_hooks(self):
+        assert self.hook is None or self.hook in SystemLinuxNetfilter.FIREWALL_HOOKS
 
 
 class NetfilterChain(TranslatePluginChain):
@@ -27,18 +26,39 @@ class NetfilterChain(TranslatePluginChain):
     def get(self) -> Chain:
         family = self.raw.family
         if family == 'ip':
-            family = PROTO_L3_IP4
+            family = ProtoL3IP4
 
         elif family == 'inet':
-            family = PROTO_L3_IP4_IP6
+            family = ProtoL3IP4IP6
+
+        else:
+            family = ProtoL3IP6
+
+        if isinstance(self.raw.prio, int) or (isinstance(self.raw.prio, str) and self.raw.prio.isnumeric()):
+            prio = int(self.raw.prio)
+
+        else:
+            prio = 0
+
+        if self.raw.policy is None:
+            policy = Chain.POLICY_ACCEPT
+
+        else:
+            policy = self.raw.policy
+
+        if self.raw.type is None:
+            chain_type = Chain.TYPE_FILTER
+
+        else:
+            chain_type = self.raw.type
 
         return NetfilterChainOutput(
             name=self.raw.name,
-            type=self.raw.type,
+            type=chain_type,
             family=family,
             hook=self.raw.hook,
-            priority=self.raw.prio,
-            policy=self.raw.policy,
+            priority=prio,
+            policy=policy,
             rules=[r.get() for r in self.rules]
         )
 
@@ -51,15 +71,24 @@ class NetfilterTable(TranslatePluginTable):
     def get(self) -> Table:
         family = self.raw.family
         if family == 'ip':
-            family = PROTO_L3_IP4
+            family = ProtoL3IP4
 
         elif family == 'inet':
-            family = PROTO_L3_IP4_IP6
+            family = ProtoL3IP4IP6
+
+        else:
+            family = ProtoL3IP6
+
+        if isinstance(self.raw.prio, int) or (isinstance(self.raw.prio, str) and self.raw.prio.isnumeric()):
+            prio = int(self.raw.prio)
+
+        else:
+            prio = 0
 
         return Table(
             name=self.raw.name,
             family=family,
-            priority=self.raw.prio,
+            priority=prio,
             chains=[c.get() for c in self.chains],
         )
 

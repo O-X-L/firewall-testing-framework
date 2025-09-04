@@ -6,7 +6,7 @@ from simulator.routes import Router
 from simulator.firewall import Firewall
 from simulator.logger import log_info, log_error, log_ok
 
-from config import DEFAULT_ROUTES, FLOW_INPUT, FLOW_OUTPUT, FLOW_FORWARD, FLOW_INPUT_FORWARD
+from config import DEFAULT_ROUTES, Flow, FlowForward, FlowInput, FlowInputForward, FlowOutput
 from plugins.system.abstract import FirewallSystem
 from plugins.translate.abstract import NetworkInterface, StaticRoute, StaticRouteRule, Ruleset
 
@@ -29,7 +29,7 @@ class SimulatorRun:
         self.local_src, packet.ni_in = self._is_ip_local(packet.src)
         self.local_dst, packet.ni_out = self._is_ip_local(packet.dst)
         self.flow_type = self._get_flow_type()
-        # log_info('Firewall', f'Flow-type: {self.flow_type}')
+        # log_info('Firewall', f'Flow-type: {self.flow_type.N}')
 
         self.route_src = self._s.router.get_src_route(self.packet)
         self._update_packet_ni_in()
@@ -54,23 +54,23 @@ class SimulatorRun:
 
         self.local_dst, packet.ni_out = self._is_ip_local(packet.dst)
         self.flow_type = self._get_flow_type()
+        log_info('Firewall', f'Flow-type: {self.flow_type.N}')
 
         self.route_dst = self._s.router.get_route(self.packet)
         self._update_packet_ni_out()
         if packet.ni_out is not None:
             log_info('Router', f'Packet outbound-interface: {packet.ni_out}')
 
-        if self.route_dst is None:
-            log_error('Router', 'No Destination-Route found')
-            return
+        if self.flow_type != FlowInput:
+            if self.route_dst is None:
+                log_error('Router', 'No Destination-Route found')
+                return
 
-        self._log_route(out=True, route=self.route_dst)
+            self._log_route(out=True, route=self.route_dst)
 
-        log_info('Firewall', f'Flow-type: {self.flow_type}')
-
-        if self._is_bogon_to_wan() and self._s.system.FIREWALL_WAN_DROP_BOGONS:
-            log_error('Firewall', 'Dropping traffic to WAN targeting bogons')
-            return
+            if self._is_bogon_to_wan() and self._s.system.FIREWALL_WAN_DROP_BOGONS:
+                log_error('Firewall', 'Dropping traffic to WAN targeting bogons')
+                return
 
         result, rule = self._s.fw.process_main(packet=packet, flow=self.flow_type)
         if not result:
@@ -93,7 +93,7 @@ class SimulatorRun:
             'packet': self.packet.dump(),
             'src_is_local': self.local_src,
             'dst_is_local': self.local_dst,
-            'flow_type': self.flow_type,
+            'flow_type': self.flow_type.N,
             'route_src': self.route_src.dump() if self.route_src is not None else None,
             'route_dst': self.route_dst.dump() if self.route_dst is not None else None,
             'dnat': self.dnat,
@@ -111,17 +111,17 @@ class SimulatorRun:
 
         return False, None
 
-    def _get_flow_type(self) -> str:
+    def _get_flow_type(self) -> type[Flow]:
         if self.local_src:
-            return FLOW_OUTPUT
+            return FlowOutput
 
         if not self._dnat_done:
-            return FLOW_INPUT_FORWARD
+            return FlowInputForward
 
         if self.local_dst:
-            return FLOW_INPUT
+            return FlowInput
 
-        return FLOW_FORWARD
+        return FlowForward
 
     def _update_packet_ni_in(self):
         if self.packet.ni_in is not None:
@@ -142,6 +142,9 @@ class SimulatorRun:
         self.packet.ni_out = self.route_dst.ni
 
     def _is_bogon_to_wan(self) -> bool:
+        if self.flow_type == FlowInput or self.route_dst is None:
+            return False
+
         if self.route_dst.net in DEFAULT_ROUTES and \
                 not self.packet.dst.is_global:
             return True
@@ -159,7 +162,7 @@ class SimulatorRun:
             if value is not None:
                 msg += f', {field} {value}'
 
-        if out and self.flow_type == FLOW_OUTPUT and route.src_pref is not None:
+        if out and self.flow_type == FlowOutput and route.src_pref is not None:
             msg += f', preferred-source-IP {route.src_pref}'
 
         log_info('Router', msg)

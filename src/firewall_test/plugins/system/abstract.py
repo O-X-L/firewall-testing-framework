@@ -1,7 +1,7 @@
 # pylint: disable=R0801
 from abc import ABC
 
-from config import FLOW_INPUT, FLOW_OUTPUT, FLOW_FORWARD
+from config import FlowInput, FlowOutput, FlowForward
 
 
 class FirewallSystem(ABC):
@@ -27,42 +27,42 @@ class FirewallSystem(ABC):
     #   else all chain-priorities of all tables will be evaluated simultaneously; while the table-priority will impact the chain-priority
     FIREWALL_PRIO_TABLE_FULL = False
 
+    # if it supports DNAT
+    FIREWALL_DNAT = True
+
+    # if it supports SNAT
+    FIREWALL_SNAT = True
+
     # input = src is remote & dst is local
     # output = src is local
     # forward = src is remote & dst is remote
     # full = all chains combined in theoretical sequence
     FIREWALL_HOOKS = {
-        FLOW_INPUT: [],
-        FLOW_OUTPUT: [],
-        FLOW_FORWARD: [],
+        FlowInput: [],
+        FlowOutput: [],
+        FlowForward: [],
         'full': [],
     }
 
     # last chain before we need to perform the routing-lookup and DNAT
     FIREWALL_INGRESS = {
-        FLOW_INPUT: {},
-        FLOW_OUTPUT: {},
-        FLOW_FORWARD: {},
-    }
-
-    # chains after we performed SNAT
-    FIREWALL_EGRESS = {
-        FLOW_OUTPUT: {},
-        FLOW_FORWARD: {},
+        FlowInput: {'hook': '', 'priority': 1000},
+        FlowOutput: {'hook': '', 'priority': 1000},
+        FlowForward: {'hook': '', 'priority': 1000},
     }
 
     # chains where NAT-operations are performed
     FIREWALL_NAT = {
-        FLOW_INPUT: {
-            'dnat': {},
-            'snat': {},
+        FlowInput: {
+            'dnat': {'hook': '', 'priority': 0},
+            'snat': {'hook': '', 'priority': 0},
         },
-        FLOW_OUTPUT: {
-            'dnat': {},
-            'snat': {},
+        FlowOutput: {
+            'dnat': {'hook': '', 'priority': 0},
+            'snat': {'hook': '', 'priority': 0},
         },
-        FLOW_FORWARD: {
-            'dnat': {},
-            'snat': {},
+        FlowForward: {
+            'dnat': {'hook': '', 'priority': 0},
+            'snat': {'hook': '', 'priority': 0},
         },
     }

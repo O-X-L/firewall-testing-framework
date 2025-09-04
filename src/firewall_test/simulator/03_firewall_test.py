@@ -1,14 +1,14 @@
 import pytest
 
 from testdata_test import TESTDATA_FILE_NF_RULESET
-from config import PROTO_L3_IP4, PROTO_L3_IP4_IP6, PROTO_L3_IP6
+from config import ProtoL3IP4, ProtoL3IP4IP6, ProtoL3IP6, FlowInput, FlowOutput, FlowForward
 
 with open(TESTDATA_FILE_NF_RULESET, 'r', encoding='utf-8') as f:
     TESTDATA_RULESET = f.read()
 
 
 def test_firewall_basic():
-    from config import FLOW_FORWARD
+    from config import FlowForward
     from plugins.system.linux_netfilter import SystemLinuxNetfilter
     from plugins.translate.netfilter.ruleset import NetfilterRuleset
     from simulator.packet import PacketIP
@@ -20,23 +20,23 @@ def test_firewall_basic():
         ruleset=ruleset,
     )
     packet = PacketIP(src='192.168.0.10', dst='1.1.1.1')
-    result, rule = fw.process_pre_routing(packet=packet, flow=FLOW_FORWARD)
+    result, rule = fw.process_pre_routing(packet=packet, flow=FlowForward)
     assert result
     assert rule is None
 
-    result, rule = fw.process_dnat(packet=packet, flow=FLOW_FORWARD)
+    result, rule = fw.process_dnat(packet=packet, flow=FlowForward)
     assert not result
     assert rule is None
 
-    result, rule = fw.process_main(packet=packet, flow=FLOW_FORWARD)
+    result, rule = fw.process_main(packet=packet, flow=FlowForward)
     assert result
     assert rule is None
 
-    result, rule = fw.process_snat(packet=packet, flow=FLOW_FORWARD)
+    result, rule = fw.process_snat(packet=packet, flow=FlowForward)
     assert not result
     assert rule is None
 
-    result, rule = fw.process_egress(packet=packet, flow=FLOW_FORWARD)
+    result, rule = fw.process_egress(packet=packet, flow=FlowForward)
     assert result
     assert rule is None
 
@@ -44,12 +44,12 @@ def test_firewall_basic():
 @pytest.mark.parametrize(
     'src,dst,ipp,matching',
     [
-        ('127.0.0.1', '1.1.1.1', PROTO_L3_IP4, True),
-        ('::1', '::1', PROTO_L3_IP6, True),
-        ('2003::2', '2003::1', PROTO_L3_IP4, False),
-        ('192.168.0.1', '10.255.255.49', PROTO_L3_IP6, False),
-        ('192.168.0.1', '10.255.255.49', PROTO_L3_IP4_IP6, True),
-        ('2003::2', '2003::1', PROTO_L3_IP4_IP6, True),
+        ('127.0.0.1', '1.1.1.1', ProtoL3IP4, True),
+        ('::1', '::1', ProtoL3IP6, True),
+        ('2003::2', '2003::1', ProtoL3IP4, False),
+        ('192.168.0.1', '10.255.255.49', ProtoL3IP6, False),
+        ('192.168.0.1', '10.255.255.49', ProtoL3IP4IP6, True),
+        ('2003::2', '2003::1', ProtoL3IP4IP6, True),
     ]
 )
 def test_firewall_packet_matching_table(src, dst, ipp, matching):
@@ -72,20 +72,19 @@ def test_firewall_packet_matching_table(src, dst, ipp, matching):
 @pytest.mark.parametrize(
     'src,dst,ipp,matching',
     [
-        ('127.0.0.1', '1.1.1.1', PROTO_L3_IP4, True),
-        ('::1', '::1', PROTO_L3_IP6, True),
-        ('2003::2', '2003::1', PROTO_L3_IP4, False),
-        ('192.168.0.1', '10.255.255.49', PROTO_L3_IP6, False),
-        ('192.168.0.1', '10.255.255.49', PROTO_L3_IP4_IP6, True),
-        ('2003::2', '2003::1', PROTO_L3_IP4_IP6, True),
+        ('127.0.0.1', '1.1.1.1', ProtoL3IP4, True),
+        ('::1', '::1', ProtoL3IP6, True),
+        ('2003::2', '2003::1', ProtoL3IP4, False),
+        ('192.168.0.1', '10.255.255.49', ProtoL3IP6, False),
+        ('192.168.0.1', '10.255.255.49', ProtoL3IP4IP6, True),
+        ('2003::2', '2003::1', ProtoL3IP4IP6, True),
     ]
 )
 def test_firewall_packet_matching_chain(src, dst, ipp, matching):
     from simulator.packet import PacketIP
     from simulator.firewall import Firewall
-    from plugins.translate.abstract import Chain
     from plugins.system.linux_netfilter import SystemLinuxNetfilter
-    from plugins.translate.netfilter.ruleset import NetfilterRuleset
+    from plugins.translate.netfilter.ruleset import NetfilterRuleset, NetfilterChainOutput as Chain
 
     ruleset = NetfilterRuleset(TESTDATA_RULESET).get()
     fw = Firewall(
@@ -109,11 +108,11 @@ def test_firewall_sort_tables_by_priority():
         ruleset=ruleset,
     )
     tables = [
-        Table(name='c', chains=[], family=PROTO_L3_IP4, priority=1),
-        Table(name='e', chains=[], family=PROTO_L3_IP4, priority=100),
-        Table(name='a', chains=[], family=PROTO_L3_IP4, priority=-10),
-        Table(name='d', chains=[], family=PROTO_L3_IP4, priority=20),
-        Table(name='b', chains=[], family=PROTO_L3_IP4),
+        Table(name='c', chains=[], family=ProtoL3IP4, priority=1),
+        Table(name='e', chains=[], family=ProtoL3IP4, priority=100),
+        Table(name='a', chains=[], family=ProtoL3IP4, priority=-10),
+        Table(name='d', chains=[], family=ProtoL3IP4, priority=20),
+        Table(name='b', chains=[], family=ProtoL3IP4),
     ]
 
     sorted_tables = fw._sort_tables_by_priority(tables)
@@ -125,9 +124,8 @@ def test_firewall_sort_tables_by_priority():
 
 def test_firewall_sort_chains_by_hook_and_priority():
     from simulator.firewall import Firewall
-    from plugins.translate.abstract import Chain
     from plugins.system.linux_netfilter import SystemLinuxNetfilter
-    from plugins.translate.netfilter.ruleset import NetfilterRuleset
+    from plugins.translate.netfilter.ruleset import NetfilterRuleset, NetfilterChainOutput as Chain
 
     ruleset = NetfilterRuleset(TESTDATA_RULESET).get()
     fw = Firewall(
@@ -135,15 +133,15 @@ def test_firewall_sort_chains_by_hook_and_priority():
         ruleset=ruleset,
     )
     chains = [
-        Chain(name='0b', rules=[], family=PROTO_L3_IP4, policy=Chain.POLICY_ACCEPT, hook='prerouting'),
-        Chain(name='0a', rules=[], family=PROTO_L3_IP4, priority=-100, policy=Chain.POLICY_ACCEPT, hook='prerouting'),
-        Chain(name='1c', rules=[], family=PROTO_L3_IP4, priority=1, policy=Chain.POLICY_ACCEPT, hook='input'),
-        Chain(name='1e', rules=[], family=PROTO_L3_IP4, priority=100, policy=Chain.POLICY_ACCEPT, hook='input'),
-        Chain(name='1a', rules=[], family=PROTO_L3_IP4, priority=-10, policy=Chain.POLICY_ACCEPT, hook='input'),
-        Chain(name='1d', rules=[], family=PROTO_L3_IP4, priority=20, policy=Chain.POLICY_ACCEPT, hook='input'),
-        Chain(name='1b', rules=[], family=PROTO_L3_IP4, policy=Chain.POLICY_ACCEPT, hook='input'),
-        Chain(name='2a', rules=[], family=PROTO_L3_IP4, policy=Chain.POLICY_ACCEPT, hook='postrouting'),
-        Chain(name='2b', rules=[], family=PROTO_L3_IP4, priority=100, policy=Chain.POLICY_ACCEPT, hook='postrouting'),
+        Chain(name='0b', rules=[], family=ProtoL3IP4, policy=Chain.POLICY_ACCEPT, hook='prerouting'),
+        Chain(name='0a', rules=[], family=ProtoL3IP4, priority=-100, policy=Chain.POLICY_ACCEPT, hook='prerouting'),
+        Chain(name='1c', rules=[], family=ProtoL3IP4, priority=1, policy=Chain.POLICY_ACCEPT, hook='input'),
+        Chain(name='1e', rules=[], family=ProtoL3IP4, priority=100, policy=Chain.POLICY_ACCEPT, hook='input'),
+        Chain(name='1a', rules=[], family=ProtoL3IP4, priority=-10, policy=Chain.POLICY_ACCEPT, hook='input'),
+        Chain(name='1d', rules=[], family=ProtoL3IP4, priority=20, policy=Chain.POLICY_ACCEPT, hook='input'),
+        Chain(name='1b', rules=[], family=ProtoL3IP4, policy=Chain.POLICY_ACCEPT, hook='input'),
+        Chain(name='2a', rules=[], family=ProtoL3IP4, policy=Chain.POLICY_ACCEPT, hook='postrouting'),
+        Chain(name='2b', rules=[], family=ProtoL3IP4, priority=100, policy=Chain.POLICY_ACCEPT, hook='postrouting'),
     ]
 
     sorted_chains = fw._sort_chains_by_hook_and_priority(chains)
@@ -174,9 +172,8 @@ def test_firewall_sort_chains_by_hook_and_priority():
 )
 def test_firewall_chain_before_eq_after(compare_hook, compare_prio, chain_hook, chain_prio, result):
     from simulator.firewall import Firewall
-    from plugins.translate.abstract import Chain
     from plugins.system.linux_netfilter import SystemLinuxNetfilter
-    from plugins.translate.netfilter.ruleset import NetfilterRuleset
+    from plugins.translate.netfilter.ruleset import NetfilterRuleset, NetfilterChainOutput as Chain
 
     ruleset = NetfilterRuleset(TESTDATA_RULESET).get()
     fw = Firewall(
@@ -184,7 +181,7 @@ def test_firewall_chain_before_eq_after(compare_hook, compare_prio, chain_hook, 
         ruleset=ruleset,
     )
     chain = Chain(
-        name='test', rules=[], family=PROTO_L3_IP4, policy=Chain.POLICY_ACCEPT,
+        name='test', rules=[], family=ProtoL3IP4, policy=Chain.POLICY_ACCEPT,
         hook=chain_hook, priority=chain_prio,
     )
     is_before_eq = fw._is_chain_before_eq(chain=chain, hook=compare_hook, priority=compare_prio)
@@ -197,3 +194,61 @@ def test_firewall_chain_before_eq_after(compare_hook, compare_prio, chain_hook, 
     else:
         assert not is_before_eq
         assert not is_after
+
+
+@pytest.mark.parametrize(
+    'hook,flow,result',
+    [
+        ('input', FlowInput, True),
+        ('prerouting', FlowInput, True),
+        ('prerouting', FlowForward, True),
+        ('prerouting', FlowOutput, False),
+        ('output', FlowOutput, True),
+        ('output', FlowForward, False),
+        ('output', FlowInput, False),
+        ('postrouting', FlowInput, False),
+        ('postrouting', FlowForward, True),
+        ('postrouting', FlowOutput, True),
+    ]
+)
+def test_firewall_chain_in_flow(hook, flow, result):
+    from simulator.firewall import Firewall
+    from plugins.system.linux_netfilter import SystemLinuxNetfilter
+    from plugins.translate.netfilter.ruleset import NetfilterRuleset, NetfilterChainOutput as Chain
+
+    ruleset = NetfilterRuleset(TESTDATA_RULESET).get()
+    fw = Firewall(
+        system=SystemLinuxNetfilter,
+        ruleset=ruleset,
+    )
+    chain = Chain(name='test', rules=[], family=ProtoL3IP4, policy=Chain.POLICY_ACCEPT, hook=hook)
+    assert fw._is_chain_in_flow(chain=chain, flow=flow) == result
+
+
+@pytest.mark.parametrize(
+    'prio_table,prio_chain,result',
+    [
+        (0, 0, 0),
+        (None, None, None),
+        (None, 0, 0),
+        (0, 1, 1),
+        (1, 10, 11),
+        (-1, -1, -2),
+    ]
+)
+def test_firewall_inherit_table_priority_chain(prio_table, prio_chain, result):
+    from simulator.firewall import Firewall
+    from plugins.translate.abstract import Table
+    from plugins.system.linux_netfilter import SystemLinuxNetfilter
+    from plugins.translate.netfilter.ruleset import NetfilterRuleset, NetfilterChainOutput as Chain
+
+    ruleset = NetfilterRuleset(TESTDATA_RULESET).get()
+    fw = Firewall(
+        system=SystemLinuxNetfilter,
+        ruleset=ruleset,
+    )
+    table = Table(name='test', chains=[], family=ProtoL3IP4, priority=prio_table)
+    chain = Chain(name='test', rules=[], family=ProtoL3IP4, policy=Chain.POLICY_ACCEPT, hook='input', priority=prio_chain)
+
+    fw._inherit_table_priority_to_chain(table=table, chain=chain)
+    assert chain.priority == result

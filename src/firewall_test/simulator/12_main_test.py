@@ -1,6 +1,7 @@
 import pytest
 from ipaddress import ip_network
 
+from config import FlowInput, FlowOutput, FlowForward
 from testdata_test import TESTDATA_FILE_ROUTES, TESTDATA_FILE_ROUTE_RULES, TESTDATA_FILE_NIS, TESTDATA_FILE_NF_RULESET
 
 from simulator.main import SimulatorRun
@@ -25,14 +26,14 @@ def _init_test(src: str, dst: str) -> SimulatorRun:
 
 
 def test_basic():
-    from simulator.main import FLOW_FORWARD
+    from simulator.main import FlowForward
 
     r = _init_test(src='172.17.10.5', dst='1.1.1.1')
     assert not r.local_src
     assert not r.local_dst
     assert r.packet.ni_in == 'docker0'
     assert r.packet.ni_out == 'wan'
-    assert r.flow_type == FLOW_FORWARD
+    assert r.flow_type == FlowForward
 
     assert r.route_src.net == ip_network('172.17.0.0/16')
     assert r.route_src.ni == 'docker0'
@@ -85,15 +86,15 @@ def test_ni_local(src, dst, local_src, local_dst):
 @pytest.mark.parametrize(
     'src,dst,flow',
     [
-        ('127.0.0.1', '1.1.1.1', 'output'),
-        ('127.0.0.1', '127.0.0.1', 'output'),
-        ('10.255.255.48', '1.1.1.1', 'output'),
-        ('10.255.255.49', '1.1.1.1', 'forward'),
-        ('192.168.0.1', '10.255.255.48', 'input'),
-        ('192.168.0.1', '10.255.255.49', 'forward'),
-        ('::1', '::1', 'output'),
-        ('::1', '2003::2', 'output'),
-        ('2003::2', '2003::1', 'forward'),
+        ('127.0.0.1', '1.1.1.1', FlowOutput),
+        ('127.0.0.1', '127.0.0.1', FlowOutput),
+        ('10.255.255.48', '1.1.1.1', FlowOutput),
+        ('10.255.255.49', '1.1.1.1', FlowForward),
+        ('192.168.0.1', '10.255.255.48', FlowInput),
+        ('192.168.0.1', '10.255.255.49', FlowForward),
+        ('::1', '::1', FlowOutput),
+        ('::1', '2003::2', FlowOutput),
+        ('2003::2', '2003::1', FlowForward),
     ]
 )
 def test_flow_type(src, dst, flow):

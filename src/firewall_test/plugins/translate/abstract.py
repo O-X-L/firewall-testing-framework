@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from ipaddress import ip_network, ip_address, IPv4Network, IPv6Network, IPv4Address, IPv6Address
 from re import compile as regex_compile
 
-from config import PROTO_L3_IP4, PROTO_L3_IP6, PROTOS_L4, PROTOS_L3, PROTO_L3_IP4_IP6
+from config import ProtoL3, ProtoL3IP4, ProtoL3IP6, ProtoL4, PROTOS_L4, PROTOS_L3, ProtoL3IP4IP6
 from simulator.logger import log_warn
 
 REGEX_MAC_ADDRESS = regex_compile(r'^[\da-f]{2}:[\da-f]{2}:[\da-f]{2}:[\da-f]{2}:[\da-f]{2}:[\da-f]{2}$')
@@ -193,8 +193,8 @@ class NetworkInterface(TranslateOutput):
         return {
             'name': self.name,
             'up': self.up,
-            PROTO_L3_IP4: ip4,
-            PROTO_L3_IP6: ip6,
+            ProtoL3IP4: ip4,
+            ProtoL3IP6: ip6,
             'net4': net4,
             'net6': net6,
             'mac': self.mac,
@@ -206,10 +206,10 @@ class NetworkInterface(TranslateOutput):
         if r['mac'] is not None:
             assert REGEX_MAC_ADDRESS.match(r['mac']) is not None
 
-        for ip in r[PROTO_L3_IP4]:
+        for ip in r[ProtoL3IP4]:
             assert isinstance(ip, IPv4Address)
 
-        for ip in r[PROTO_L3_IP6]:
+        for ip in r[ProtoL3IP6]:
             assert isinstance(ip, IPv6Address)
 
         for net in r['net4']:
@@ -398,9 +398,9 @@ class Chain(TranslateOutput):
     TYPE_NAT = 'nat'
     TYPE_ROUTE = 'route'
 
-    FAMILY_IP = PROTO_L3_IP4_IP6
-    FAMILY_IP4 = PROTO_L3_IP4
-    FAMILY_IP6 = PROTO_L3_IP6
+    FAMILY_IP = ProtoL3IP4IP6.N
+    FAMILY_IP4 = ProtoL3IP4.N
+    FAMILY_IP6 = ProtoL3IP6.N
 
     POLICY_ACCEPT = 'accept'
     POLICY_DROP = 'drop'
@@ -409,15 +409,18 @@ class Chain(TranslateOutput):
     # pylint: disable=W0622
     def __init__(
         self, name: str, hook: str, policy: str, rules: list[Rule], priority: int = 0,
-            type: str = 'filter', family: str = PROTO_L3_IP4_IP6,
+            type: str = 'filter', family: type[ProtoL3] = ProtoL3IP4IP6,
     ):
         self.name = name
         self.type = type
-        self.family = family
+        self.family: type[ProtoL3] = family
         self.hook = hook
         self.priority = priority
         self.policy = policy
         self.rules = rules
+
+        # runtime infos
+        self.log_table = None
 
     def dump(self) -> dict:
         return {
@@ -426,9 +429,14 @@ class Chain(TranslateOutput):
             "hook": self.hook,
             "policy": self.policy,
             "priority": self.priority,
-            "family": self.family,
+            "family": self.family.N,
             "rules": [r.dump() for r in self.rules],
         }
+
+    @abstractmethod
+    def _validate_hooks(self):
+        # system-specific hooks => validation needs to be implemented at that level
+        pass
 
     def validate(self):
         r = self.dump()
@@ -441,8 +449,9 @@ class Chain(TranslateOutput):
             for r in r['rules']:
                 assert isinstance(r, dict)
 
+        assert self.family in PROTOS_L3
         assert r['family'] in [self.FAMILY_IP, self.FAMILY_IP4, self.FAMILY_IP6]
-        # todo: check if hook in system.FIREWALL_HOOKS
+        self._validate_hooks()
 
 
 class TranslatePluginChain(TranslatePlugin):
@@ -462,26 +471,26 @@ class Table(TranslateOutput):
     TYPE_FILTER = 'filter'
     TYPE_NAT = 'nat'
 
-    FAMILY_IP = PROTO_L3_IP4_IP6
-    FAMILY_IP4 = PROTO_L3_IP4
-    FAMILY_IP6 = PROTO_L3_IP6
+    FAMILY_IP = ProtoL3IP4IP6.N
+    FAMILY_IP4 = ProtoL3IP4.N
+    FAMILY_IP6 = ProtoL3IP6.N
 
     # pylint: disable=W0622
     def __init__(
-        self, name: str, chains: list[Chain], priority: int = 0, family: str = PROTO_L3_IP4_IP6, type: str = 'filter',
+        self, name: str, chains: list[Chain], priority: int = 0, family: type[ProtoL3] = ProtoL3IP4IP6, type: str = 'filter',
     ):
         self.name = name
         self.type = type
         self.priority = priority
         self.chains = chains
-        self.family = family
+        self.family: type[ProtoL3] = family
 
     def dump(self) -> dict:
         return {
             "name": self.name,
             "type": self.type,
             "priority": self.priority,
-            "family": self.family,
+            "family": self.family.N,
             "chains": [r.dump() for r in self.chains],
         }
 
@@ -495,6 +504,7 @@ class Table(TranslateOutput):
             for c in r['chains']:
                 assert isinstance(c, dict)
 
+        assert self.family in PROTOS_L3
         assert r['family'] in [self.FAMILY_IP, self.FAMILY_IP4, self.FAMILY_IP6]
 
 

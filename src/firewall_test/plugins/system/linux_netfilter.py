@@ -1,6 +1,6 @@
 # pylint: disable=R0801
 
-from config import FLOW_INPUT, FLOW_OUTPUT, FLOW_FORWARD
+from config import FlowInput, FlowOutput, FlowForward
 from plugins.system.abstract import FirewallSystem
 
 
@@ -12,29 +12,31 @@ class SystemLinuxNetfilter(FirewallSystem):
     FIREWALL_CT = True
     FIREWALL_PRIO_LOWER_BETTER = True
     FIREWALL_PRIO_TABLE_FULL = False
+    FIREWALL_DNAT = True
+    FIREWALL_SNAT = True
 
     # see: https://wiki.nftables.org/wiki-nftables/index.php/Netfilter_hooks & https://people.netfilter.org/pablo/nf-hooks.png
     FIREWALL_HOOKS = {
-        FLOW_INPUT: ['ingress', 'prerouting', 'input'],
-        FLOW_FORWARD: ['ingress', 'prerouting', 'forward', 'postrouting', 'egress'],
-        FLOW_OUTPUT: ['output', 'postrouting', 'egress'],
+        FlowInput: ['ingress', 'prerouting', 'input'],
+        FlowForward: ['ingress', 'prerouting', 'forward', 'postrouting', 'egress'],
+        FlowOutput: ['output', 'postrouting', 'egress'],
         'full': ['ingress', 'prerouting', 'input', 'forward', 'output', 'postrouting', 'egress'],
     }
     FIREWALL_INGRESS = {
-        FLOW_INPUT: {'hook': 'prerouting', 'priority': 1000},
-        FLOW_FORWARD: {'hook': 'prerouting', 'priority': 1000},
-        FLOW_OUTPUT: {'hook': 'output', 'priority': -100},
+        FlowInput: {'hook': 'prerouting', 'priority': 1000},
+        FlowForward: {'hook': 'prerouting', 'priority': 1000},
+        FlowOutput: {'hook': 'output', 'priority': -100},
     }
     FIREWALL_NAT = {
-        FLOW_INPUT: {
+        FlowInput: {
             'dnat': {'hook': 'prerouting', 'priority': -100},
         },
-        FLOW_FORWARD: {
+        FlowForward: {
             'dnat': {'hook': 'prerouting', 'priority': -100},
             'snat': {'hook': 'postrouting', 'priority': 100},
         },
-        FLOW_OUTPUT: {
-            'dnat': FIREWALL_INGRESS[FLOW_OUTPUT],
+        FlowOutput: {
+            'dnat': FIREWALL_INGRESS[FlowOutput],
             'snat': {'hook': 'postrouting', 'priority': 100},
         },
     }
