@@ -66,14 +66,14 @@ def main():
         packet = PacketTCPUDP(
             src=args.src_ip,
             dst=args.dst_ip,
-            l4_proto=args.proto_l4,
+            proto_l4=args.proto_l4,
         )
 
     else:
         packet = PacketICMP(
             src=args.src_ip,
             dst=args.dst_ip,
-            l4_proto=args.proto_l4,
+            proto_l4=args.proto_l4,
         )
 
     print()

@@ -79,6 +79,7 @@ class NetfilterPreParse:
                     ),
                     raw=entry,
                     seq=seq,
+                    sets=self.sets,
                 )
                 self.rules.append(rule)
 

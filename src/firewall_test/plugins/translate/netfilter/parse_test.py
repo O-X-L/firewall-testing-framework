@@ -56,9 +56,9 @@ def test_nf_parse():
     assert nf.rules[0].action == 'return'
     assert nf.rules[0].seq == 0
     assert len(nf.rules[0].matches) == 1
-    assert nf.rules[0].matches[0].match == 'iifname'
+    assert nf.rules[0].matches[0].match_ni_in is True
     assert nf.rules[0].matches[0].operator == '=='
-    assert nf.rules[0].matches[0].value == 'docker0'
+    assert nf.rules[0].matches[0].value == ['docker0']
 
     assert nf.rules[10].table.name == 'filter'
     assert nf.rules[10].chain.name == 'DOCKER-CT'
@@ -67,9 +67,9 @@ def test_nf_parse():
     assert nf.rules[10].action == 'accept'
     assert nf.rules[10].seq == 0
     assert len(nf.rules[10].matches) == 1
-    assert nf.rules[10].matches[0].match == 'oifname'
+    assert nf.rules[10].matches[0].match_ni_out is True
     assert nf.rules[10].matches[0].operator == '=='
-    assert nf.rules[10].matches[0].value == 'docker0'
+    assert nf.rules[10].matches[0].value == ['docker0']
 
     fwd_rules = []
     for r in nf.rules:

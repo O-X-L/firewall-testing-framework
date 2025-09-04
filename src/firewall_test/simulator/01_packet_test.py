@@ -33,7 +33,7 @@ def test_packet_tcp_udp():
     p = PacketTCPUDP(
         src='10.0.0.1',
         dst='10.0.0.2',
-        l4_proto='tcp',
+        proto_l4='tcp',
     )
     p.validate()
 
@@ -44,13 +44,13 @@ def test_packet_icmp():
     p = PacketICMP(
         src='10.0.0.1',
         dst='10.0.0.2',
-        l4_proto='icmp',
+        proto_l4='icmp',
     )
     p.validate()
 
     p = PacketICMP(
         src='10.0.0.1',
         dst='10.0.0.2',
-        l4_proto='icmpv6',
+        proto_l4='icmpv6',
     )
     p.validate()

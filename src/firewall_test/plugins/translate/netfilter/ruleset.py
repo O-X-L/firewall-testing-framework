@@ -1,10 +1,10 @@
-from config import ProtoL3IP4, ProtoL3IP4IP6, ProtoL3IP6
 from plugins.translate.config import RuleActionJump, RuleActionContinue, RuleActionGoTo, \
     RuleActionAccept, RuleActionDrop, RuleActionReject, RuleActionReturn
 from plugins.system.linux_netfilter import SystemLinuxNetfilter
 from plugins.translate.abstract import TranslatePluginRuleset, TranslatePluginTable, TranslatePluginChain, \
     TranslatePluginRule, Ruleset, Table, Chain, Rule
 from plugins.translate.netfilter.parse import NetfilterPreParse, NftTable, NftChain, NftRule
+from plugins.translate.netfilter.elements import translate_family
 
 
 RULE_ACTION_MAPPING = {
@@ -17,9 +17,11 @@ RULE_ACTION_MAPPING = {
     'return': RuleActionReturn,
 }
 
+
 class NetfilterRule(TranslatePluginRule):
     def __init__(self, raw: NftRule):
         super().__init__(raw)
+        raw.family = translate_family(raw.family)
 
     def get(self) -> Rule:
         return Rule(
@@ -40,16 +42,6 @@ class NetfilterChain(TranslatePluginChain):
         self.rules: list[NetfilterRule] = []
 
     def get(self) -> Chain:
-        family = self.raw.family
-        if family == 'ip':
-            family = ProtoL3IP4
-
-        elif family == 'inet':
-            family = ProtoL3IP4IP6
-
-        else:
-            family = ProtoL3IP6
-
         if isinstance(self.raw.prio, int) or (isinstance(self.raw.prio, str) and self.raw.prio.isnumeric()):
             prio = int(self.raw.prio)
 
@@ -71,7 +63,7 @@ class NetfilterChain(TranslatePluginChain):
         return NetfilterChainOutput(
             name=self.raw.name,
             type=chain_type,
-            family=family,
+            family=translate_family(self.raw.family),
             hook=self.raw.hook,
             priority=prio,
             policy=policy,
@@ -85,16 +77,6 @@ class NetfilterTable(TranslatePluginTable):
         self.chains: list[NetfilterChain] = []
 
     def get(self) -> Table:
-        family = self.raw.family
-        if family == 'ip':
-            family = ProtoL3IP4
-
-        elif family == 'inet':
-            family = ProtoL3IP4IP6
-
-        else:
-            family = ProtoL3IP6
-
         if isinstance(self.raw.prio, int) or (isinstance(self.raw.prio, str) and self.raw.prio.isnumeric()):
             prio = int(self.raw.prio)
 
@@ -103,7 +85,7 @@ class NetfilterTable(TranslatePluginTable):
 
         return Table(
             name=self.raw.name,
-            family=family,
+            family=translate_family(self.raw.family),
             priority=prio,
             chains=[c.get() for c in self.chains],
         )

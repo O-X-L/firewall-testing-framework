@@ -27,6 +27,10 @@ class ProtoL3IP4IP6(ProtoL3):
 
 
 PROTOS_L3 = [ProtoL3IP4, ProtoL3IP6]
+PROTO_L3_MAPPING = {
+    ProtoL3IP4.N: ProtoL3IP4,
+    ProtoL3IP6.N: ProtoL3IP6,
+}
 
 class ProtoL4(Proto):
     N = 'Abstract L4 Protocol'
@@ -45,6 +49,11 @@ class ProtoL4ICMP(ProtoL4):
 
 
 PROTOS_L4 = [ProtoL4TCP, ProtoL4UDP, ProtoL4ICMP]
+PROTO_L4_MAPPING = {
+    ProtoL4TCP.N: ProtoL4TCP,
+    ProtoL4UDP.N: ProtoL4UDP,
+    ProtoL4ICMP.N: ProtoL4ICMP,
+}
 
 
 class Flow(ABC):
@@ -66,3 +75,11 @@ class FlowForward(Flow):
 class FlowInputForward(FlowInput):
     # before DNAT we might not yet know
     N = 'input_forward'
+
+
+class Match(ABC):
+    N = 'Abstract Match'
+
+
+class MatchPort(Match):
+    N = 'port'

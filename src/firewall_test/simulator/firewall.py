@@ -13,6 +13,19 @@ class RunFirewallChain:
     def __init__(self, fw):
         self._fw = fw
 
+    @staticmethod
+    def _log_rule_match(matches: bool, action: (None, RuleAction), debug: bool = False):
+        msg = f' > Match: {matches}'
+
+        if action is not None:
+            msg += f' | Action: {action.N}'
+
+        if debug:
+            log_debug('Firewall', msg)
+
+        else:
+            log_info('Firewall', msg)
+
     def process(self, chain: Chain, packet: PacketIP) -> (bool, (Rule, None)):
         """
         :param chain: Firewall chain to process; if any rule has an action that targets another chain - it will also be processed
@@ -36,10 +49,8 @@ class RunFirewallChain:
             matches, action, target_chain = rule_matcher.matches(packet=packet, rule=rule)
             requires_action = matches and action is not None
 
-            action_str = '' if not requires_action else f' | Action: {action.N}'
-
             if requires_action:
-                log_info('Firewall', f' > Match: {matches}{action_str}')
+                self._log_rule_match(matches=matches, action=action)
 
                 if action == RuleActionContinue:
                     continue
@@ -60,7 +71,7 @@ class RunFirewallChain:
                     # todo: jump to other chains if required (recurse)
 
             else:
-                log_debug('Firewall', f' > Match: {matches}{action_str}')
+                self._log_rule_match(matches=matches, action=action, debug=True)
 
         if self._fw.system.FIREWALL_ACTION_LAZY and lazy_rule is not None:
             action_str = '' if lazy_action is None else f' | Action: {lazy_action.N}'
@@ -83,10 +94,10 @@ class RunFirewallTables:
         if table.family == ProtoL3IP4IP6:
             return True
 
-        if table.family == ProtoL3IP4 == packet.l3_proto:
+        if table.family == ProtoL3IP4 == packet.proto_l3:
             return True
 
-        if table.family == ProtoL3IP6 == packet.l3_proto:
+        if table.family == ProtoL3IP6 == packet.proto_l3:
             return True
 
         return False
@@ -105,10 +116,10 @@ class RunFirewallTables:
         if chain.family == ProtoL3IP4IP6:
             return True
 
-        if chain.family == ProtoL3IP4 == packet.l3_proto:
+        if chain.family == ProtoL3IP4 == packet.proto_l3:
             return True
 
-        if chain.family == ProtoL3IP6 == packet.l3_proto:
+        if chain.family == ProtoL3IP6 == packet.proto_l3:
             return True
 
         return False
