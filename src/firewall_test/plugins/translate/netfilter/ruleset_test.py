@@ -7,14 +7,16 @@ with open(TESTDATA_FILE_NF_RULESET, 'r', encoding='utf-8') as f:
 def test_nf_ruleset():
     from config import ProtoL3IP4, ProtoL3IP6
     from plugins.translate.netfilter.ruleset import NetfilterRuleset
-    from plugins.translate.abstract import Ruleset, Table, Chain, Rule
+    from plugins.translate.abstract import Ruleset
+    from plugins.translate.config import RuleActionReturn, RuleActionDrop
+    from plugins.translate.netfilter.ruleset import NftRule
 
     nf = NetfilterRuleset(TESTDATA_RULESET)
     r = nf.get()
 
     assert isinstance(r, Ruleset)
+    r.validate()
     assert len(r.tables) == 4
-    assert isinstance(r.tables[0], Table)
     r.tables[0].validate()
     assert r.tables[0].name == 'nat'
     assert r.tables[0].family == ProtoL3IP4
@@ -26,9 +28,21 @@ def test_nf_ruleset():
     assert r.tables[3].family == ProtoL3IP6
 
     assert len(r.tables[0].chains) == 4
-    assert isinstance(r.tables[0].chains[0], Chain)
-    r.tables[0].chains[0].validate()
+    chain = r.tables[0].chains[0]
+    chain.validate()
 
     assert len(r.tables[1].chains) == 8
     assert len(r.tables[2].chains) == 3
     assert len(r.tables[3].chains) == 8
+
+    assert len(chain.rules) == 2
+    rule = chain.rules[0]
+    rule.validate()
+    assert rule.seq == 0
+    assert rule.action == RuleActionReturn
+    assert isinstance(rule.raw, NftRule)
+
+    rule = chain.rules[1]
+    assert rule.seq == 1
+    assert rule.action == RuleActionDrop
+    assert isinstance(rule.raw, NftRule)

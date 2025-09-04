@@ -3,38 +3,69 @@ from typing import Callable
 from config import Flow, FlowInputForward, FlowInput, ProtoL3IP4, ProtoL3IP6, ProtoL3IP4IP6
 from plugins.system.abstract import FirewallSystem
 from plugins.translate.abstract import Ruleset, Table, Chain, Rule
+from plugins.translate.config import RuleAction, RuleActionKindTerminal, RuleActionKindToChain, RuleActionContinue, \
+    RuleActionKindTerminalKill
 from simulator.packet import PacketIP
-from simulator.logger import log_debug, log_info
+from simulator.logger import log_debug, log_info, log_warn
 
 
-class RunFirewallChains:
+class RunFirewallChain:
     def __init__(self, fw):
         self._fw = fw
 
-    def process(self, chain: Chain) -> (bool, (Rule, None)):
+    def process(self, chain: Chain, packet: PacketIP) -> (bool, (Rule, None)):
         """
         :param chain: Firewall chain to process; if any rule has an action that targets another chain - it will also be processed
+        :param packet: Packet to match
         :return:
           - bool: If the packet passed the chain
           - (Rule, None): If that packet did not pass - the rule that denied it
         """
 
         rule_matcher = self._fw.system.get_rule_matcher()(chain.run_table)
+        chain.rules.sort(key=lambda r: r.seq, reverse=False)
+        lazy_action: (None, RuleAction) = None
+        lazy_rule: (None, Rule) = None
 
-        # todo: actual rule-matching
-        # todo: jump to other chains if required (recurse)
         for rule in chain.rules:
-            log_debug(
+            log_info(
                 'Firewall',
                 f'Processing Rule: {rule.dump()}'
             )
 
-            matches, action, target_chain = rule_matcher.matches(rule)
-            del target_chain
-            if action is not None:
-                action = action.N
+            matches, action, target_chain = rule_matcher.matches(packet=packet, rule=rule)
+            requires_action = matches and action is not None
 
-            log_debug('Firewall', f'Result: {matches} {action}')
+            action_str = '' if not requires_action else f' | Action: {action.N}'
+
+            if requires_action:
+                log_info('Firewall', f' > Match: {matches}{action_str}')
+
+                if action == RuleActionContinue:
+                    continue
+
+                if issubclass(action, RuleActionKindTerminal):
+                    if self._fw.system.FIREWALL_ACTION_LAZY and rule.action_lazy:
+                        lazy_action = action
+                        lazy_rule = rule
+                        continue
+
+                    return not issubclass(action, RuleActionKindTerminalKill), rule
+
+                if issubclass(action, RuleActionKindToChain):
+                    if target_chain is None:
+                        log_warn('Firewall', f'Got to-chain action "{action.N}" but rule-matcher did not return target-chain!')
+                        continue
+
+                    # todo: jump to other chains if required (recurse)
+
+            else:
+                log_debug('Firewall', f' > Match: {matches}{action_str}')
+
+        if self._fw.system.FIREWALL_ACTION_LAZY and lazy_rule is not None:
+            action_str = '' if lazy_action is None else f' | Action: {lazy_action.N}'
+            log_debug('Firewall', f'Applying lazy-action: {action_str}')
+            return not issubclass(lazy_action, RuleActionKindTerminalKill), lazy_rule
 
         return True, None
 
@@ -42,7 +73,7 @@ class RunFirewallChains:
 class RunFirewallTables:
     def __init__(self, fw):
         self._fw = fw
-        self._run_chains = RunFirewallChains(fw)
+        self._run_chains = RunFirewallChain(fw)
 
     @staticmethod
     def _is_matching_table(packet: PacketIP, table: Table, ignore_type: list[str] = None) -> bool:
@@ -164,7 +195,9 @@ class RunFirewallTables:
         elif chain.priority is None and isinstance(table.priority, int):
             chain.priority = table.priority
 
-    def _process_by_table_prio(self, tables: list[Table], callback_chain_filter: Callable[[Chain], bool]) -> (bool, (Rule, None)):
+    def _process_by_table_prio(
+            self, tables: list[Table], callback_chain_filter: Callable[[Chain], bool], packet: PacketIP,
+    ) -> (bool, (Rule, None)):
         for table in self._sort_tables_by_priority(tables):
             chains = [
                 c for c in table.chains
@@ -173,13 +206,15 @@ class RunFirewallTables:
 
             for chain in self._sort_chains_by_hook_and_priority(chains):
                 chain.run_table = table
-                result, rule = self._process_chain(chain)
+                result, rule = self._process_chain(chain=chain, packet=packet)
                 if not result:
                     return False, rule
 
         return True, None
 
-    def _process_by_chain_prio(self, tables: list[Table], callback_chain_filter: Callable[[Chain], bool]) -> (bool, (Rule, None)):
+    def _process_by_chain_prio(
+            self, tables: list[Table], callback_chain_filter: Callable[[Chain], bool], packet: PacketIP,
+    ) -> (bool, (Rule, None)):
         chains: list[Chain] = []
         for table in tables:
             for chain in table.chains:
@@ -195,15 +230,15 @@ class RunFirewallTables:
                 chains.append(chain)
 
         for chain in self._sort_chains_by_hook_and_priority(chains):
-            result, rule = self._process_chain(chain)
+            result, rule = self._process_chain(chain=chain, packet=packet)
             if not result:
                 return False, rule
 
         return True, None
 
-    def _process_chain(self, chain: Chain) -> (bool, (Rule, None)):
+    def _process_chain(self, chain: Chain, packet: PacketIP) -> (bool, (Rule, None)):
         """
-        see: RunFirewallChains.process
+        see: RunFirewallChain.process
         """
 
         log_info(
@@ -212,13 +247,13 @@ class RunFirewallTables:
             f'Table {chain.run_table.name} {chain.run_table.family.N} | '
             f'Chain {chain.name} {chain.family.N} {chain.type}'
         )
-        return self._run_chains.process(chain)
+        return self._run_chains.process(chain=chain, packet=packet)
 
     def process_pre_routing(self, packet: PacketIP, flow: type[Flow]) -> (bool, (Rule, None)):
         """
         :param packet: Packet to process
         :param flow: traffic flow-type
-        :return: see RunFirewallChains.process
+        :return: see RunFirewallChain.process
         """
 
         def _chain_filter(chain: Chain) -> bool:
@@ -230,9 +265,9 @@ class RunFirewallTables:
 
         tables = self._get_tables(packet=packet, ignore_type=[Table.TYPE_NAT])
         if self._fw.system.FIREWALL_PRIO_TABLE_FULL:
-            return self._process_by_table_prio(tables=tables, callback_chain_filter=_chain_filter)
+            return self._process_by_table_prio(tables=tables, callback_chain_filter=_chain_filter, packet=packet)
 
-        return self._process_by_chain_prio(tables=tables, callback_chain_filter=_chain_filter)
+        return self._process_by_chain_prio(tables=tables, callback_chain_filter=_chain_filter, packet=packet)
 
     def process_dnat(self, packet: PacketIP, flow: type[Flow]) -> (bool, (Rule, None)):
         """
@@ -254,10 +289,10 @@ class RunFirewallTables:
 
         tables = self._get_tables(packet=packet)
         if self._fw.system.FIREWALL_PRIO_TABLE_FULL:
-            result, rule = self._process_by_table_prio(tables=tables, callback_chain_filter=_chain_filter)
+            result, rule = self._process_by_table_prio(tables=tables, callback_chain_filter=_chain_filter, packet=packet)
 
         else:
-            result, rule = self._process_by_chain_prio(tables=tables, callback_chain_filter=_chain_filter)
+            result, rule = self._process_by_chain_prio(tables=tables, callback_chain_filter=_chain_filter, packet=packet)
 
         return not result, rule
 
@@ -265,7 +300,7 @@ class RunFirewallTables:
         """
         :param packet: Packet to process
         :param flow: traffic flow-type
-        :return: see RunFirewallChains.process
+        :return: see RunFirewallChain.process
         """
 
         def _chain_filter(chain: Chain) -> bool:
@@ -281,9 +316,9 @@ class RunFirewallTables:
 
         tables = self._get_tables(packet=packet, ignore_type=[Table.TYPE_NAT])
         if self._fw.system.FIREWALL_PRIO_TABLE_FULL:
-            return self._process_by_table_prio(tables=tables, callback_chain_filter=_chain_filter)
+            return self._process_by_table_prio(tables=tables, callback_chain_filter=_chain_filter, packet=packet)
 
-        return self._process_by_chain_prio(tables=tables, callback_chain_filter=_chain_filter)
+        return self._process_by_chain_prio(tables=tables, callback_chain_filter=_chain_filter, packet=packet)
 
     def process_snat(self, packet: PacketIP, flow: type[Flow]) -> (bool, (Rule, None)):
         """
@@ -303,10 +338,10 @@ class RunFirewallTables:
 
         tables = self._get_tables(packet=packet)
         if self._fw.system.FIREWALL_PRIO_TABLE_FULL:
-            result, rule = self._process_by_table_prio(tables=tables, callback_chain_filter=_chain_filter)
+            result, rule = self._process_by_table_prio(tables=tables, callback_chain_filter=_chain_filter, packet=packet)
 
         else:
-            result, rule = self._process_by_chain_prio(tables=tables, callback_chain_filter=_chain_filter)
+            result, rule = self._process_by_chain_prio(tables=tables, callback_chain_filter=_chain_filter, packet=packet)
 
         return not result, rule
 
@@ -314,7 +349,7 @@ class RunFirewallTables:
         """
         :param packet: Packet to process
         :param flow: traffic flow-type
-        :return: see RunFirewallChains.process
+        :return: see RunFirewallChain.process
         """
 
         def _chain_filter(chain: Chain) -> bool:
@@ -326,9 +361,9 @@ class RunFirewallTables:
 
         tables = self._get_tables(packet=packet, ignore_type=[Table.TYPE_NAT])
         if self._fw.system.FIREWALL_PRIO_TABLE_FULL:
-            return self._process_by_table_prio(tables=tables, callback_chain_filter=_chain_filter)
+            return self._process_by_table_prio(tables=tables, callback_chain_filter=_chain_filter, packet=packet)
 
-        return self._process_by_chain_prio(tables=tables, callback_chain_filter=_chain_filter)
+        return self._process_by_chain_prio(tables=tables, callback_chain_filter=_chain_filter, packet=packet)
 
 
 class Firewall:

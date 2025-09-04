@@ -19,7 +19,7 @@ class FirewallSystem(ABC):
     FIREWALL_DROP_WAN_BOGONS = True
 
     # the firewall supports bsd-pf-style quick/lazy matching
-    FIREWALL_LAZY_MATCHING = False
+    FIREWALL_ACTION_LAZY = False
 
     # the firewall supports connection-tracking (ct-state)
     FIREWALL_CT = True

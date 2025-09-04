@@ -54,6 +54,7 @@ def test_nf_parse():
     assert nf.rules[0].chain.hook is None
     assert nf.rules[0].family == 'ip' == nf.rules[0].table.family == nf.rules[0].chain.family
     assert nf.rules[0].action == 'return'
+    assert nf.rules[0].seq == 0
     assert len(nf.rules[0].matches) == 1
     assert nf.rules[0].matches[0].match == 'iifname'
     assert nf.rules[0].matches[0].operator == '=='
@@ -64,7 +65,17 @@ def test_nf_parse():
     assert nf.rules[10].chain.hook is None
     assert nf.rules[10].family == 'ip' == nf.rules[0].table.family == nf.rules[0].chain.family
     assert nf.rules[10].action == 'accept'
+    assert nf.rules[10].seq == 0
     assert len(nf.rules[10].matches) == 1
     assert nf.rules[10].matches[0].match == 'oifname'
     assert nf.rules[10].matches[0].operator == '=='
     assert nf.rules[10].matches[0].value == 'docker0'
+
+    fwd_rules = []
+    for r in nf.rules:
+        if r.chain.family == 'ip6' and r.chain.name == 'FORWARD':
+            fwd_rules.append(r)
+
+    assert len(fwd_rules) == 2
+    assert fwd_rules[0].seq == 0
+    assert fwd_rules[1].seq == 1

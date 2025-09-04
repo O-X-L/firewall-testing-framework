@@ -2,10 +2,9 @@ from abc import ABC, abstractmethod
 from ipaddress import ip_network, ip_address, IPv4Network, IPv6Network, IPv4Address, IPv6Address
 from re import compile as regex_compile
 
-from config import ProtoL3, ProtoL3IP4, ProtoL3IP6, PROTOS_L4, PROTOS_L3, ProtoL3IP4IP6
+from config import ProtoL3, ProtoL3IP4, ProtoL3IP6, PROTOS_L3, ProtoL3IP4IP6
 from plugins.translate.config import RuleAction, RuleActionAccept, RuleActionReject, RuleActionDrop, \
-    RuleActionJump, RuleActionGoTo, RuleActionContinue, RULE_ACTIONS
-from simulator.logger import log_warn
+    RuleActionJump, RuleActionGoTo, RuleActionContinue, RULE_ACTIONS, RuleActionReturn
 
 REGEX_MAC_ADDRESS = regex_compile(r'^[\da-f]{2}:[\da-f]{2}:[\da-f]{2}:[\da-f]{2}:[\da-f]{2}:[\da-f]{2}$')
 
@@ -232,115 +231,6 @@ class TranslatePluginNetworkInterfaces(TranslatePlugin):
         ]
 
 
-# RULE-MATCH
-class RuleMatch(TranslateOutput):
-    MATCH_NI = 'ni'
-    MATCH_IP_NET = 'ip'
-    MATCH_PROTO_L3 = 'proto_l3'
-    MATCH_PROTO_L4 = 'proto_l4'
-    MATCH_ICMP_CODE = 'icmp_code'
-    MATCH_PORT = 'port'
-    MATCHES = [MATCH_NI, MATCH_IP_NET, MATCH_PROTO_L3, MATCH_PROTO_L4, MATCH_ICMP_CODE, MATCH_PORT]
-
-    OP_EQ = '='
-    OP_NE = '!='
-    OP_GT = '>'
-    OP_LT = '<'
-    OPERATORS = [OP_EQ, OP_NE, OP_GT, OP_LT]
-
-    FIELD_IP_SRC = 'saddr'
-    FIELD_IP_DST = 'daddr'
-    FIELD_PORT_SRC = 'sport'
-    FIELD_PORT_DST = 'dport'
-    FIELDS = [FIELD_IP_SRC, FIELD_IP_DST, FIELD_PORT_SRC, FIELD_PORT_DST]
-
-    PORT_RANGE_SEP = ['-', ':']
-
-    # pylint: disable=W0622
-    def __init__(self, type: str, operator: str, compare: list, field: str = None):
-        self.match_type = type
-        self.operator = operator
-        self.compare = compare
-        self.field = field
-
-    def _prepare_ports(self) -> list[int]:
-        compare = []
-        for c in self.compare:
-            if isinstance(c, int):
-                compare.append(c)
-                continue
-
-            if c.isnumeric():
-                compare.append(int(c))
-                continue
-
-            # explode port-ranges
-            port_range = False
-            for range_char in self.PORT_RANGE_SEP:
-                if port_range:
-                    break
-
-                port_range = True
-                if c.find(range_char) != -1:
-                    p1, p2 = c.split(range_char, 1)
-                    if p1.isnumeric() and p2.isnumeric():
-                        compare.extend(p for p in range(int(p1), int(p2) + 1))
-
-            if not port_range:
-                log_warn('Firewall', f"Unable to parse port-match: '{c}'")
-
-        return compare
-
-    def dump(self) -> dict:
-        compare = self.compare
-        if self.match_type == self.MATCH_IP_NET:
-            compare = []
-            for c in self.compare:
-                compare.append(ip_network(c))
-
-        elif self.match_type == self.MATCH_PORT:
-            compare = self._prepare_ports()
-
-        return {
-            'type': self.match_type,
-            'operator': self.operator,
-            'field': self.field,
-            'compare': compare,
-        }
-
-    def validate(self):
-        r = self.dump()
-        assert r['type'] in self.MATCHES
-        if r['type'] == self.MATCH_PORT and len(r['compare']) == 1:
-            assert r['operator'] in self.OPERATORS
-
-        else:
-            assert r['operator'] in [self.OP_EQ, self.OP_NE]
-
-        assert r['field'] is None or r['field'] in self.FIELDS
-
-        assert r['compare'] is not None
-        assert len(r['compare']) > 0
-        if r['type'] == self.MATCH_IP_NET:
-            assert r['field'] in [self.FIELD_IP_SRC, self.FIELD_IP_DST]
-            for ip_net in r['compare']:
-                assert isinstance(ip_net, (IPv4Network, IPv6Network))
-
-        if r['type'] == self.MATCH_PORT:
-            assert r['field'] in [self.FIELD_PORT_SRC, self.FIELD_PORT_DST]
-            for port in r['compare']:
-                assert isinstance(port, int)
-                assert 0 < port < 65536
-
-        if r['type'] == self.MATCH_PROTO_L3:
-            for proto_l3 in r['compare']:
-                assert proto_l3 in PROTOS_L3
-
-        if r['type'] == self.MATCH_PROTO_L4:
-            for proto_l4 in r['compare']:
-                assert proto_l4 in PROTOS_L4
-
-
 # RULE: a firewall-rule
 class Rule(TranslateOutput):
     ACTION_ACCEPT = RuleActionAccept.N
@@ -349,51 +239,47 @@ class Rule(TranslateOutput):
     ACTION_JUMP = RuleActionJump.N
     ACTION_GOTO = RuleActionGoTo.N
     ACTION_CONTINUE = RuleActionContinue.N
-    ACTIONS = [ACTION_ACCEPT, ACTION_DROP, ACTION_REJECT, ACTION_JUMP, ACTION_GOTO, ACTION_CONTINUE]
+    ACTION_RETURN = RuleActionReturn.N
+    ACTIONS = [ACTION_ACCEPT, ACTION_DROP, ACTION_REJECT, ACTION_JUMP, ACTION_GOTO, ACTION_CONTINUE, ACTION_RETURN, None]
 
-    def __init__(
-            self, action: type[RuleAction], seq: int, matches: list[RuleMatch],
-            comment: str,
-    ):
+    def __init__(self, action: type[RuleAction], seq: int, raw: any, action_lazy: bool = False):
         self.action: type[RuleAction] = action
         self.seq = seq  # sequence inside chain
-        self.matches: list[RuleMatch] = matches
-        self.comment = comment  # comment or log-msg
+        self.raw = raw  # interpreted in system-specific RuleMatcher
+        self.action_lazy = action_lazy
+
+    def __repr__(self) -> str:
+        raw = self.raw
+        if hasattr(self.raw, 'dump'):
+            raw = self.raw.dump()
+
+        return f'RULE: Sequence {self.seq} action {self.action.N} raw: "{raw}"'
 
     def dump(self) -> dict:
+        action = self.action
+        if action is not None:
+            action = action.N
+
         return {
-            'action': self.action.N,
+            'action': action,
             'seq': self.seq,
-            'comment': self.comment,
-            'matches': [match.dump() for match in self.matches],
+            'raw': self.raw,
         }
 
     def validate(self):
         r = self.dump()
-        assert self.action in RULE_ACTIONS
+        if self.action is not None:
+            assert self.action in RULE_ACTIONS
+
         assert r['action'] in self.ACTIONS
+
         assert isinstance(r['seq'], int)
-        assert isinstance(r['matches'], list)
-        assert len(r['matches']) > 0
-        assert isinstance(r['matches'][0], list)
+        assert self.raw is not None
 
 
 class TranslatePluginRule(TranslatePlugin):
     @abstractmethod
     def get(self) -> Rule:
-        # action: accept/drop/reject/jump/goto/...
-        # action_delayed: pf-like lazy-matching (bsd)
-        # l3_proto & invert
-        # saddr & invert
-        # daddr & invert
-        # l4_proto & invert
-        # l4_sport & invert
-        # l4_dport & invert
-        # icmp_type & invert
-        # icmp_code & invert
-        # icmp6_type & invert
-        # icmp6_code & invert
-        # ...
         return Rule(**self.raw)
 
 
@@ -454,8 +340,11 @@ class Chain(TranslateOutput):
         assert isinstance(r['priority'], int)
         assert r['type'] in self.TYPES
         if len(r['rules']) > 0:
-            for r in r['rules']:
-                assert isinstance(r, dict)
+            for r2 in self.rules:
+                assert isinstance(r2, Rule)
+
+            for r2 in r['rules']:
+                assert isinstance(r2, dict)
 
         assert self.family in PROTOS_L3
         assert r['family'] in self.FAMILIES
@@ -512,6 +401,9 @@ class Table(TranslateOutput):
         assert isinstance(r['priority'], int)
         assert r['type'] in self.TYPES
         if len(r['chains']) > 0:
+            for c in self.chains:
+                assert isinstance(c, Chain)
+
             for c in r['chains']:
                 assert isinstance(c, dict)
 
@@ -545,6 +437,9 @@ class Ruleset(TranslateOutput):
     def validate(self):
         r = self.dump()
         if len(r['tables']) > 0:
+            for t in self.tables:
+                assert isinstance(t, Table)
+
             for t in r['tables']:
                 assert isinstance(t, dict)
 

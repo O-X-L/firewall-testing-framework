@@ -5,35 +5,47 @@ class RuleAction(ABC):
     N = 'Abstract Rule-Action'
 
 
-class RuleActionAccept(RuleAction):
+class RuleActionKindTerminal(RuleAction):
+    N = 'Abstract Rule-Action Terminal'
+
+
+class RuleActionKindTerminalKill(RuleActionKindTerminal):
+    N = 'Abstract Rule-Action Terminal'
+
+
+class RuleActionAccept(RuleActionKindTerminal):
     N = 'accept'
 
 
-class RuleActionDrop(RuleAction):
+class RuleActionDrop(RuleActionKindTerminalKill):
     N = 'drop'
 
 
-class RuleActionReject(RuleAction):
+class RuleActionReject(RuleActionKindTerminalKill):
     N = 'reject'
 
 
-class RuleActionToChain(RuleAction):
+class RuleActionKindToChain(RuleAction):
     N = 'Abstract Rule-Action To-Chain'
 
 
-class RuleActionJump(RuleActionToChain):
+class RuleActionJump(RuleActionKindToChain):
     N = 'jump'
 
 
-class RuleActionGoTo(RuleActionToChain):
+class RuleActionGoTo(RuleActionKindToChain):
     N = 'goto'
 
 
-class RuleActionContinue(RuleActionToChain):
+class RuleActionReturn(RuleActionKindTerminal):
+    N = 'return'
+
+
+class RuleActionContinue(RuleAction):
     N = 'continue'
 
 
 RULE_ACTIONS = [
     RuleActionAccept, RuleActionDrop, RuleActionReject,
-    RuleActionJump, RuleActionGoTo, RuleActionContinue,
+    RuleActionJump, RuleActionGoTo, RuleActionContinue, RuleActionReturn,
 ]

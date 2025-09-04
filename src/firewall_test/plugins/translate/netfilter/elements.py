@@ -84,9 +84,10 @@ class NftGoTo:
 
 
 class NftRule(NftBase):
-    def __init__(self, table: NftTable, chain: NftChain, raw: dict):
+    def __init__(self, table: NftTable, chain: NftChain, raw: dict, seq: int):
         NftBase.__init__(self=self, raw=raw, table=table)
         self.chain = chain
+        self.seq = seq
 
         self.comment = raw.get('comment', None)
         self.index = raw.get('index', None)
@@ -150,6 +151,6 @@ class NftRule(NftBase):
     def __repr__(self) -> str:
         cmt = ''
         if self.comment is not None:
-            cmt = f" '{self.comment}'"
+            cmt = f' "{self.comment}"'
 
-        return f"Rule: {self.action}{cmt} | ID {self.handle}"
+        return f"Rule: #{self.handle}{cmt}"

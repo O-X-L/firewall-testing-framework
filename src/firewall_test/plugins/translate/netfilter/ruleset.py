@@ -1,16 +1,32 @@
 from config import ProtoL3IP4, ProtoL3IP4IP6, ProtoL3IP6
+from plugins.translate.config import RuleActionJump, RuleActionContinue, RuleActionGoTo, \
+    RuleActionAccept, RuleActionDrop, RuleActionReject, RuleActionReturn
 from plugins.system.linux_netfilter import SystemLinuxNetfilter
 from plugins.translate.abstract import TranslatePluginRuleset, TranslatePluginTable, TranslatePluginChain, \
     TranslatePluginRule, Ruleset, Table, Chain, Rule
 from plugins.translate.netfilter.parse import NetfilterPreParse, NftTable, NftChain, NftRule
 
 
+RULE_ACTION_MAPPING = {
+    'accept': RuleActionAccept,
+    'drop': RuleActionDrop,
+    'reject': RuleActionReject,
+    'jump': RuleActionJump,
+    'goto': RuleActionGoTo,
+    'continue': RuleActionContinue,
+    'return': RuleActionReturn,
+}
+
 class NetfilterRule(TranslatePluginRule):
     def __init__(self, raw: NftRule):
         super().__init__(raw)
 
     def get(self) -> Rule:
-        return Rule(**self.raw)
+        return Rule(
+            action=RULE_ACTION_MAPPING.get(self.raw.action, None),
+            seq=self.raw.seq,
+            raw=self.raw,
+        )
 
 
 class NetfilterChainOutput(Chain):
@@ -105,6 +121,10 @@ class NetfilterRuleset(TranslatePluginRuleset):
                 if c.table.name == t.raw.name and c.table.family == t.raw.family:
                     t.chains.append(NetfilterChain(c))
 
-        # todo: add rules
+        for r in self.raw.rules:
+            for t in tables:
+                for c in t.chains:
+                    if c.raw.name == r.chain.name and c.raw.family == r.chain.family:
+                        c.rules.append(NetfilterRule(r))
 
         return Ruleset([t.get() for t in tables])

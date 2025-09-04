@@ -10,7 +10,7 @@ class SystemLinuxNetfilter(FirewallSystem):
     ROUTE_STATIC_RULES = True
 
     FIREWALL_DROP_WAN_BOGONS = True
-    FIREWALL_LAZY_MATCHING = False
+    FIREWALL_ACTION_LAZY = False
     FIREWALL_CT = True
     FIREWALL_PRIO_LOWER_BETTER = True
     FIREWALL_PRIO_TABLE_FULL = False

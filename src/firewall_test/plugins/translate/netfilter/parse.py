@@ -55,9 +55,19 @@ class NetfilterPreParse:
                 ))
 
     def _parse_rules(self):
+        chain_rule_seq = {}
         for entry in self.raw:
             if isinstance(entry, dict) and 'rule' in entry:
                 entry = entry['rule']
+                chain_unique = entry['chain'] + entry['family']
+                if chain_unique not in chain_rule_seq:
+                    seq = 0
+                    chain_rule_seq[chain_unique] = seq
+
+                else:
+                    chain_rule_seq[chain_unique] += 1
+                    seq = chain_rule_seq[chain_unique]
+
                 rule = NftRule(
                     table=self._find_table(
                         name=entry['table'],
@@ -68,6 +78,7 @@ class NetfilterPreParse:
                         family=entry['family'],
                     ),
                     raw=entry,
+                    seq=seq,
                 )
                 self.rules.append(rule)
 
