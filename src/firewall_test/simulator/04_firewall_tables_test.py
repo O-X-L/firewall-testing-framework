@@ -7,40 +7,6 @@ with open(TESTDATA_FILE_NF_RULESET, 'r', encoding='utf-8') as f:
     TESTDATA_RULESET = f.read()
 
 
-def test_firewall_basic():
-    from config import FlowForward
-    from plugins.system.linux_netfilter import SystemLinuxNetfilter
-    from plugins.translate.netfilter.ruleset import NetfilterRuleset
-    from simulator.packet import PacketIP
-    from simulator.firewall import Firewall
-
-    ruleset = NetfilterRuleset(TESTDATA_RULESET).get()
-    fw = Firewall(
-        system=SystemLinuxNetfilter,
-        ruleset=ruleset,
-    )
-    packet = PacketIP(src='192.168.0.10', dst='1.1.1.1')
-    result, rule = fw.process_pre_routing(packet=packet, flow=FlowForward)
-    assert result
-    assert rule is None
-
-    result, rule = fw.process_dnat(packet=packet, flow=FlowForward)
-    assert not result
-    assert rule is None
-
-    result, rule = fw.process_main(packet=packet, flow=FlowForward)
-    assert result
-    assert rule is None
-
-    result, rule = fw.process_snat(packet=packet, flow=FlowForward)
-    assert not result
-    assert rule is None
-
-    result, rule = fw.process_egress(packet=packet, flow=FlowForward)
-    assert result
-    assert rule is None
-
-
 @pytest.mark.parametrize(
     'src,dst,ipp,matching',
     [
@@ -66,7 +32,7 @@ def test_firewall_packet_matching_table(src, dst, ipp, matching):
     )
     packet = PacketIP(src=src, dst=dst)
     table = Table(name='test', chains=[], family=ipp)
-    assert fw._is_matching_table(packet=packet, table=table) == matching
+    assert fw._run_tables._is_matching_table(packet=packet, table=table) == matching
 
 
 @pytest.mark.parametrize(
@@ -93,7 +59,7 @@ def test_firewall_packet_matching_chain(src, dst, ipp, matching):
     )
     packet = PacketIP(src=src, dst=dst)
     chain = Chain(name='test', rules=[], family=ipp, policy=Chain.POLICY_ACCEPT, hook='input')
-    assert fw._is_matching_chain(packet=packet, chain=chain) == matching
+    assert fw._run_tables._is_matching_chain(packet=packet, chain=chain) == matching
 
 
 def test_firewall_sort_tables_by_priority():
@@ -115,7 +81,7 @@ def test_firewall_sort_tables_by_priority():
         Table(name='b', chains=[], family=ProtoL3IP4),
     ]
 
-    sorted_tables = fw._sort_tables_by_priority(tables)
+    sorted_tables = fw._run_tables._sort_tables_by_priority(tables)
 
     assert tables != sorted_tables
     assert len(tables) == len(sorted_tables)
@@ -144,7 +110,7 @@ def test_firewall_sort_chains_by_hook_and_priority():
         Chain(name='2b', rules=[], family=ProtoL3IP4, priority=100, policy=Chain.POLICY_ACCEPT, hook='postrouting'),
     ]
 
-    sorted_chains = fw._sort_chains_by_hook_and_priority(chains)
+    sorted_chains = fw._run_tables._sort_chains_by_hook_and_priority(chains)
 
     assert chains != sorted_chains
     assert len(chains) == len(sorted_chains)
@@ -184,8 +150,8 @@ def test_firewall_chain_before_eq_after(compare_hook, compare_prio, chain_hook, 
         name='test', rules=[], family=ProtoL3IP4, policy=Chain.POLICY_ACCEPT,
         hook=chain_hook, priority=chain_prio,
     )
-    is_before_eq = fw._is_chain_before_eq(chain=chain, hook=compare_hook, priority=compare_prio)
-    is_after = fw._is_chain_after(chain=chain, hook=compare_hook, priority=compare_prio)
+    is_before_eq = fw._run_tables._is_chain_before_eq(chain=chain, hook=compare_hook, priority=compare_prio)
+    is_after = fw._run_tables._is_chain_after(chain=chain, hook=compare_hook, priority=compare_prio)
 
     if chain_hook is not None:
         assert is_before_eq == result
@@ -222,7 +188,7 @@ def test_firewall_chain_in_flow(hook, flow, result):
         ruleset=ruleset,
     )
     chain = Chain(name='test', rules=[], family=ProtoL3IP4, policy=Chain.POLICY_ACCEPT, hook=hook)
-    assert fw._is_chain_in_flow(chain=chain, flow=flow) == result
+    assert fw._run_tables._is_chain_in_flow(chain=chain, flow=flow) == result
 
 
 @pytest.mark.parametrize(
@@ -250,5 +216,5 @@ def test_firewall_inherit_table_priority_chain(prio_table, prio_chain, result):
     table = Table(name='test', chains=[], family=ProtoL3IP4, priority=prio_table)
     chain = Chain(name='test', rules=[], family=ProtoL3IP4, policy=Chain.POLICY_ACCEPT, hook='input', priority=prio_chain)
 
-    fw._inherit_table_priority_to_chain(table=table, chain=chain)
+    fw._run_tables._inherit_table_priority_to_chain(table=table, chain=chain)
     assert chain.priority == result

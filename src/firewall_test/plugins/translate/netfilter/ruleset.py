@@ -105,4 +105,6 @@ class NetfilterRuleset(TranslatePluginRuleset):
                 if c.table.name == t.raw.name and c.table.family == t.raw.family:
                     t.chains.append(NetfilterChain(c))
 
+        # todo: add rules
+
         return Ruleset([t.get() for t in tables])

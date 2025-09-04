@@ -26,10 +26,13 @@ class SimulatorRun:
         self.dnat = None
         self.snat = None
 
+        ### CATEGORIZE TRAFFIC FLOW ###
+
         self.local_src, packet.ni_in = self._is_ip_local(packet.src)
         self.local_dst, packet.ni_out = self._is_ip_local(packet.dst)
         self.flow_type = self._get_flow_type()
-        # log_info('Firewall', f'Flow-type: {self.flow_type.N}')
+
+        ### CHECK SOURCE-ROUTE AND UPDATE INBOUND-NETWORK-INTERFACE ###
 
         self.route_src = self._s.router.get_src_route(self.packet)
         self._update_packet_ni_in()
@@ -42,19 +45,27 @@ class SimulatorRun:
 
         self._log_route(out=False, route=self.route_src)
 
+        ### PROCESSING FIREWALL-FILTERS UP TO DNAT ###
+
         result, rule = self._s.fw.process_pre_routing(packet=packet, flow=self.flow_type)
         if not result:
             log_error('Firewall', f'Packet blocked by rule: {rule.dump()}')
             return
+
+        ### PROCESSING DNAT ###
 
         _, self.dnat = self._s.fw.process_dnat(packet=packet, flow=self.flow_type)
         self._dnat_done = True
         if self.dnat is not None:
             log_info('Firewall', f'Performed DNAT: {self.dnat.dump()}')
 
+        ### UPDATE TRAFFIC FLOW AND OUTBOUND-NETWORK-INTERFACE ###
+
         self.local_dst, packet.ni_out = self._is_ip_local(packet.dst)
         self.flow_type = self._get_flow_type()
         log_info('Firewall', f'Flow-type: {self.flow_type.N}')
+
+        ### CHECK DESTINATION-ROUTE ###
 
         self.route_dst = self._s.router.get_route(self.packet)
         self._update_packet_ni_out()
@@ -68,23 +79,32 @@ class SimulatorRun:
 
             self._log_route(out=True, route=self.route_dst)
 
-            if self._is_bogon_to_wan() and self._s.system.FIREWALL_WAN_DROP_BOGONS:
+            ### DROP PACKET IF TRAFFIC TO BOGONS ON WAN ###
+            if self._is_bogon_to_wan() and self._s.system.FIREWALL_DROP_WAN_BOGONS:
                 log_error('Firewall', 'Dropping traffic to WAN targeting bogons')
                 return
+
+        ### PROCESSING MAIN FIREWALL-FILTERS ###
 
         result, rule = self._s.fw.process_main(packet=packet, flow=self.flow_type)
         if not result:
             log_error('Firewall', f'Packet blocked by rule: {rule.dump()}')
             return
 
+        ### PROCESSING SOURCE-NAT ###
+
         _, self.snat = self._s.fw.process_snat(packet=packet, flow=self.flow_type)
         if self.snat is not None:
-            log_info('Firewall', f'Performed SNAT: {self.snat}')
+            log_info('Firewall', f'Performed SNAT: {self.snat.dump()}')
+
+        ### PROCESSING FIREWALL-FILTERS AFTER SNAT ###
 
         result, rule = self._s.fw.process_egress(packet=packet, flow=self.flow_type)
         if not result:
             log_error('Firewall', f'Packet blocked by rule: {rule.dump()}')
             return
+
+        ### DONE ###
 
         log_ok('Firewall', 'Packet passed')
 

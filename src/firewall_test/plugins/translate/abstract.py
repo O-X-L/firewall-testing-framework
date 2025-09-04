@@ -2,7 +2,9 @@ from abc import ABC, abstractmethod
 from ipaddress import ip_network, ip_address, IPv4Network, IPv6Network, IPv4Address, IPv6Address
 from re import compile as regex_compile
 
-from config import ProtoL3, ProtoL3IP4, ProtoL3IP6, ProtoL4, PROTOS_L4, PROTOS_L3, ProtoL3IP4IP6
+from config import ProtoL3, ProtoL3IP4, ProtoL3IP6, PROTOS_L4, PROTOS_L3, ProtoL3IP4IP6
+from plugins.translate.config import RuleAction, RuleActionAccept, RuleActionReject, RuleActionDrop, \
+    RuleActionJump, RuleActionGoTo, RuleActionContinue, RULE_ACTIONS
 from simulator.logger import log_warn
 
 REGEX_MAC_ADDRESS = regex_compile(r'^[\da-f]{2}:[\da-f]{2}:[\da-f]{2}:[\da-f]{2}:[\da-f]{2}:[\da-f]{2}$')
@@ -238,16 +240,19 @@ class RuleMatch(TranslateOutput):
     MATCH_PROTO_L4 = 'proto_l4'
     MATCH_ICMP_CODE = 'icmp_code'
     MATCH_PORT = 'port'
+    MATCHES = [MATCH_NI, MATCH_IP_NET, MATCH_PROTO_L3, MATCH_PROTO_L4, MATCH_ICMP_CODE, MATCH_PORT]
 
     OP_EQ = '='
     OP_NE = '!='
     OP_GT = '>'
     OP_LT = '<'
+    OPERATORS = [OP_EQ, OP_NE, OP_GT, OP_LT]
 
     FIELD_IP_SRC = 'saddr'
     FIELD_IP_DST = 'daddr'
     FIELD_PORT_SRC = 'sport'
     FIELD_PORT_DST = 'dport'
+    FIELDS = [FIELD_IP_SRC, FIELD_IP_DST, FIELD_PORT_SRC, FIELD_PORT_DST]
 
     PORT_RANGE_SEP = ['-', ':']
 
@@ -305,23 +310,14 @@ class RuleMatch(TranslateOutput):
 
     def validate(self):
         r = self.dump()
-        assert r['type'] in [
-            self.MATCH_IP_NET, self.MATCH_ICMP_CODE, self.MATCH_NI,
-            self.MATCH_PROTO_L3, self.MATCH_PROTO_L4, self.MATCH_PORT,
-        ]
+        assert r['type'] in self.MATCHES
         if r['type'] == self.MATCH_PORT and len(r['compare']) == 1:
-            assert r['operator'] in [self.OP_EQ, self.OP_NE, self.OP_LT, self.OP_GT]
+            assert r['operator'] in self.OPERATORS
 
         else:
             assert r['operator'] in [self.OP_EQ, self.OP_NE]
 
-        assert r['field'] in [
-            None,
-            self.FIELD_IP_SRC,
-            self.FIELD_IP_DST,
-            self.FIELD_PORT_SRC,
-            self.FIELD_PORT_DST,
-        ]
+        assert r['field'] is None or r['field'] in self.FIELDS
 
         assert r['compare'] is not None
         assert len(r['compare']) > 0
@@ -347,18 +343,26 @@ class RuleMatch(TranslateOutput):
 
 # RULE: a firewall-rule
 class Rule(TranslateOutput):
+    ACTION_ACCEPT = RuleActionAccept.N
+    ACTION_DROP = RuleActionDrop.N
+    ACTION_REJECT = RuleActionReject.N
+    ACTION_JUMP = RuleActionJump.N
+    ACTION_GOTO = RuleActionGoTo.N
+    ACTION_CONTINUE = RuleActionContinue.N
+    ACTIONS = [ACTION_ACCEPT, ACTION_DROP, ACTION_REJECT, ACTION_JUMP, ACTION_GOTO, ACTION_CONTINUE]
+
     def __init__(
-            self, action: str, seq: int, matches: list[RuleMatch],
+            self, action: type[RuleAction], seq: int, matches: list[RuleMatch],
             comment: str,
     ):
-        self.action = action
+        self.action: type[RuleAction] = action
         self.seq = seq  # sequence inside chain
         self.matches: list[RuleMatch] = matches
         self.comment = comment  # comment or log-msg
 
     def dump(self) -> dict:
         return {
-            'action': self.action,
+            'action': self.action.N,
             'seq': self.seq,
             'comment': self.comment,
             'matches': [match.dump() for match in self.matches],
@@ -366,7 +370,8 @@ class Rule(TranslateOutput):
 
     def validate(self):
         r = self.dump()
-        assert r['action'] in ['accept', 'drop', 'reject', 'jump', 'goto']
+        assert self.action in RULE_ACTIONS
+        assert r['action'] in self.ACTIONS
         assert isinstance(r['seq'], int)
         assert isinstance(r['matches'], list)
         assert len(r['matches']) > 0
@@ -397,14 +402,17 @@ class Chain(TranslateOutput):
     TYPE_FILTER = 'filter'
     TYPE_NAT = 'nat'
     TYPE_ROUTE = 'route'
+    TYPES = [TYPE_FILTER, TYPE_NAT, TYPE_ROUTE]
 
     FAMILY_IP = ProtoL3IP4IP6.N
     FAMILY_IP4 = ProtoL3IP4.N
     FAMILY_IP6 = ProtoL3IP6.N
+    FAMILIES = [FAMILY_IP, FAMILY_IP4, FAMILY_IP6]
 
     POLICY_ACCEPT = 'accept'
     POLICY_DROP = 'drop'
     POLICY_REJECT = 'reject'
+    POLICIES = [POLICY_ACCEPT, POLICY_DROP, POLICY_REJECT]
 
     # pylint: disable=W0622
     def __init__(
@@ -420,7 +428,7 @@ class Chain(TranslateOutput):
         self.rules = rules
 
         # runtime infos
-        self.log_table = None
+        self.run_table = None
 
     def dump(self) -> dict:
         return {
@@ -442,15 +450,15 @@ class Chain(TranslateOutput):
         r = self.dump()
         assert isinstance(r['name'], str)
         assert len(r['name']) > 0
-        assert r['policy'] in [self.POLICY_ACCEPT, self.POLICY_DROP, self.POLICY_REJECT]
+        assert r['policy'] in self.POLICIES
         assert isinstance(r['priority'], int)
-        assert r['type'] in [self.TYPE_FILTER, self.TYPE_NAT, self.TYPE_ROUTE]
+        assert r['type'] in self.TYPES
         if len(r['rules']) > 0:
             for r in r['rules']:
                 assert isinstance(r, dict)
 
         assert self.family in PROTOS_L3
-        assert r['family'] in [self.FAMILY_IP, self.FAMILY_IP4, self.FAMILY_IP6]
+        assert r['family'] in self.FAMILIES
         self._validate_hooks()
 
 
@@ -458,6 +466,7 @@ class TranslatePluginChain(TranslatePlugin):
     @abstractmethod
     def get(self) -> Chain:
         rules = self.raw.pop('rules')
+        # pylint: disable=E0110
         return Chain(
             **self.raw,
             rules=[
@@ -470,10 +479,12 @@ class TranslatePluginChain(TranslatePlugin):
 class Table(TranslateOutput):
     TYPE_FILTER = 'filter'
     TYPE_NAT = 'nat'
+    TYPES = [TYPE_FILTER, TYPE_NAT]
 
     FAMILY_IP = ProtoL3IP4IP6.N
     FAMILY_IP4 = ProtoL3IP4.N
     FAMILY_IP6 = ProtoL3IP6.N
+    FAMILIES = [FAMILY_IP, FAMILY_IP4, FAMILY_IP6]
 
     # pylint: disable=W0622
     def __init__(
@@ -499,19 +510,20 @@ class Table(TranslateOutput):
         assert isinstance(r['name'], str)
         assert len(r['name']) > 0
         assert isinstance(r['priority'], int)
-        assert r['type'] in [self.TYPE_FILTER, self.TYPE_NAT]
+        assert r['type'] in self.TYPES
         if len(r['chains']) > 0:
             for c in r['chains']:
                 assert isinstance(c, dict)
 
         assert self.family in PROTOS_L3
-        assert r['family'] in [self.FAMILY_IP, self.FAMILY_IP4, self.FAMILY_IP6]
+        assert r['family'] in self.FAMILIES
 
 
 class TranslatePluginTable(TranslatePlugin):
     @abstractmethod
     def get(self) -> Table:
         chains = self.raw.pop('chains')
+        # pylint: disable=E0110
         return Table(
             **self.raw,
             chains=[

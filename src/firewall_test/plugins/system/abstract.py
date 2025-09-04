@@ -1,7 +1,11 @@
 # pylint: disable=R0801
-from abc import ABC
+from abc import ABC, abstractmethod
 
 from config import FlowInput, FlowOutput, FlowForward
+
+
+class BaseRuleMatcher(ABC):
+    pass
 
 
 class FirewallSystem(ABC):
@@ -12,7 +16,7 @@ class FirewallSystem(ABC):
     ROUTE_STATIC_RULES = False
 
     # if the system allows traffic to bogon-networks to be sent to wan/default-route
-    FIREWALL_WAN_DROP_BOGONS = True
+    FIREWALL_DROP_WAN_BOGONS = True
 
     # the firewall supports bsd-pf-style quick/lazy matching
     FIREWALL_LAZY_MATCHING = False
@@ -66,3 +70,12 @@ class FirewallSystem(ABC):
             'snat': {'hook': '', 'priority': 0},
         },
     }
+
+    @classmethod
+    @abstractmethod
+    def get_rule_matcher(cls) -> type[BaseRuleMatcher]:
+        """
+        Return the system-specific rule-matcher (plugins.system.abstract_rule_match.RuleMatcher)
+
+        :return: RuleMatcher
+        """

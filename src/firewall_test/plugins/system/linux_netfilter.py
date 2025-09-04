@@ -2,12 +2,14 @@
 
 from config import FlowInput, FlowOutput, FlowForward
 from plugins.system.abstract import FirewallSystem
+from plugins.system.firewall_netfilter import RuleMatcher, RuleMatcherNetfilter
 
 
 class SystemLinuxNetfilter(FirewallSystem):
     ROUTE_STATIC = True
     ROUTE_STATIC_RULES = True
 
+    FIREWALL_DROP_WAN_BOGONS = True
     FIREWALL_LAZY_MATCHING = False
     FIREWALL_CT = True
     FIREWALL_PRIO_LOWER_BETTER = True
@@ -41,8 +43,10 @@ class SystemLinuxNetfilter(FirewallSystem):
         },
     }
 
+    ### CUSTOM ATTRIBUTES ###
+
     # sudo nft describe icmp type
-    ICMP_TYPE_TO_CODE_MAPPING = {
+    RULE_MAPPING_ICMP_TYPE_TO_CODE = {
         'echo-reply': 0,
         'destination-unreachable': 3,
         'source-quench': 4,
@@ -61,7 +65,7 @@ class SystemLinuxNetfilter(FirewallSystem):
     }
 
     # sudo nft describe icmpv6 type
-    ICMP6_TYPE_TO_CODE_MAPPING = {
+    RULE_MAPPING_ICMP6_TYPE_TO_CODE = {
         'destination-unreachable': 1,
         'packet-too-big': 2,
         'time-exceeded': 3,
@@ -82,3 +86,12 @@ class SystemLinuxNetfilter(FirewallSystem):
         'ind-neighbor-advert': 142,
         'mld2-listener-report': 143,
     }
+
+    @classmethod
+    def get_rule_matcher(cls) -> type[RuleMatcher]:
+        """
+        Property to return the system-specific rule-matcher (plugins.system.abstract_rule_match.RuleMatcher)
+
+        :return: RuleMatcher
+        """
+        return RuleMatcherNetfilter
