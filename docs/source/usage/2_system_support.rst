@@ -39,9 +39,9 @@ For Firewall-Ruleset parsing.
 
     - Source Code
 
-  * - Netfilter on Linux
+  * - `Netfilter <https://www.netfilter.org/>`_ on Linux
 
-    - NFTables or IPTables
+    - `NFTables <https://www.netfilter.org/projects/nftables/index.html>`_ or `IPTables <https://www.netfilter.org/projects/iptables/index.html>`_
 
     - Experimental
 
@@ -49,6 +49,18 @@ For Firewall-Ruleset parsing.
 
     - `system/firewall_netfilter.py <https://github.com/O-X-L/firewall-testing-framework/blob/latest/src/firewall_test/plugins/system/firewall_netfilter.py>`_,
       `translate/netfilter/ <https://github.com/O-X-L/firewall-testing-framework/tree/latest/src/firewall_test/plugins/translate/netfilter>`_
+
+  * - `OPNsense <https://opnsense.org/>`_
+
+    - -
+
+    - Development
+
+    - `Download a Config-Backup <https://docs.opnsense.org/manual/backups.html>`_, `Querying runtime routes via API <https://docs.opnsense.org/development/api/core/diagnostics.html#id6>`_
+
+    - `system/firewall_opnsense.py <https://github.com/O-X-L/firewall-testing-framework/blob/latest/src/firewall_test/plugins/system/firewall_opnsense.py>`_,
+      `system/system_opnsense.py <https://github.com/O-X-L/firewall-testing-framework/blob/latest/src/firewall_test/plugins/system/system_opnsense.py>`_,
+      `translate/opnsense/ <https://github.com/O-X-L/firewall-testing-framework/tree/latest/src/firewall_test/plugins/translate/opnsense>`_
 
 ----
 
