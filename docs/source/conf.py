@@ -9,8 +9,8 @@ templates_path = ['_templates']
 exclude_patterns = []
 html_theme = 'sphinx_immaterial'
 html_static_path = ['_static']
-html_logo = '_static/img/logo.svg'
-html_favicon = '_static/img/logo.svg'
+html_logo = 'https://files.oxl.at/img/oxl3_xst.webp'
+html_favicon = 'https://files.oxl.at/img/oxl3_sm.webp'
 html_js_files = ['https://files.oxl.at/js/feedback.js']
 html_css_files = ['css/main.css', 'https://files.oxl.at/css/feedback.css']
 master_doc = 'index'
@@ -41,6 +41,7 @@ html_theme_options = {
         "search.suggest",
         "toc.follow",
         "toc.sticky",
+        "toc.integrate",
         "content.tabs.link",
         "content.code.copy",
         "content.action.edit",

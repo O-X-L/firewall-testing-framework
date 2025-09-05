@@ -52,7 +52,7 @@ For Firewall-Ruleset parsing.
 
   * - `OPNsense <https://opnsense.org/>`_
 
-    - -
+    - \-
 
     - Development
 
@@ -65,7 +65,7 @@ For Firewall-Ruleset parsing.
 ----
 
 Operating System Support
-************************
+########################
 
 For Routing- and Network-Interface parsing.
 

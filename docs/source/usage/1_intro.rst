@@ -17,7 +17,7 @@ When having to administer IT infrastructure and networks - we will often have mu
 Maintaining these might be time-consuming. You might also face some challenges:
 
 Troubleshooting & Analysis
-**************************
+==========================
 
 Even for senior network engineers it can be a challenge to find the source of an unexpected block/accept in large rulesets that are distributed across multiple systems and firewall vendors.
 
@@ -26,7 +26,7 @@ Infrastructure-as-Code does help to keep the rulesets in a consistent state - bu
 This project wants to provide one interface for simulating traffic over multiple firewall systems.
 
 Automated Regression-Tests
-**************************
+==========================
 
 **Why would you want to do ruleset-regression-tests?**
 

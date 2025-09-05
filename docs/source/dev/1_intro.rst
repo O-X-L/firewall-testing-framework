@@ -80,7 +80,7 @@ Code Structure
 ##############
 
 1. Entrypoint
-*************
+=============
 
 **Files**: :code:`src/firewall_test/cli.py`, :code:`src/firewall_test/ci.py`, :code:`src/firewall_test/shell.py`
 
@@ -111,7 +111,7 @@ The entrypoints are designed to be executed by the user.
 ----
 
 2. Simulated Packets
-********************
+====================
 
 **Files**: :code:`src/firewall_test/simulator/packet.py`
 
@@ -120,7 +120,7 @@ The network-traffic configuration as provided by the user is parsed to packets.
 ----
 
 3. Config Loader
-****************
+================
 
 **Files**: :code:`src/firewall_test/simulator/loader.py`, :code:`src/firewall_test/plugins/system/config.py` (mapping target-system to translate-plugins), :code:`:code:`src/firewall_test/system/*` (target-system config), :code:`/home/rath/code/firewall-testing-framework/src/firewall_test/plugins/translate/*` (translate plugins)
 
@@ -133,7 +133,7 @@ The configuration-files provided by the user are loaded and parsed as configured
 ----
 
 4. Simulator Initialization
-***************************
+===========================
 
 **Files**: :code:`src/firewall_test/simulator/main.py`, :code:`src/firewall_test/simulator/router.py`, :code:`src/firewall_test/simulator/firewall.py`
 
@@ -148,11 +148,11 @@ The configuration-files provided by the user are loaded and parsed as configured
 .. _dev_intro_simulation:
 
 5. Simulating Traffic
-*********************
+=====================
 
 1. A :code:`SimulatorRun` is initialized
 
-2. **It is checked which kind of traffic-flow applies **
+2. **It is checked which kind of traffic-flow applies**
 
   * If the source or destination IPs are local to the firewall
 
@@ -221,13 +221,13 @@ Routing & Firewalling
 .. _dev_intro_router:
 
 Routing Simulator
-*****************
+=================
 
 tbd
 
 .. _dev_intro_firewall:
 
 Firewall Simulator
-******************
+==================
 
 tbd

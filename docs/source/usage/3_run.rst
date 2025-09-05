@@ -24,7 +24,7 @@ Run Modes
 #########
 
 One-Shot CLI
-************
+============
 
 For simulating single packets you can use the simple CLI.
 
@@ -57,6 +57,7 @@ This is also a good way to test your setup at first!
     >                         Path to the file containing the network-route-rule information
     >   -z FILE_RULESET, --file-ruleset FILE_RULESET
     >                         Path to the file containing the firewall-ruleset information
+
 
     # PASS EXAMPLE:
     ftf-cli --firewall-system 'linux_netfilter' \
@@ -114,6 +115,7 @@ This is also a good way to test your setup at first!
     > 🛈 FIREWALL: Processing Egress Filter-Hooks
     > ✓ FIREWALL: Packet passed
 
+
     # BLOCK EXAMPLE:
     ftf-cli ... --src-ip 10.0.0.1 --dst-ip 172.17.10.6
 
@@ -160,6 +162,8 @@ This is also a good way to test your setup at first!
     > 🛈 FIREWALL:  > Match: True | Action: drop
     > ✖ FIREWALL: Packet blocked by rule: {'action': 'drop', 'seq': 1, 'raw': Rule: #22 | Matches: [Match: ['ni_in'] != ['docker0'], Match: ['ni_out'] == ['docker0']]}
 
+
+    # SYSTEM-CONFIG EXAMPLE:
     ftf-cli ... --src-ip 172.17.11.5 --dst-ip 10.100.1.1
 
     > 🛈 ROUTER: Packet inbound-interface: docker0
@@ -184,7 +188,7 @@ This is also a good way to test your setup at first!
 ----
 
 Automated for CI
-****************
+================
 
 .. warning::
 
@@ -193,7 +197,7 @@ Automated for CI
 ----
 
 Interactive Shell
-*****************
+=================
 
 .. warning::
 
