@@ -1,6 +1,6 @@
-from plugins.system.abstract_rule_match import RuleMatcher
-from plugins.translate.config import RuleAction, RuleActionKindTerminal, RuleActionKindToChain
-from plugins.translate.abstract import Rule, Chain  # Table
+from plugins.system.abstract_rule_match import RuleMatcher, RuleMatchResult
+from plugins.translate.config import RuleActionKindTerminal, RuleActionKindToChain, RuleActionKindNAT
+from plugins.translate.abstract import Rule
 from plugins.translate.netfilter.parse import NftRule
 from simulator.packet import PacketIP, PacketTCPUDP, PacketICMP
 from simulator.logger import log_debug, log_warn
@@ -8,26 +8,30 @@ from simulator.logger import log_debug, log_warn
 
 # pylint: disable=R0912
 class RuleMatcherNetfilter(RuleMatcher):
-    def matches(self, packet: (PacketIP, PacketTCPUDP, PacketICMP), rule: Rule) -> tuple[bool, (type[RuleAction], None), (Chain, None)]:
+    def matches(self, packet: (PacketIP, PacketTCPUDP, PacketICMP), rule: Rule) -> RuleMatchResult:
         """
         :param packet: Packet to match
         :param rule: Rule to check
-        :return:
-          - bool: If the packet matches the rule
-          - (RuleAction, None): The action that should be performed - None if not matched
-          - (Chain, None): The target-chain related to the action - None if not applicable
+        :return: RuleMatchResult
         """
         nf_rule: NftRule = rule.raw
 
         if rule.action is None:
-            return False, None, None
+            return RuleMatchResult(False, None, None, None, None)
 
-        if issubclass(rule.action, RuleActionKindToChain):
-            return False, rule.action, nf_rule.target_chain
-
-        if issubclass(rule.action, RuleActionKindTerminal):
+        if issubclass(rule.action, (RuleActionKindTerminal, RuleActionKindToChain, RuleActionKindNAT)):
             all_results = []
             results = []
+
+            if len(nf_rule.matches) == 0:
+                return RuleMatchResult(
+                    matched=True,
+                    action=rule.action,
+                    target_chain_name=nf_rule.target_chain,
+                    target_nat_ip=nf_rule.target_nat_ip,
+                    target_nat_port=nf_rule.target_nat_port,
+                )
+
             for match in nf_rule.matches:
                 single_results = []
                 # NETWORK INTERFACES
@@ -67,10 +71,10 @@ class RuleMatcherNetfilter(RuleMatcher):
                 if isinstance(packet, PacketTCPUDP):
                     # PORTS
                     if match.match_sport:
-                        single_results.append(packet.l4_sport in match.value)
+                        single_results.append(packet.sport in match.value)
 
                     if match.match_dport:
-                        single_results.append(packet.l4_dport in match.value)
+                        single_results.append(packet.dport in match.value)
 
                     # CONNECTION TRACKING STATE
                     if match.match_ct:
@@ -87,7 +91,18 @@ class RuleMatcherNetfilter(RuleMatcher):
                 else:
                     log_warn('Firewall', f' > Unable to get results for operator {match.operator}')
 
-            log_debug('Firewall', f' > Matches: {nf_rule.get_match_types()} | Result: {results}')
-            return all(results), rule.action, None
+            if len(results) == 0:
+                log_warn('Firewall', ' > Matches: Found not matches we could process - skipping rule')
 
-        return True, rule.action, None
+            else:
+                log_debug('Firewall', f' > Matches: {nf_rule.get_match_types()} | Result: {results}')
+
+                return RuleMatchResult(
+                    matched=all(results),
+                    action=rule.action,
+                    target_chain_name=nf_rule.target_chain,
+                    target_nat_ip=nf_rule.target_nat_ip,
+                    target_nat_port=nf_rule.target_nat_port,
+                )
+
+        return RuleMatchResult(False, None, None, None, None)

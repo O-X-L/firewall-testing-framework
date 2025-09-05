@@ -44,14 +44,14 @@ class StaticRoute(TranslateOutput):
         self.ni = ni
         self.metric = metric
 
+        if self.src_pref is not None:
+            self.src_pref = ip_address(self.src_pref)
+
     def __repr__(self) -> str:
         return f'ROUTE: Network {self.net} in Table {self.table} via {self.ni} {self.gw} metric {self.metric} type {self.type}'
 
     def dump(self) -> dict:
-        src_pref, gw, net = None, None, None
-        if self.src_pref is not None:
-            src_pref = ip_address(self.src_pref)
-
+        gw, net = None, None
         if self.gw is not None:
             gw = ip_address(self.gw)
 
@@ -68,7 +68,7 @@ class StaticRoute(TranslateOutput):
             'scope': self.scope,
             'type': self.type,
             'gw': gw,
-            'src_pref': src_pref,
+            'src_pref': self.src_pref,
             'ni': self.ni,
             'metric': metric,
         }

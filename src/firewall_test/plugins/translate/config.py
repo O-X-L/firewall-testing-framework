@@ -45,7 +45,20 @@ class RuleActionContinue(RuleAction):
     N = 'continue'
 
 
+class RuleActionKindNAT(RuleAction):
+    N = 'Abstract Rule-Action NAT'
+
+
+class RuleActionDNAT(RuleActionKindNAT):
+    N = 'dnat'
+
+
+class RuleActionSNAT(RuleActionKindNAT):
+    N = 'snat'
+
+
 RULE_ACTIONS = [
     RuleActionAccept, RuleActionDrop, RuleActionReject,
     RuleActionJump, RuleActionGoTo, RuleActionContinue, RuleActionReturn,
+    RuleActionDNAT, RuleActionSNAT,
 ]

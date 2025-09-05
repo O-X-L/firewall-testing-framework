@@ -1,6 +1,6 @@
 from ipaddress import ip_address, IPv4Address, IPv6Address
 
-from config import ProtoL3IP4, ProtoL3IP6, ProtoL3, PROTO_L4_MAPPING
+from config import ProtoL3IP4, ProtoL3IP6, ProtoL3, PROTO_L4_MAPPING, ProtoL4ICMP
 
 
 class Packet:
@@ -50,26 +50,33 @@ class PacketIP(Packet):
             'proto_l3': self.proto_l3.N,
         }
 
+    def dnat_str(self) -> str:
+        return f'{self.pre_nat_dst} => {self.dst}'
+
+    def snat_str(self) -> str:
+        return f'{self.pre_nat_src} => {self.src}'
+
 
 class PacketTCPUDP(PacketIP):
     def __init__(
-            self, src: str, dst: str, proto_l4: str, l4_dport: int = None, l4_sport: int = None, ct: str = 'new',
+            self, src: str, dst: str, proto_l4: str, dport: int = None, sport: int = None, ct: str = 'new',
     ):
         super().__init__(src=src, dst=dst)
         self._proto_l4 = proto_l4.lower()
-        self.l4_sport = l4_sport
-        self.l4_dport = l4_dport
+        self.sport = sport
+        self.dport = dport
         self.ct = ct
+        self.pre_nat_dst_port = dport
 
-        if l4_dport is None:
+        if dport is None:
             if proto_l4 == 'tcp':
-                self.l4_dport = 443
+                self.dport = 443
 
             else:
-                self.l4_dport = 53
+                self.dport = 53
 
-        if l4_sport is None:
-            self.l4_sport = 50_000
+        if sport is None:
+            self.sport = 50_000
 
     @property
     def proto_l4(self) -> type[ProtoL3]:
@@ -78,18 +85,21 @@ class PacketTCPUDP(PacketIP):
     def validate(self):
         super().validate()
         assert self._proto_l4 in PROTO_L4_MAPPING
-        assert isinstance(self.l4_dport, int)
-        assert isinstance(self.l4_sport, int)
-        assert 0 <= self.l4_dport <= 65535
-        assert 0 <= self.l4_sport <= 65535
+        assert isinstance(self.dport, int)
+        assert isinstance(self.sport, int)
+        assert 0 <= self.dport <= 65535
+        assert 0 <= self.sport <= 65535
 
     def dump(self) -> dict:
         return {
             **super().dump(),
             'proto_l4': self.proto_l4.N,
-            'l4_dport': self.l4_dport,
-            'l4_sport': self.l4_sport,
+            'dport': self.dport,
+            'sport': self.sport,
         }
+
+    def dnat_str(self) -> str:
+        return f'{self.pre_nat_dst}:{self.pre_nat_dst_port} => {self.dst}:{self.dport}'
 
 
 class PacketICMP(PacketIP):
@@ -99,14 +109,12 @@ class PacketICMP(PacketIP):
     CODE6_ECHO_REPLY = 0
     CODE6_ECHO_REQUEST = 128
 
-    def __init__(
-            self, src: str, dst: str, proto_l4: str, icmp_code: int = None,
-    ):
+    def __init__(self, src: str, dst: str, icmp_code: int = None):
         super().__init__(src=src, dst=dst)
-        self.proto_l4 = proto_l4.lower()
+        self.proto_l4 = ProtoL4ICMP
         self.icmp_code = icmp_code
         if icmp_code is None:
-            if self.proto_l4 == 'icmp':
+            if self.proto_l3 == ProtoL3IP4:
                 self.icmp_code = self.CODE_ECHO_REQUEST
 
             else:
@@ -114,13 +122,16 @@ class PacketICMP(PacketIP):
 
     def validate(self):
         super().validate()
-        assert self.proto_l4 in ['icmp', 'icmpv6']
+        assert self.proto_l4 == ProtoL4ICMP
         assert isinstance(self.icmp_code, int)
         assert -1 < self.icmp_code < 256
 
     def dump(self) -> dict:
         return {
             **super().dump(),
-            'proto_l4': self.proto_l4.N,
+            'proto_l4': 'icmp' if self.proto_l3 == ProtoL3IP4 else 'icmpv6',
             'icmp_code': self.icmp_code,
         }
+
+
+PACKET_KINDS = (PacketIP, PacketTCPUDP, PacketICMP)

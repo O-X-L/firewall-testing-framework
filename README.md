@@ -28,11 +28,13 @@ You can find the documentation at: [ftf.oxl.app](https://ftf.oxl.app)
   - [x] Firewall Rules
   - [x] System-Specific Translate-Plugins
   - [x] System-Specific Rule-Matching
+  - [x] Destination-NAT
+  - [x] Source-NAT
 - [ ] Run modes:
   - [x] One-Shot CLI
   - [ ] Basic interactive shell
   - [ ] Automated/CI mode
-    - [ ] Run multiple Test-cases from config (CLI pytest-like?)
+    - [ ] Run multiple Test-cases from config
 - [ ] Defining basic config-schema (Topology, Rulesets, Tests)
 - [ ] Option to Output results to JSON
 - [ ] Supporting multiple Firewalls

@@ -44,13 +44,11 @@ def test_packet_icmp():
     p = PacketICMP(
         src='10.0.0.1',
         dst='10.0.0.2',
-        proto_l4='icmp',
     )
     p.validate()
 
     p = PacketICMP(
         src='10.0.0.1',
         dst='10.0.0.2',
-        proto_l4='icmpv6',
     )
     p.validate()

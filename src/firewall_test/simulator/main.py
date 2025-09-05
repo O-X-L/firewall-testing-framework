@@ -1,23 +1,24 @@
 from json import dumps as json_dumps
 from ipaddress import IPv4Address, IPv6Address
 
-from simulator.packet import PacketIP
+from simulator.packet import PACKET_KINDS
 from simulator.routes import Router
 from simulator.firewall import Firewall
-from simulator.logger import log_info, log_error, log_ok
+from simulator.logger import log_info, log_error, log_ok, log_warn
 
+from util import ip_is_bogon
 from config import DEFAULT_ROUTES, Flow, FlowForward, FlowInput, FlowInputForward, FlowOutput
 from plugins.system.abstract import FirewallSystem
 from plugins.translate.abstract import NetworkInterface, StaticRoute, StaticRouteRule, Ruleset
-
 
 
 MODE_INTERACTIVE = 1
 MODE_CI = 2
 
 
+# pylint: disable=R0912,R0915
 class SimulatorRun:
-    def __init__(self, packet: PacketIP, simulator):
+    def __init__(self, packet: PACKET_KINDS, simulator):
         self.packet = packet
         self._s = simulator
 
@@ -57,7 +58,7 @@ class SimulatorRun:
         _, self.dnat = self._s.fw.process_dnat(packet=packet, flow=self.flow_type)
         self._dnat_done = True
         if self.dnat is not None:
-            log_info('Firewall', f'Performed DNAT: {self.dnat.dump()}')
+            log_info('Firewall', f'Performed DNAT: {self.packet.dnat_str}')
 
         ### UPDATE TRAFFIC FLOW AND OUTBOUND-NETWORK-INTERFACE ###
 
@@ -79,7 +80,10 @@ class SimulatorRun:
 
             self._log_route(out=True, route=self.route_dst)
 
-            ### DROP PACKET IF TRAFFIC TO BOGONS ON WAN ###
+        ### SYSTEM-SPECIFIC FILTERS OUTSIDE OF FIREWALL ####
+
+        if self.flow_type != FlowInput:
+            # DROP PACKET IF TRAFFIC TO BOGONS ON WAN
             if self._is_bogon_to_wan() and self._s.system.FIREWALL_DROP_WAN_BOGONS:
                 log_error('Firewall', 'Dropping traffic to WAN targeting bogons')
                 return
@@ -93,9 +97,25 @@ class SimulatorRun:
 
         ### PROCESSING SOURCE-NAT ###
 
-        _, self.snat = self._s.fw.process_snat(packet=packet, flow=self.flow_type)
-        if self.snat is not None:
-            log_info('Firewall', f'Performed SNAT: {self.snat.dump()}')
+        performed_snat, self.snat = self._s.fw.process_snat(packet=packet, flow=self.flow_type)
+        if performed_snat:
+            if self.snat is None:
+                # generic masquerade
+                snat_ip = self._get_snat_masquerade_ip()
+                if snat_ip is None:
+                    log_warn('Firewall', 'Unable to find usable IP for masquerade SNAT!')
+
+                else:
+                    self.packet.src = self._get_snat_masquerade_ip()
+
+            log_info('Firewall', f'Performed SNAT: {self.packet.snat_str()}')
+
+        elif self.flow_type == FlowOutput:
+            # use the correct outbound-IP if the traffic originated from this host itself
+            self.packet.src = self._get_output_outbound_ip()
+
+        elif self.flow_type == FlowForward and self._is_src_bogon_dst_wan_public():
+            log_warn('Firewall', 'Source is bogon-network and heading to Public-WAN without SNAT!')
 
         ### PROCESSING FIREWALL-FILTERS AFTER SNAT ###
 
@@ -165,11 +185,41 @@ class SimulatorRun:
         if self.flow_type == FlowInput or self.route_dst is None:
             return False
 
-        if self.route_dst.net in DEFAULT_ROUTES and \
-                not self.packet.dst.is_global:
+        if self.route_dst.net in DEFAULT_ROUTES and ip_is_bogon(self.packet.dst):
             return True
 
         return False
+
+    def _is_src_bogon_dst_wan_public(self) -> bool:
+        if self.flow_type == FlowInput or self.route_dst is None:
+            return False
+
+        if self.route_dst.net in DEFAULT_ROUTES and \
+                ip_is_bogon(self.packet.src) and \
+                not ip_is_bogon(self.packet.dst):
+            return True
+
+        return False
+
+    def _get_output_outbound_ip(self) -> (IPv4Address, IPv6Address, None):
+        if self.flow_type != FlowOutput:
+            return None
+
+        return self._get_snat_masquerade_ip()
+
+    def _get_snat_masquerade_ip(self) -> (IPv4Address, IPv6Address, None):
+        if ip_is_bogon(self.packet.dst):
+            return None
+
+        if self.route_dst.src_pref is not None:
+            return self.route_dst.src_pref
+
+        for ni in self._s.nis:
+            if ni.name == self.packet.ni_out:
+                ni_ips = ni.ip4 if self._ipp == 4 else ni.ip6
+                return ni_ips[0]
+
+        return None
 
     def _log_route(self, out: bool, route: StaticRoute):
         in_out = 'outbound'
@@ -211,7 +261,7 @@ class Simulator:
             ruleset=ruleset,
         )
 
-    def run(self, packet: PacketIP) -> SimulatorRun:
+    def run(self, packet: PACKET_KINDS) -> SimulatorRun:
         # todo: implement multi-run handling
         #   for traffic that is flow-type 'output => input' (local to local)
         #   for multiple firewalls

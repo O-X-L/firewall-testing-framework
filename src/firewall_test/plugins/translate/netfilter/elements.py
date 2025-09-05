@@ -300,22 +300,6 @@ class NftMatch:
         return f"Match: {self.get_match_types()} {self.operator} {values}"
 
 
-class NftJump:
-    def __init__(self, chain: NftChain):
-        self.chain = chain
-
-    def __repr__(self) -> str:
-        return f"Jump: chain {self.chain.name}"
-
-
-class NftGoTo:
-    def __init__(self, chain: NftChain):
-        self.chain = chain
-
-    def __repr__(self) -> str:
-        return f"Go-to: chain {self.chain.name}"
-
-
 class NftRule(NftBase):
     def __init__(self, table: NftTable, chain: NftChain, raw: dict, seq: int, sets: list[NftSet]):
         NftBase.__init__(self=self, raw=raw, table=table)
@@ -328,6 +312,8 @@ class NftRule(NftBase):
         self.action = None
         self.matches: list[NftMatch] = []
         self.target_chain = None
+        self.target_nat_ip = None
+        self.target_nat_port = None
 
         for expression in raw['expr']:
             for a in RULE_ACTIONS:
@@ -337,6 +323,9 @@ class NftRule(NftBase):
             self._init_match(expression)
             self._init_jump(expression)
             self._init_goto(expression)
+            self._init_dnat(expression)
+            self._init_snat(expression)
+            self._init_nat_xt(expression)
 
         for match in self.matches:
             if match.value_is_set:
@@ -349,11 +338,11 @@ class NftRule(NftBase):
 
     def _init_goto(self, e: dict):
         if 'goto' in e:
-            self.target_chain = NftGoTo(e['goto']['target'])
+            self.target_chain = e['goto']['target']
 
     def _init_jump(self, e: dict):
         if 'jump' in e:
-            self.target_chain = NftJump(e['jump']['target'])
+            self.target_chain = e['jump']['target']
 
     def _init_match(self, e: dict):
         if 'match' in e:
@@ -364,6 +353,27 @@ class NftRule(NftBase):
                     right=e['match']['right'],
                 )
             )
+
+    def _init_dnat(self, e: dict):
+        if 'dnat' not in e:
+            return
+
+        self.target_nat_ip = ip_address(e['dnat']['addr'])
+        if 'port' in e['dnat']:
+            self.target_nat_port = e['dnat']['port']
+
+    def _init_snat(self, e: dict):
+        if 'snat' not in e:
+            return
+
+        self.target_nat_ip = ip_address(e['snat']['addr'])
+
+    def _init_nat_xt(self, e: dict):
+        if 'xt' not in e:
+            return
+
+        if 'name' in e['xt'] and e['xt']['name'] == 'MASQUERADE':
+            self.action = 'masquerade'
 
     def get_match_types(self) -> list[str]:
         matches = []

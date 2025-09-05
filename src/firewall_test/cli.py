@@ -73,7 +73,6 @@ def main():
         packet = PacketICMP(
             src=args.src_ip,
             dst=args.dst_ip,
-            proto_l4=args.proto_l4,
         )
 
     print()

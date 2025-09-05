@@ -1,6 +1,6 @@
 from plugins.translate.config import RuleActionJump, RuleActionContinue, RuleActionGoTo, \
-    RuleActionAccept, RuleActionDrop, RuleActionReject, RuleActionReturn
-from plugins.system.linux_netfilter import SystemLinuxNetfilter
+    RuleActionAccept, RuleActionDrop, RuleActionReject, RuleActionReturn, RuleActionDNAT, RuleActionSNAT
+from plugins.system.system_linux_netfilter import SystemLinuxNetfilter
 from plugins.translate.abstract import TranslatePluginRuleset, TranslatePluginTable, TranslatePluginChain, \
     TranslatePluginRule, Ruleset, Table, Chain, Rule
 from plugins.translate.netfilter.parse import NetfilterPreParse, NftTable, NftChain, NftRule
@@ -15,6 +15,9 @@ RULE_ACTION_MAPPING = {
     'goto': RuleActionGoTo,
     'continue': RuleActionContinue,
     'return': RuleActionReturn,
+    'dnat': RuleActionDNAT,
+    'snat': RuleActionSNAT,
+    'masquerade': RuleActionSNAT,
 }
 
 

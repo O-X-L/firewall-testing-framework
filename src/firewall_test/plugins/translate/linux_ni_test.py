@@ -1,4 +1,4 @@
-from testdata_test import TESTDATA_FILE_NIS
+from testdata_test import TESTDATA_FILE_NIS, TEST_WAN_IP4, TEST_WAN_IP6
 
 with open(TESTDATA_FILE_NIS, 'r', encoding='utf-8') as f:
     TESTDATA_NICS = f.read()
@@ -29,8 +29,8 @@ def test_linux_nis():
 
         elif ni.name == 'wan':
             assert ni.up
-            assert [str(ip) for ip in ni.ip4] == ['10.255.255.48']
-            assert [str(ip) for ip in ni.ip6] == ['2001:4bc9:1f9a:cfe6:aaaa:11e2:5f14:1793', 'fe80::a0d:5eeb:c78:aba7']
+            assert [str(ip) for ip in ni.ip4] == [TEST_WAN_IP4]
+            assert [str(ip) for ip in ni.ip6] == [TEST_WAN_IP6, 'fe80::a0d:5eeb:c78:aba7']
             assert [str(ip) for ip in ni.net4] == ['10.255.255.0/24']
             assert [str(ip) for ip in ni.net6] == ['fe80::/64']
             assert ni.mac == 'a0:59:aa:15:4e:0b'
