@@ -12,7 +12,7 @@ def test_firewall_chains_basic():
     from simulator.packet import PacketIP
     from simulator.firewall import Firewall
     from plugins.translate.abstract import Table
-    from plugins.system.linux_netfilter import SystemLinuxNetfilter
+    from plugins.system.system_linux_netfilter import SystemLinuxNetfilter
     from plugins.translate.netfilter.ruleset import NetfilterRuleset
 
     ruleset = NetfilterRuleset(TESTDATA_RULESET).get()

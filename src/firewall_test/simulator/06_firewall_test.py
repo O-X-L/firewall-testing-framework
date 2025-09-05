@@ -6,7 +6,7 @@ with open(TESTDATA_FILE_NF_RULESET, 'r', encoding='utf-8') as f:
 
 def test_firewall_basic():
     from config import FlowForward
-    from plugins.system.linux_netfilter import SystemLinuxNetfilter
+    from plugins.system.system_linux_netfilter import SystemLinuxNetfilter
     from plugins.translate.netfilter.ruleset import NetfilterRuleset
     from simulator.packet import PacketIP
     from simulator.firewall import Firewall

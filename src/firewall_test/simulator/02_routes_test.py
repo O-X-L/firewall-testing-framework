@@ -13,7 +13,7 @@ def test_router_dst_route():
     from simulator.routes import Router
     from simulator.packet import PacketIP
     from plugins.translate.linux import LinuxRouteRules, LinuxRoutes
-    from plugins.system.linux_netfilter import SystemLinuxNetfilter
+    from plugins.system.system_linux_netfilter import SystemLinuxNetfilter
 
     routes = LinuxRoutes(TESTDATA_ROUTES).get()
     route_rules = LinuxRouteRules(TESTDATA_RULES).get()
@@ -31,7 +31,7 @@ def test_router_src_route():
     from simulator.routes import Router
     from simulator.packet import PacketIP
     from plugins.translate.linux import LinuxRouteRules, LinuxRoutes
-    from plugins.system.linux_netfilter import SystemLinuxNetfilter
+    from plugins.system.system_linux_netfilter import SystemLinuxNetfilter
 
     routes = LinuxRoutes(TESTDATA_ROUTES).get()
     route_rules = LinuxRouteRules(TESTDATA_RULES).get()

@@ -22,7 +22,7 @@ def test_firewall_packet_matching_table(src, dst, ipp, matching):
     from simulator.packet import PacketIP
     from simulator.firewall import Firewall
     from plugins.translate.abstract import Table
-    from plugins.system.linux_netfilter import SystemLinuxNetfilter
+    from plugins.system.system_linux_netfilter import SystemLinuxNetfilter
     from plugins.translate.netfilter.ruleset import NetfilterRuleset
 
     ruleset = NetfilterRuleset(TESTDATA_RULESET).get()
@@ -49,7 +49,7 @@ def test_firewall_packet_matching_table(src, dst, ipp, matching):
 def test_firewall_packet_matching_chain(src, dst, ipp, matching):
     from simulator.packet import PacketIP
     from simulator.firewall import Firewall
-    from plugins.system.linux_netfilter import SystemLinuxNetfilter
+    from plugins.system.system_linux_netfilter import SystemLinuxNetfilter
     from plugins.translate.netfilter.ruleset import NetfilterRuleset, NetfilterChainOutput as Chain
 
     ruleset = NetfilterRuleset(TESTDATA_RULESET).get()
@@ -65,7 +65,7 @@ def test_firewall_packet_matching_chain(src, dst, ipp, matching):
 def test_firewall_sort_tables_by_priority():
     from simulator.firewall import Firewall
     from plugins.translate.abstract import Table
-    from plugins.system.linux_netfilter import SystemLinuxNetfilter
+    from plugins.system.system_linux_netfilter import SystemLinuxNetfilter
     from plugins.translate.netfilter.ruleset import NetfilterRuleset
 
     ruleset = NetfilterRuleset(TESTDATA_RULESET).get()
@@ -90,7 +90,7 @@ def test_firewall_sort_tables_by_priority():
 
 def test_firewall_sort_chains_by_hook_and_priority():
     from simulator.firewall import Firewall
-    from plugins.system.linux_netfilter import SystemLinuxNetfilter
+    from plugins.system.system_linux_netfilter import SystemLinuxNetfilter
     from plugins.translate.netfilter.ruleset import NetfilterRuleset, NetfilterChainOutput as Chain
 
     ruleset = NetfilterRuleset(TESTDATA_RULESET).get()
@@ -138,7 +138,7 @@ def test_firewall_sort_chains_by_hook_and_priority():
 )
 def test_firewall_chain_before_eq_after(compare_hook, compare_prio, chain_hook, chain_prio, result):
     from simulator.firewall import Firewall
-    from plugins.system.linux_netfilter import SystemLinuxNetfilter
+    from plugins.system.system_linux_netfilter import SystemLinuxNetfilter
     from plugins.translate.netfilter.ruleset import NetfilterRuleset, NetfilterChainOutput as Chain
 
     ruleset = NetfilterRuleset(TESTDATA_RULESET).get()
@@ -179,7 +179,7 @@ def test_firewall_chain_before_eq_after(compare_hook, compare_prio, chain_hook, 
 )
 def test_firewall_chain_in_flow(hook, flow, result):
     from simulator.firewall import Firewall
-    from plugins.system.linux_netfilter import SystemLinuxNetfilter
+    from plugins.system.system_linux_netfilter import SystemLinuxNetfilter
     from plugins.translate.netfilter.ruleset import NetfilterRuleset, NetfilterChainOutput as Chain
 
     ruleset = NetfilterRuleset(TESTDATA_RULESET).get()
@@ -205,7 +205,7 @@ def test_firewall_chain_in_flow(hook, flow, result):
 def test_firewall_inherit_table_priority_chain(prio_table, prio_chain, result):
     from simulator.firewall import Firewall
     from plugins.translate.abstract import Table
-    from plugins.system.linux_netfilter import SystemLinuxNetfilter
+    from plugins.system.system_linux_netfilter import SystemLinuxNetfilter
     from plugins.translate.netfilter.ruleset import NetfilterRuleset, NetfilterChainOutput as Chain
 
     ruleset = NetfilterRuleset(TESTDATA_RULESET).get()

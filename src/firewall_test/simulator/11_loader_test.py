@@ -4,7 +4,7 @@ from testdata_test import TESTDATA_FILE_ROUTES, TESTDATA_FILE_ROUTE_RULES, TESTD
 def test_loader():
     from simulator.loader import load
     from plugins.translate.abstract import NetworkInterface, StaticRoute, StaticRouteRule, Ruleset
-    from plugins.system.linux_netfilter import SystemLinuxNetfilter
+    from plugins.system.system_linux_netfilter import SystemLinuxNetfilter
 
     loaded = load(
         system='linux_netfilter',
