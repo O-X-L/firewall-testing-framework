@@ -25,6 +25,7 @@ You can find the documentation at: [ftf.oxl.app](https://ftf.oxl.app)
   - [x] Network Interfaces
   - [x] Firewall Tables
   - [x] Firewall Chains
+    - [x] Sub-Chains (Jump, Goto)
   - [x] Firewall Rules
   - [x] System-Specific Translate-Plugins
   - [x] System-Specific Rule-Matching
