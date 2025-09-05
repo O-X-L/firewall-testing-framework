@@ -38,3 +38,4 @@ where = ["src"]
 ftf = "firewall_test.cli:main"
 ftf-shell = "firewall_test.shell:main"
 ftf-ci = "firewall_test.ci:main"
+ftf-cli = "firewall_test.cli:main"

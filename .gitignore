@@ -9,3 +9,5 @@ dist/
 testdata/custom_*
 scripts/cli_custom.sh
 tmp/
+
+docs/build/
