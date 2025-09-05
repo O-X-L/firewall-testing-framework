@@ -9,7 +9,7 @@
 Install
 #######
 
-To install the **firewall-testing-framework** you need to have `Python3 and the package-manager PIP <https://docs.python.org/3/installing/index.html>`_ installed!
+To install the **Firewall Testing Framework** you need to have `Python3 and the package-manager PIP <https://docs.python.org/3/installing/index.html>`_ installed!
 
 Then just run:
 
