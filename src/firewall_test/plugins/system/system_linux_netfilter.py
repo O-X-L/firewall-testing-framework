@@ -9,7 +9,9 @@ class SystemLinuxNetfilter(FirewallSystem):
     ROUTE_STATIC = True
     ROUTE_STATIC_RULES = True
 
-    FIREWALL_DROP_WAN_BOGONS = True
+    SYSTEM_DROP_WAN_BOGONS = True
+    SYSTEM_DROP_FORWARD = False
+
     FIREWALL_ACTION_LAZY = False
     FIREWALL_CT = True
     FIREWALL_PRIO_LOWER_BETTER = True

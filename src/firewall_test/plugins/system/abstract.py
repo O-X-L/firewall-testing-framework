@@ -16,7 +16,10 @@ class FirewallSystem(ABC):
     ROUTE_STATIC_RULES = False
 
     # if the system allows traffic to bogon-networks to be sent to wan/default-route
-    FIREWALL_DROP_WAN_BOGONS = True
+    SYSTEM_DROP_WAN_BOGONS = True
+
+    # if the system allows traffic to be forwarded; todo: should be instance-specific
+    SYSTEM_DROP_FORWARD = False
 
     # the firewall supports bsd-pf-style quick/lazy matching
     FIREWALL_ACTION_LAZY = False

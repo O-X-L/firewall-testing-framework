@@ -89,6 +89,11 @@ class SimulatorRun:
                 log_error('System', 'Dropping traffic to WAN targeting bogons', final=True)
                 return
 
+        if self.flow_type == FlowForward and self._s.system.SYSTEM_DROP_FORWARD:
+            # DROP PACKET IF TRAFFIC-FORWARDING IS NOT ALLOWED
+            log_error('System', 'Dropping forward traffic', final=True)
+            return
+
         ### PROCESSING MAIN FIREWALL-FILTERS ###
 
         result, rule = self._s.fw.process_main(packet=packet, flow=self.flow_type)
