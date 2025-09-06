@@ -163,7 +163,7 @@ You can get more detailed output by increasing the verbosity:
     > 🛈 FIREWALL: > Chain FORWARD | Rule 1 | Match => drop | {'action': 'drop', 'seq': 1, 'raw': Rule: #101 "TEST IP4-DADDR DROP" | Matches: [proto_l3 == ip4 & ip_daddr == ['2.2.2.2/32']]}
     > ✖ FIREWALL: Packet blocked by rule: {'action': 'drop', 'seq': 1, 'raw': Rule: #101 "TEST IP4-DADDR DROP" | Matches: [proto_l3 == ip4 & ip_daddr == ['2.2.2.2/32']]}
 
-Or run use the silent-mode:
+Or use the silent-mode:
 
 .. code-block:: bash
 
