@@ -12,6 +12,13 @@ Index
    usage/*
 
 .. toctree::
+   :caption: Plugins
+   :glob:
+   :maxdepth: 1
+
+   plugins/*
+
+.. toctree::
    :caption: Development
    :glob:
    :maxdepth: 1

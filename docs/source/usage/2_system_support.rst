@@ -26,7 +26,7 @@ For Firewall-Ruleset parsing.
 
 .. list-table::
   :width: 100 %
-  :widths: 10 10 10 45 25
+  :widths: 20 20 30 30
   :header-rows: 1
 
   * - System
@@ -44,7 +44,6 @@ For Firewall-Ruleset parsing.
     - Experimental
 
     - :ref:`Plugins - Firewall Netfilter <plugins_fw_netfilter>`
-
 
   * - `OPNsense <https://opnsense.org/>`_
 
@@ -64,7 +63,7 @@ For Routing- and Network-Interface parsing.
 
 .. list-table::
   :width: 100 %
-  :widths: 10 10 10 45 25
+  :widths: 20 20 30 30
   :header-rows: 1
 
   * - System
