@@ -90,7 +90,10 @@ Pass Example
     > 🛈 FIREWALL: > Chain FORWARD | Rule 0 | Match => jump
     > 🛈 FIREWALL: > Chain FORWARD | Sub-Chain: DOCKER-USER
     > 🛈 FIREWALL: > Chain DOCKER-USER | Rule 0 | Match => return
-    > 🛈 FIREWALL: > Chain FORWARD | Rule 1 | Match => jump
+    > 🛈 FIREWALL: > Chain FORWARD | Rule 1
+    > 🛈 FIREWALL: > Chain FORWARD | Rule 2
+    > 🛈 FIREWALL: > Chain FORWARD | Rule 3
+    > 🛈 FIREWALL: > Chain FORWARD | Rule 4 | Match => jump
     > 🛈 FIREWALL: > Chain FORWARD | Sub-Chain: DOCKER-FORWARD
     > 🛈 FIREWALL: > Chain DOCKER-FORWARD | Rule 0 | Match => jump
     > 🛈 FIREWALL: > Chain DOCKER-FORWARD | Sub-Chain: DOCKER-CT
@@ -116,36 +119,22 @@ Block Example
 
 .. code-block:: bash
 
-    ftf-cli ... --src-ip 10.0.0.1 --dst-ip 172.17.10.6
+    ftf-cli ... --src-ip 172.17.11.5 --dst-ip 2.2.2.2
 
-    > 🛈 ROUTER: Packet inbound-interface: wan
-    > 🛈 ROUTER: Packet inbound-route: 0.0.0.0/0, gw 10.255.255.254, metric 600, scope remote
+    > 🛈 ROUTER: Packet inbound-interface: docker0
+    > 🛈 ROUTER: Packet inbound-route: 172.17.0.0/16, scope link
     > 🛈 FIREWALL: Processing Chain: Table nat ip4 | Chain PREROUTING ip4 nat
     > 🛈 FIREWALL: > Chain PREROUTING | Rule 0 | Match => jump
     > 🛈 FIREWALL: > Chain PREROUTING | Sub-Chain: DOCKER
-    > 🛈 FIREWALL: > Chain DOCKER | Rule 0
-    > 🛈 FIREWALL: > Chain DOCKER | Rule 1
-    > 🛈 ROUTER: Packet outbound-interface: docker0
-    > 🛈 ROUTER: Packet outbound-route: 172.17.0.0/16, scope link
+    > 🛈 FIREWALL: > Chain DOCKER | Rule 0 | Match => return
+    > 🛈 ROUTER: Packet outbound-interface: wan
+    > 🛈 ROUTER: Packet outbound-route: 0.0.0.0/0, gw 10.255.255.254, metric 600, scope remote
     > 🛈 FIREWALL: Processing Chain: Table filter ip4 | Chain FORWARD ip4 filter
     > 🛈 FIREWALL: > Chain FORWARD | Rule 0 | Match => jump
     > 🛈 FIREWALL: > Chain FORWARD | Sub-Chain: DOCKER-USER
     > 🛈 FIREWALL: > Chain DOCKER-USER | Rule 0 | Match => return
-    > 🛈 FIREWALL: > Chain FORWARD | Rule 1 | Match => jump
-    > 🛈 FIREWALL: > Chain FORWARD | Sub-Chain: DOCKER-FORWARD
-    > 🛈 FIREWALL: > Chain DOCKER-FORWARD | Rule 0 | Match => jump
-    > 🛈 FIREWALL: > Chain DOCKER-FORWARD | Sub-Chain: DOCKER-CT
-    > 🛈 FIREWALL: > Chain DOCKER-CT | Rule 0 | Match => accept
-    > 🛈 FIREWALL: > Chain DOCKER-FORWARD | Rule 1 | Match => jump
-    > 🛈 FIREWALL: > Chain DOCKER-FORWARD | Sub-Chain: DOCKER-ISOLATION-STAGE-1
-    > 🛈 FIREWALL: > Chain DOCKER-ISOLATION-STAGE-1 | Rule 0
-    > 🛈 FIREWALL: > Chain DOCKER-FORWARD | Rule 2 | Match => jump
-    > 🛈 FIREWALL: > Chain DOCKER-FORWARD | Sub-Chain: DOCKER-BRIDGE
-    > 🛈 FIREWALL: > Chain DOCKER-BRIDGE | Rule 0 | Match => jump
-    > 🛈 FIREWALL: > Chain DOCKER-BRIDGE | Sub-Chain: DOCKER
-    > 🛈 FIREWALL: > Chain DOCKER | Rule 0
-    > 🛈 FIREWALL: > Chain DOCKER | Rule 1 | Match => drop
-    > ✖ FIREWALL: Packet blocked by rule: {'action': 'drop', 'seq': 1, 'raw': Rule: #22 | Matches: [ni_in != ['docker0'], ni_out == ['docker0']]}
+    > 🛈 FIREWALL: > Chain FORWARD | Rule 1 | Match => drop
+    > ✖ FIREWALL: Packet blocked by rule: {'action': 'drop', 'seq': 1, 'raw': Rule: #101 "TEST DROP" | Matches: [proto_l3 == ip4 & ip_daddr == ['2.2.2.2/32']]}
 
 ----
 
@@ -156,45 +145,31 @@ You can get more detailed output by increasing the verbosity:
 
 .. code-block:: bash
 
-    ftf-cli ... --src-ip 10.0.0.1 --dst-ip 172.17.10.6 --verbosity 2
+    ftf-cli ... --src-ip 172.17.11.5 --dst-ip 2.2.2.2 --verbosity 2
 
-    > 🛈 ROUTER: Packet inbound-interface: wan
-    > 🛈 ROUTER: Packet inbound-route: 0.0.0.0/0, gw 10.255.255.254, metric 600, scope remote
+    > 🛈 ROUTER: Packet inbound-interface: docker0
+    > 🛈 ROUTER: Packet inbound-route: 172.17.0.0/16, scope link
     > 🛈 FIREWALL: Processing Chain: Table nat ip4 | Chain PREROUTING ip4 nat
     > 🛈 FIREWALL: > Chain PREROUTING | Rule 0 | Match => jump | {'action': 'jump', 'seq': 0, 'raw': Rule: #3 | Matches: []}
     > 🛈 FIREWALL: > Chain PREROUTING | Sub-Chain: DOCKER
-    > 🛈 FIREWALL: > Chain DOCKER | Rule 0 | {'action': 'return', 'seq': 0, 'raw': Rule: #10 | Matches: [ni_in == ['docker0']]}
-    > 🛈 FIREWALL: > Chain DOCKER | Rule 1 | {'action': 'drop', 'seq': 1, 'raw': Rule: #22 | Matches: [ni_in != ['docker0'], ni_out == ['docker0']]}
+    > 🛈 FIREWALL: > Chain DOCKER | Rule 0 | Match => return | {'action': 'return', 'seq': 0, 'raw': Rule: #10 | Matches: [ni_in == ['docker0']]}
     > 🛈 FIREWALL: Flow-type: forward
-    > 🛈 ROUTER: Packet outbound-interface: docker0
-    > 🛈 ROUTER: Packet outbound-route: 172.17.0.0/16, scope link
+    > 🛈 ROUTER: Packet outbound-interface: wan
+    > 🛈 ROUTER: Packet outbound-route: 0.0.0.0/0, gw 10.255.255.254, metric 600, scope remote
     > 🛈 FIREWALL: Processing Chain: Table filter ip4 | Chain FORWARD ip4 filter
     > 🛈 FIREWALL: > Chain FORWARD | Rule 0 | Match => jump | {'action': 'jump', 'seq': 0, 'raw': Rule: #20 | Matches: []}
     > 🛈 FIREWALL: > Chain FORWARD | Sub-Chain: DOCKER-USER
     > 🛈 FIREWALL: > Chain DOCKER-USER | Rule 0 | Match => return | {'action': 'return', 'seq': 0, 'raw': Rule: #19 | Matches: []}
-    > 🛈 FIREWALL: > Chain FORWARD | Rule 1 | Match => jump | {'action': 'jump', 'seq': 1, 'raw': Rule: #8 | Matches: []}
-    > 🛈 FIREWALL: > Chain FORWARD | Sub-Chain: DOCKER-FORWARD
-    > 🛈 FIREWALL: > Chain DOCKER-FORWARD | Rule 0 | Match => jump | {'action': 'jump', 'seq': 0, 'raw': Rule: #11 | Matches: []}
-    > 🛈 FIREWALL: > Chain DOCKER-FORWARD | Sub-Chain: DOCKER-CT
-    > 🛈 FIREWALL: > Chain DOCKER-CT | Rule 0 | Match => accept | {'action': 'accept', 'seq': 0, 'raw': Rule: #23 | Matches: [ni_out == ['docker0']]}
-    > 🛈 FIREWALL: > Chain DOCKER-FORWARD | Rule 1 | Match => jump | {'action': 'jump', 'seq': 1, 'raw': Rule: #10 | Matches: []}
-    > 🛈 FIREWALL: > Chain DOCKER-FORWARD | Sub-Chain: DOCKER-ISOLATION-STAGE-1
-    > 🛈 FIREWALL: > Chain DOCKER-ISOLATION-STAGE-1 | Rule 0 | {'action': 'jump', 'seq': 0, 'raw': Rule: #25 | Matches: [ni_in == ['docker0'], ni_out != ['docker0']]}
-    > 🛈 FIREWALL: > Chain DOCKER-FORWARD | Rule 2 | Match => jump | {'action': 'jump', 'seq': 2, 'raw': Rule: #9 | Matches: []}
-    > 🛈 FIREWALL: > Chain DOCKER-FORWARD | Sub-Chain: DOCKER-BRIDGE
-    > 🛈 FIREWALL: > Chain DOCKER-BRIDGE | Rule 0 | Match => jump | {'action': 'jump', 'seq': 0, 'raw': Rule: #24 | Matches: [ni_out == ['docker0']]}
-    > 🛈 FIREWALL: > Chain DOCKER-BRIDGE | Sub-Chain: DOCKER
-    > 🛈 FIREWALL: > Chain DOCKER | Rule 0 | {'action': 'return', 'seq': 0, 'raw': Rule: #10 | Matches: [ni_in == ['docker0']]}
-    > 🛈 FIREWALL: > Chain DOCKER | Rule 1 | Match => drop | {'action': 'drop', 'seq': 1, 'raw': Rule: #22 | Matches: [ni_in != ['docker0'], ni_out == ['docker0']]}
-    > ✖ FIREWALL: Packet blocked by rule: {'action': 'drop', 'seq': 1, 'raw': Rule: #22 | Matches: [ni_in != ['docker0'], ni_out == ['docker0']]}
+    > 🛈 FIREWALL: > Chain FORWARD | Rule 1 | Match => drop | {'action': 'drop', 'seq': 1, 'raw': Rule: #101 "TEST IP4-DADDR DROP" | Matches: [proto_l3 == ip4 & ip_daddr == ['2.2.2.2/32']]}
+    > ✖ FIREWALL: Packet blocked by rule: {'action': 'drop', 'seq': 1, 'raw': Rule: #101 "TEST IP4-DADDR DROP" | Matches: [proto_l3 == ip4 & ip_daddr == ['2.2.2.2/32']]}
 
 Or run use the silent-mode:
 
 .. code-block:: bash
 
-    ftf-cli ... --src-ip 10.0.0.1 --dst-ip 172.17.10.6 --verbosity silent
+    ftf-cli ... --src-ip 172.17.11.5 --dst-ip 2.2.2.2 --verbosity silent
 
-    > ✖ FIREWALL: Packet blocked by rule: {'action': 'drop', 'seq': 1, 'raw': Rule: #22 | Matches: [ni_in != ['docker0'], ni_out == ['docker0']]}
+    > ✖ FIREWALL: Packet blocked by rule: {'action': 'drop', 'seq': 1, 'raw': Rule: #101 "TEST IP4-DADDR DROP" | Matches: [proto_l3 == ip4 & ip_daddr == ['2.2.2.2/32']]}
 
 ----
 

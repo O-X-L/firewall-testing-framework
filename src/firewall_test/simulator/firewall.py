@@ -1,11 +1,12 @@
 from typing import Callable
 
-from config import Flow, FlowInputForward, FlowInput, ProtoL3IP4, ProtoL3IP6, ProtoL3IP4IP6
+from config import Flow, FlowInputForward, FlowInput, ProtoL3IP4, ProtoL3IP6, ProtoL3IP4IP6, \
+    RuleAction, RuleActionKindTerminal, RuleActionKindToChain, RuleActionContinue, \
+    RuleActionKindTerminalKill, RuleActionGoTo, RuleActionKindNAT, RuleActionDNAT, RuleActionReturn, \
+    RuleActionDrop, RuleActionReject
 from plugins.system.abstract import FirewallSystem
 from plugins.system.abstract_rule_match import RuleMatchResult
 from plugins.translate.abstract import Ruleset, Table, Chain, Rule
-from plugins.translate.config import RuleAction, RuleActionKindTerminal, RuleActionKindToChain, RuleActionContinue, \
-    RuleActionKindTerminalKill, RuleActionGoTo, RuleActionKindNAT, RuleActionDNAT, RuleActionReturn
 from simulator.packet import PACKET_KINDS, PacketTCPUDP
 from utils.logger import log_debug, log_info, log_warn
 
@@ -116,7 +117,7 @@ class RunFirewallChain:
                 )
                 target_chain.run_table = chain.run_table
                 jump_result, jump_rule = self.process(chain=target_chain, packet=packet)
-                if not jump_result:
+                if not jump_result or jump_rule is not None:
                     return jump_result, jump_rule
 
                 if rule.action == RuleActionGoTo:
@@ -144,6 +145,9 @@ class RunFirewallChain:
             action_str = '' if lazy_action is None else f' | Action: {lazy_action.N}'
             log_debug('Firewall', f'> Chain {chain.name} | Applying lazy-action: {action_str}')
             return not issubclass(lazy_action, RuleActionKindTerminalKill), lazy_rule
+
+        if chain.policy in [RuleActionDrop, RuleActionReject]:
+            return False, None
 
         return True, None
 

@@ -1,5 +1,5 @@
+from config import RuleActionKindTerminal, RuleActionKindToChain, RuleActionKindNAT
 from plugins.system.abstract_rule_match import RuleMatcher, RuleMatchResult
-from plugins.translate.config import RuleActionKindTerminal, RuleActionKindToChain, RuleActionKindNAT
 from plugins.translate.abstract import Rule
 from plugins.translate.netfilter.parse import NftRule
 from simulator.packet import PacketIP, PacketTCPUDP, PacketICMP

@@ -9,7 +9,7 @@ from utils.logger import log_info, log_error, log_ok, log_warn
 from utils.net import ip_is_bogon
 from config import DEFAULT_ROUTES, Flow, FlowForward, FlowInput, FlowInputForward, FlowOutput
 from plugins.system.abstract import FirewallSystem
-from plugins.translate.abstract import NetworkInterface, StaticRoute, StaticRouteRule, Ruleset
+from plugins.translate.abstract import NetworkInterface, StaticRoute, StaticRouteRule, Ruleset, Rule
 
 
 MODE_INTERACTIVE = 1
@@ -49,9 +49,9 @@ class SimulatorRun:
 
         ### PROCESSING FIREWALL-FILTERS UP TO DNAT ###
 
-        result, rule = self._s.fw.process_pre_routing(packet=packet, flow=self.flow_type)
-        if not result:
-            log_error(label='Firewall', v1='Packet blocked by rule', v2=f': {rule.dump()}', final=True)
+        passed, rule = self._s.fw.process_pre_routing(packet=packet, flow=self.flow_type)
+        if not passed:
+            self._log_block(rule)
             return
 
         ### PROCESSING DNAT ###
@@ -96,9 +96,9 @@ class SimulatorRun:
 
         ### PROCESSING MAIN FIREWALL-FILTERS ###
 
-        result, rule = self._s.fw.process_main(packet=packet, flow=self.flow_type)
-        if not result:
-            log_error(label='Firewall', v1='Packet blocked by rule', v2=f': {rule.dump()}', final=True)
+        passed, rule = self._s.fw.process_main(packet=packet, flow=self.flow_type)
+        if not passed:
+            self._log_block(rule)
             return
 
         ### PROCESSING SOURCE-NAT ###
@@ -125,9 +125,9 @@ class SimulatorRun:
 
         ### PROCESSING FIREWALL-FILTERS AFTER SNAT ###
 
-        result, rule = self._s.fw.process_egress(packet=packet, flow=self.flow_type)
-        if not result:
-            log_error(label='Firewall', v1='Packet blocked by rule', v2=f': {rule.dump()}', final=True)
+        passed, rule = self._s.fw.process_egress(packet=packet, flow=self.flow_type)
+        if not passed:
+            self._log_block(rule)
             return
 
         ### DONE ###
@@ -243,6 +243,14 @@ class SimulatorRun:
             msg += f', preferred-source-IP {route.src_pref}'
 
         log_info('Router', msg)
+
+    @staticmethod
+    def _log_block(rule: (Rule, None)):
+        if rule is None:
+            log_error(label='Firewall', v1='Packet blocked by chain default-policy', final=True)
+
+        else:
+            log_error(label='Firewall', v1='Packet blocked by rule', v2=f': {rule.dump()}', final=True)
 
 
 class Simulator:

@@ -2,9 +2,9 @@ from abc import ABC, abstractmethod
 from ipaddress import ip_network, ip_address, IPv4Network, IPv6Network, IPv4Address, IPv6Address
 from re import compile as regex_compile
 
-from config import ProtoL3, ProtoL3IP4, ProtoL3IP6, PROTOS_L3, ProtoL3IP4IP6
-from plugins.translate.config import RuleAction, RuleActionAccept, RuleActionReject, RuleActionDrop, \
-    RuleActionJump, RuleActionGoTo, RuleActionContinue, RULE_ACTIONS, RuleActionReturn
+from config import ProtoL3, ProtoL3IP4, ProtoL3IP6, PROTOS_L3, ProtoL3IP4IP6, \
+    RuleAction, RuleActionAccept, RuleActionReject, RuleActionDrop, \
+    RuleActionJump, RuleActionGoTo, RuleActionContinue, RULE_ACTIONS, RuleActionReturn, RULE_ACTION_MAPPING
 
 REGEX_MAC_ADDRESS = regex_compile(r'^[\da-f]{2}:[\da-f]{2}:[\da-f]{2}:[\da-f]{2}:[\da-f]{2}:[\da-f]{2}$')
 
@@ -295,15 +295,14 @@ class Chain(TranslateOutput):
     FAMILY_IP6 = ProtoL3IP6.N
     FAMILIES = [FAMILY_IP, FAMILY_IP4, FAMILY_IP6]
 
-    POLICY_ACCEPT = 'accept'
-    POLICY_DROP = 'drop'
-    POLICY_REJECT = 'reject'
-    POLICIES = [POLICY_ACCEPT, POLICY_DROP, POLICY_REJECT]
+    POLICY_ACCEPT = RuleActionAccept
+    POLICY_DROP = RuleActionDrop
+    POLICY_REJECT = RuleActionReject
 
     # pylint: disable=W0622
     def __init__(
-        self, name: str, hook: str, policy: str, rules: list[Rule], priority: int = 0,
-            type: str = 'filter', family: type[ProtoL3] = ProtoL3IP4IP6,
+        self, name: str, hook: str, policy: (None, RuleActionAccept, RuleActionDrop, RuleActionReject),
+            rules: list[Rule], priority: int = 0, type: str = 'filter', family: type[ProtoL3] = ProtoL3IP4IP6,
     ):
         self.name = name
         self.type = type
@@ -313,6 +312,9 @@ class Chain(TranslateOutput):
         self.policy = policy
         self.rules = rules
 
+        if self.policy is None:
+            self.policy = RuleActionAccept
+
         # runtime infos
         self.run_table = None
 
@@ -321,7 +323,7 @@ class Chain(TranslateOutput):
             "name": self.name,
             "type": self.type,
             "hook": self.hook,
-            "policy": self.policy,
+            "policy": self.policy.N,
             "priority": self.priority,
             "family": self.family.N,
             "rules": [r.dump() for r in self.rules],
@@ -336,7 +338,7 @@ class Chain(TranslateOutput):
         r = self.dump()
         assert isinstance(r['name'], str)
         assert len(r['name']) > 0
-        assert r['policy'] in self.POLICIES
+        assert r['policy'] in RULE_ACTION_MAPPING
         assert isinstance(r['priority'], int)
         assert r['type'] in self.TYPES
         if len(r['rules']) > 0:

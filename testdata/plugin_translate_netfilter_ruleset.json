@@ -278,6 +278,18 @@
     },
     {
       "chain": {
+        "family": "ip6",
+        "table": "filter",
+        "name": "FORWARD",
+        "handle": 100,
+        "type": "filter",
+        "hook": "forward",
+        "prio": 0,
+        "policy": "drop"
+      }
+    },
+    {
+      "chain": {
         "family": "ip",
         "table": "filter",
         "name": "DOCKER-USER",
@@ -576,6 +588,162 @@
             "jump": {
               "target": "DOCKER-USER"
             }
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "filter",
+        "chain": "FORWARD",
+        "handle": 101,
+        "comment": "TEST IP4-DADDR DROP",
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "payload": {
+                  "protocol": "ip",
+                  "field": "daddr"
+                }
+              },
+              "right": "2.2.2.2"
+            }
+          },
+          {
+            "drop": null
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "filter",
+        "chain": "FORWARD",
+        "handle": 102,
+        "comment": "TEST IP4-DADDR REJECT",
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "payload": {
+                  "protocol": "ip",
+                  "field": "daddr"
+                }
+              },
+              "right": "3.3.3.3"
+            }
+          },
+          {
+            "reject": null
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip",
+        "table": "filter",
+        "chain": "FORWARD",
+        "handle": 103,
+        "comment": "TEST IP4-DADDR ACCEPT",
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "payload": {
+                  "protocol": "ip",
+                  "field": "daddr"
+                }
+              },
+              "right": "4.4.4.4"
+            }
+          },
+          {
+            "accept": null
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip6",
+        "table": "filter",
+        "chain": "FORWARD",
+        "handle": 111,
+        "comment": "TEST IP6-DADDR DROP",
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "payload": {
+                  "protocol": "ip6",
+                  "field": "daddr"
+                }
+              },
+              "right": "2003:beef::1"
+            }
+          },
+          {
+            "drop": null
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip6",
+        "table": "filter",
+        "chain": "FORWARD",
+        "handle": 112,
+        "comment": "TEST IP6-DADDR REJECT",
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "payload": {
+                  "protocol": "ip6",
+                  "field": "daddr"
+                }
+              },
+              "right": "2003:beef::2"
+            }
+          },
+          {
+            "reject": null
+          }
+        ]
+      }
+    },
+    {
+      "rule": {
+        "family": "ip6",
+        "table": "filter",
+        "chain": "FORWARD",
+        "handle": 113,
+        "comment": "TEST IP6-DADDR ACCEPT",
+        "expr": [
+          {
+            "match": {
+              "op": "==",
+              "left": {
+                "payload": {
+                  "protocol": "ip6",
+                  "field": "daddr"
+                }
+              },
+              "right": "2003:beef::3"
+            }
+          },
+          {
+            "accept": null
           }
         ]
       }

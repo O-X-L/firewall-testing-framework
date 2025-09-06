@@ -5,10 +5,9 @@ with open(TESTDATA_FILE_NF_RULESET, 'r', encoding='utf-8') as f:
 
 
 def test_nf_ruleset():
-    from config import ProtoL3IP4, ProtoL3IP6
+    from config import ProtoL3IP4, ProtoL3IP6, RuleActionReturn, RuleActionDrop
     from plugins.translate.netfilter.ruleset import NetfilterRuleset
     from plugins.translate.abstract import Ruleset
-    from plugins.translate.config import RuleActionReturn, RuleActionDrop
     from plugins.translate.netfilter.ruleset import NftRule
 
     nf = NetfilterRuleset(TESTDATA_RULESET)
@@ -33,7 +32,7 @@ def test_nf_ruleset():
 
     assert len(r.tables[1].chains) == 8
     assert len(r.tables[2].chains) == 3
-    assert len(r.tables[3].chains) == 8
+    assert len(r.tables[3].chains) == 9
 
     assert len(chain.rules) == 2
     rule = chain.rules[0]

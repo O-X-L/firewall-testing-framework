@@ -1,8 +1,8 @@
 from abc import abstractmethod
 from ipaddress import IPv4Address, IPv6Address
 
+from config import RuleAction
 from plugins.system.abstract import BaseRuleMatcher
-from plugins.translate.config import RuleAction
 from plugins.translate.abstract import Table, Rule
 from simulator.packet import PacketIP
 

@@ -1,5 +1,4 @@
-from plugins.translate.config import RuleActionJump, RuleActionContinue, RuleActionGoTo, \
-    RuleActionAccept, RuleActionDrop, RuleActionReject, RuleActionReturn, RuleActionDNAT, RuleActionSNAT
+from config import RuleActionAccept, RuleActionDrop, RuleActionReject, RuleActionSNAT, RULE_ACTION_MAPPING
 from plugins.system.system_linux_netfilter import SystemLinuxNetfilter
 from plugins.translate.abstract import TranslatePluginRuleset, TranslatePluginTable, TranslatePluginChain, \
     TranslatePluginRule, Ruleset, Table, Chain, Rule
@@ -7,16 +6,8 @@ from plugins.translate.netfilter.parse import NetfilterPreParse, NftTable, NftCh
 from plugins.translate.netfilter.elements import translate_family
 
 
-RULE_ACTION_MAPPING = {
-    'accept': RuleActionAccept,
-    'drop': RuleActionDrop,
-    'reject': RuleActionReject,
-    'jump': RuleActionJump,
-    'goto': RuleActionGoTo,
-    'continue': RuleActionContinue,
-    'return': RuleActionReturn,
-    'dnat': RuleActionDNAT,
-    'snat': RuleActionSNAT,
+NF_RULE_ACTION_MAPPING = {
+    **RULE_ACTION_MAPPING,
     'masquerade': RuleActionSNAT,
 }
 
@@ -28,7 +19,7 @@ class NetfilterRule(TranslatePluginRule):
 
     def get(self) -> Rule:
         return Rule(
-            action=RULE_ACTION_MAPPING.get(self.raw.action, None),
+            action=NF_RULE_ACTION_MAPPING.get(self.raw.action, None),
             seq=self.raw.seq,
             raw=self.raw,
         )
@@ -51,11 +42,15 @@ class NetfilterChain(TranslatePluginChain):
         else:
             prio = 0
 
-        if self.raw.policy is None:
-            policy = Chain.POLICY_ACCEPT
+        policy = None
+        if self.raw.policy == 'accept':
+            policy = RuleActionAccept
 
-        else:
-            policy = self.raw.policy
+        elif self.raw.policy == 'drop':
+            policy = RuleActionDrop
+
+        elif self.raw.policy == 'reject':
+            policy = RuleActionReject
 
         if self.raw.type is None:
             chain_type = Chain.TYPE_FILTER
