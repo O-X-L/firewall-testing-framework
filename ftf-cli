@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+# This is just a wrapper for the development environment
+#   the actual 'ftf-cli' command is provided via pyproject.toml / pip install
+
+set -euo pipefail
+
+cd "$(dirname "$0")"
+
+python3 src/firewall_test/cli.py $@

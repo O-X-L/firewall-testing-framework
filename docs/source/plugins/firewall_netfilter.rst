@@ -23,6 +23,24 @@ Optional: To get a more readable JSON-output, you can use the :code:`jq` tool to
 
     sudo nft -j list ruleset | jq > ruleset.json
 
+----
+
+Run
+###
+
+Here is an example on how to run supply the exported config:
+
+.. code-block:: bash
+
+    ftf-cli --firewall-system 'linux_netfilter' \
+            --file-ruleset 'ruleset.json' \
+            --file-interfaces 'interfaces.json' \
+            --file-routes 'routes.json' \
+            --file-route-rules 'route-rules.json' \
+            --src-ip 172.17.11.5 \
+            --dst-ip 1.1.1.1
+
+It also requires the exported config of **interfaces**, **routes** and **route-rules** :ref:`for the Linux system <plugins_sys_linux>`!
 
 ----
 

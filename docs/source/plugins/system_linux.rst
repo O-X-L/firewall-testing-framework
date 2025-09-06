@@ -31,6 +31,25 @@ Optional: To get a more readable JSON-output, you can use the :code:`jq` tool to
 
 ----
 
+Run
+###
+
+Here is an example on how to run supply the exported config:
+
+.. code-block:: bash
+
+    ftf-cli --firewall-system 'linux_netfilter' \
+            --file-interfaces 'interfaces.json' \
+            --file-routes 'routes.json' \
+            --file-route-rules 'route-rules.json' \
+            --file-ruleset 'ruleset.json' \
+            --src-ip 172.17.11.5 \
+            --dst-ip 1.1.1.1
+
+It also requires the exported **ruleset**-config :ref:`of the Netfilter firewall <plugins_fw_netfilter>`!
+
+----
+
 Source Code
 ###########
 
