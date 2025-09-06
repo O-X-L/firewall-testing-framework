@@ -44,7 +44,7 @@ This is also a good way to test your setup at first!
     >                         Packet source-IP
     >   -d DST_IP, --dst-ip DST_IP
     >                         Packet destination-IP
-    >   -4 {tcp,udp,icmp,icmpv6}, --proto-l4 {tcp,udp,icmp,icmpv6}
+    >   -4 {tcp,udp,icmp}, --proto {tcp,udp,icmp}
     >                         Packet Layer-4 protocol
     >   -p PORT, --port PORT  Packet destination-port (if L4-proto is tcp/udp)
     >   -n, --no-color        Disable output colors

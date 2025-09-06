@@ -29,8 +29,8 @@ def main():
         required=True,
     )
     parser.add_argument(
-        '-4', '--proto-l4', help='Packet Layer-4 protocol',
-        choices=['tcp', 'udp', 'icmp', 'icmpv6'], default='tcp',
+        '-4', '--proto', help='Packet Layer-4 protocol',
+        choices=['tcp', 'udp', 'icmp'], default='tcp',
     )
     parser.add_argument(
         '-p', '--port', help='Packet destination-port (if L4-proto is tcp/udp)',
