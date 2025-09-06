@@ -377,7 +377,7 @@ class NftRule(NftBase):
                     e in expression for e in IGNORE_RULE_EXPRESSIONS
                 )
                 if not ignored:
-                    log_warn('Firewall Plugin', f'Got unsupported rule-expression: "{expression}"')
+                    log_warn('Firewall Plugin', f'Unsupported rule-expression: "{expression}"')
 
         for match in self.matches:
             if match.value_is_set:

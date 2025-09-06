@@ -35,9 +35,7 @@ For Firewall-Ruleset parsing.
 
     - Support
 
-    - Config-Export Command
-
-    - Source Code
+    - Plugin Docs
 
   * - `Netfilter <https://www.netfilter.org/>`_ on Linux
 
@@ -45,10 +43,8 @@ For Firewall-Ruleset parsing.
 
     - Experimental
 
-    - :code:`sudo nft -j list ruleset > ruleset.json`
+    - :ref:`Plugins - Firewall Netfilter <plugins_fw_netfilter>`
 
-    - `system/firewall_netfilter.py <https://github.com/O-X-L/firewall-testing-framework/blob/latest/src/firewall_test/plugins/system/firewall_netfilter.py>`_,
-      `translate/netfilter/ <https://github.com/O-X-L/firewall-testing-framework/tree/latest/src/firewall_test/plugins/translate/netfilter>`_
 
   * - `OPNsense <https://opnsense.org/>`_
 
@@ -56,16 +52,13 @@ For Firewall-Ruleset parsing.
 
     - Development
 
-    - `Download a Config-Backup <https://docs.opnsense.org/manual/backups.html>`_, `Querying runtime routes via API <https://docs.opnsense.org/development/api/core/diagnostics.html#id6>`_
+    - :ref:`Plugins - Firewall OPNsense <plugins_fw_opnsense>`
 
-    - `system/firewall_opnsense.py <https://github.com/O-X-L/firewall-testing-framework/blob/latest/src/firewall_test/plugins/system/firewall_opnsense.py>`_,
-      `system/system_opnsense.py <https://github.com/O-X-L/firewall-testing-framework/blob/latest/src/firewall_test/plugins/system/system_opnsense.py>`_,
-      `translate/opnsense/ <https://github.com/O-X-L/firewall-testing-framework/tree/latest/src/firewall_test/plugins/translate/opnsense>`_
 
 ----
 
-Operating System Support
-########################
+Networking System Support
+#########################
 
 For Routing- and Network-Interface parsing.
 
@@ -74,23 +67,18 @@ For Routing- and Network-Interface parsing.
   :widths: 10 10 10 45 25
   :header-rows: 1
 
-  * - OS
+  * - System
 
     - Description
 
     - Support
 
-    - Config-Export Command
-
-    - Source Code
+    - Plugin Docs
 
   * - Linux
 
-    - iproute2
+    - `iproute2 <https://wiki.linuxfoundation.org/networking/iproute2>`_
 
     - Yes
 
-    - :code:`ip -j address show > interfaces.json && ip -j route show table all > routes.json && ip -j rule show > route-rules.json`
-
-    - `system/system_linux_netfilter.py <https://github.com/O-X-L/firewall-testing-framework/blob/latest/src/firewall_test/plugins/system/system_linux_netfilter.py>`_,
-      `translate/linux.py <https://github.com/O-X-L/firewall-testing-framework/blob/latest/src/firewall_test/plugins/translate/linux.py>`_
+    - :ref:`Plugins - System Linux <plugins_sys_linux>`
