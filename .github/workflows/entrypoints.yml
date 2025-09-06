@@ -1,0 +1,62 @@
+---
+
+name: Test Entrypoints
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [latest]
+    paths:
+      - '**.py'
+      - '.github/workflows/entrypoints.yml'
+      - 'requirements.txt'
+      - 'requirements_build.txt'
+  pull_request:
+    branches: [latest]
+    paths:
+      - '**.py'
+      - '.github/workflows/entrypoints.yml'
+      - 'requirements.txt'
+      - 'requirements_build.txt'
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.ref }}
+
+      - name: Install python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements_build.txt >/dev/null
+          pip install -r requirements.txt >/dev/null
+
+      - name: Testing to install as PIP-Module
+        run: |
+          PATH_REPO="$(pwd)"
+          PATH_VENV="/tmp/ftf_venv"
+          python3 -m virtualenv "$PATH_VENV" > /dev/null
+          cd /tmp
+          PYTHONPATH=''
+          source "${PATH_VENV}/bin/activate"
+          python3 -m pip install -e "$PATH_REPO" > /dev/null
+
+      - name: Testing to execute entrypoints
+        run: |
+          PATH_VENV="/tmp/ftf_venv"
+          source "${PATH_VENV}/bin/activate"
+
+          ftf-ci --help >/dev/null
+          ftf-cli --help >/dev/null
+          ftf-shell --help >/dev/null

@@ -2,6 +2,7 @@
 
 [![Lint](https://github.com/O-X-L/firewall-testing-framework/actions/workflows/lint.yml/badge.svg?branch=latest)](https://github.com/O-X-L/firewall-testing-framework/actions/workflows/lint.yml)
 [![Test](https://github.com/O-X-L/firewall-testing-framework/actions/workflows/test.yml/badge.svg?branch=latest)](https://github.com/O-X-L/firewall-testing-framework/actions/workflows/test.yml)
+[![Test Entrypoints](https://github.com/O-X-L/firewall-testing-framework/actions/workflows/entrypoints.yml/badge.svg?branch=latest)](https://github.com/O-X-L/firewall-testing-framework/actions/workflows/entrypoints.yml)
 
 A framework for **testing and troubleshooting firewall rulesets**.
 
@@ -31,31 +32,32 @@ ftf-cli --firewall-system 'linux_netfilter' \
 > 🛈 ROUTER: Packet inbound-interface: wan
 > 🛈 ROUTER: Packet inbound-route: 0.0.0.0/0, gw 10.255.255.254, metric 600, scope remote
 > 🛈 FIREWALL: Processing Chain: Table nat ip4 | Chain PREROUTING ip4 nat
-> 🛈 FIREWALL: > Chain PREROUTING | Rule 0
+> 🛈 FIREWALL: > Chain PREROUTING | Rule 0 | Match => jump
 > 🛈 FIREWALL: > Chain PREROUTING | Sub-Chain: DOCKER
 > 🛈 FIREWALL: > Chain DOCKER | Rule 0
 > 🛈 FIREWALL: > Chain DOCKER | Rule 1
 > 🛈 ROUTER: Packet outbound-interface: docker0
 > 🛈 ROUTER: Packet outbound-route: 172.17.0.0/16, scope link
 > 🛈 FIREWALL: Processing Chain: Table filter ip4 | Chain FORWARD ip4 filter
-> 🛈 FIREWALL: > Chain FORWARD | Rule 0
+> 🛈 FIREWALL: > Chain FORWARD | Rule 0 | Match => jump
 > 🛈 FIREWALL: > Chain FORWARD | Sub-Chain: DOCKER-USER
-> 🛈 FIREWALL: > Chain DOCKER-USER | Rule 0
-> 🛈 FIREWALL: > Chain FORWARD | Rule 1
+> 🛈 FIREWALL: > Chain DOCKER-USER | Rule 0 | Match => return
+> 🛈 FIREWALL: > Chain FORWARD | Rule 1 | Match => jump
 > 🛈 FIREWALL: > Chain FORWARD | Sub-Chain: DOCKER-FORWARD
-> 🛈 FIREWALL: > Chain DOCKER-FORWARD | Rule 0
+> 🛈 FIREWALL: > Chain DOCKER-FORWARD | Rule 0 | Match => jump
 > 🛈 FIREWALL: > Chain DOCKER-FORWARD | Sub-Chain: DOCKER-CT
-> 🛈 FIREWALL: > Chain DOCKER-CT | Rule 0
-> 🛈 FIREWALL: > Chain DOCKER-FORWARD | Rule 1
+> 🛈 FIREWALL: > Chain DOCKER-CT | Rule 0 | Match => accept
+> 🛈 FIREWALL: > Chain DOCKER-FORWARD | Rule 1 | Match => jump
 > 🛈 FIREWALL: > Chain DOCKER-FORWARD | Sub-Chain: DOCKER-ISOLATION-STAGE-1
 > 🛈 FIREWALL: > Chain DOCKER-ISOLATION-STAGE-1 | Rule 0
-> 🛈 FIREWALL: > Chain DOCKER-FORWARD | Rule 2
+> 🛈 FIREWALL: > Chain DOCKER-FORWARD | Rule 2 | Match => jump
 > 🛈 FIREWALL: > Chain DOCKER-FORWARD | Sub-Chain: DOCKER-BRIDGE
-> 🛈 FIREWALL: > Chain DOCKER-BRIDGE | Rule 0
+> 🛈 FIREWALL: > Chain DOCKER-BRIDGE | Rule 0 | Match => jump
 > 🛈 FIREWALL: > Chain DOCKER-BRIDGE | Sub-Chain: DOCKER
 > 🛈 FIREWALL: > Chain DOCKER | Rule 0
-> 🛈 FIREWALL: > Chain DOCKER | Rule 1
+> 🛈 FIREWALL: > Chain DOCKER | Rule 1 | Match => drop
 > ✖ FIREWALL: Packet blocked by rule: {'action': 'drop', 'seq': 1, 'raw': Rule: #22 | Matches: [ni_in != ['docker0'], ni_out == ['docker0']]}
+
 ```
 
 ----

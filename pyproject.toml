@@ -3,7 +3,7 @@ requires = ["setuptools >= 61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "ftf"
+name = "firewall-test"
 authors = [
     {name = "Rath Pascal", email = "contact@oxl.at"},
 ]
@@ -30,6 +30,7 @@ version = {file = ["VERSION"]}
 
 [tool.setuptools.packages.find]
 where = ["src"]
+exclude = ["*_test.py"]
 
 [tool.setuptools.package-data]
 "*" = ["*.txt"]

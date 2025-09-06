@@ -25,7 +25,9 @@ cd /tmp
 PYTHONPATH=''
 source "${PATH_VENV}/bin/activate"
 python3 -m pip install -e "$PATH_REPO" > /dev/null
-firewall-test-ci --help >/dev/null
+ftf-ci --help >/dev/null
+ftf-cli --help >/dev/null
+ftf-shell --help >/dev/null
 deactivate
 echo ' => OK'
 

@@ -76,11 +76,11 @@ def main():
     environ.setdefault(ENV_VERBOSITY, args.verbosity)
     environ.setdefault(ENV_LOG_COLOR, '0' if args.no_color else '1')
 
-    if args.proto_l4 in ['tcp', 'udp']:
+    if args.proto in ['tcp', 'udp']:
         packet = PacketTCPUDP(
             src=args.src_ip,
             dst=args.dst_ip,
-            proto_l4=args.proto_l4,
+            proto_l4=args.proto,
         )
 
     else:
