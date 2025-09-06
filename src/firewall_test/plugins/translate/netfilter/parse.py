@@ -83,7 +83,11 @@ class NetfilterPreParse:
                     sets=self.sets,
                 )
                 if rule.invalid_matches:
-                    log_warn('Firewall Plugin', 'Got rule with unparsable matches - skipping')
+                    log_warn(
+                        'Firewall Plugin',
+                        v1=f'Unsupported rule: Table {rule.table.name}, Chain {rule.chain.name}, Rule {rule.seq}',
+                        v4=f' | {rule.raw}'
+                    )
 
                 else:
                     self.rules.append(rule)

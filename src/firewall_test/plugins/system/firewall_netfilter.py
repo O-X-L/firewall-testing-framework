@@ -97,7 +97,7 @@ class RuleMatcherNetfilter(RuleMatcher):
                 log_warn('Firewall Plugin', ' > Matches: Found not matches we could process - skipping rule')
 
             else:
-                log_debug('Firewall Plugin', f' > Matches: {nf_rule.get_match_types()} | Result: {results}')
+                log_debug('Firewall Plugin', f' > Match Results: {nf_rule.get_match_types()} => {results}')
 
                 return RuleMatchResult(
                     matched=all(results),

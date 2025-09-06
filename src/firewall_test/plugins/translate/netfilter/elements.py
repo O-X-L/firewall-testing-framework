@@ -341,6 +341,7 @@ class NftMatch:
 class NftRule(NftBase):
     def __init__(self, table: NftTable, chain: NftChain, raw: dict, seq: int, sets: list[NftSet]):
         NftBase.__init__(self=self, raw=raw, table=table)
+        self.raw = raw
         self.chain = chain
         self.seq = seq
 
