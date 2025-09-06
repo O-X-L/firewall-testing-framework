@@ -16,9 +16,12 @@ class RunFirewallChain:
         self._fw = fw
         self._run_tables = run_tables
 
-    def _get_chain_by_name_and_family(self, packet: PACKET_KINDS, name: str, family: str) -> (Chain, None):
-        for table in self._run_tables.get_tables(packet):
-            for chain in self._run_tables.get_chains(packet=packet, table=table):
+    def _get_chain_by_name_and_family(self, packet: PACKET_KINDS, table: Table, name: str, family: str) -> (Chain, None):
+        for t in self._run_tables.get_tables(packet):
+            if t.name != table.name or t.family != table.family or t.priority != table.priority:
+                continue
+
+            for chain in self._run_tables.get_chains(packet=packet, table=t):
                 if chain.name == name and chain.family == family:
                     return chain
 
@@ -101,6 +104,7 @@ class RunFirewallChain:
                     packet=packet,
                     name=result.target_chain_name,
                     family=chain.family,
+                    table=chain.run_table,
                 )
                 if target_chain is None:
                     log_warn(
@@ -146,7 +150,7 @@ class RunFirewallChain:
             log_debug('Firewall', f'> Chain {chain.name} | Applying lazy-action: {action_str}')
             return not issubclass(lazy_action, RuleActionKindTerminalKill), lazy_rule
 
-        if chain.policy in [RuleActionDrop, RuleActionReject]:
+        if chain.type == chain.TYPE_FILTER and chain.policy in [RuleActionDrop, RuleActionReject]:
             return False, None
 
         return True, None
