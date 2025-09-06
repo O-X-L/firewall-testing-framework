@@ -46,8 +46,8 @@ You can find the documentation at: [ftf.oxl.app](https://ftf.oxl.app)
 - [ ] Create Plugin Templates
 - [ ] Create Guide on how to develop Plugins
 
-**Firewall Support**:
-- [ ] Netfilter (NFTables/IPTables)
+**[Firewall Support](https://ftf.oxl.app/usage/2_system_support.html)**:
+- [x] Netfilter (NFTables/IPTables)
 - [ ] OPNsense (Information from Config-Backup-File and runtime-infos like routes from API)
 
 ----
