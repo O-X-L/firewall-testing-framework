@@ -62,7 +62,7 @@ class RunFirewallChain:
                 )
                 continue
 
-            elif result.action is None:
+            if result.action is None:
                 self._log_match(chain=chain, rule=rule)
                 continue
 
