@@ -18,6 +18,8 @@ Then just run:
 
     pip install firewall-test
 
+`Module on pypi.org <https://pypi.org/project/firewall-test/>`_
+
 ----
 
 Run Modes

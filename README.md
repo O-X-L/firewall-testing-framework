@@ -6,6 +6,8 @@
 
 A framework for **testing and troubleshooting firewall rulesets**.
 
+[Module on pypi.org](https://pypi.org/project/firewall-test/)
+
 ----
 
 ## Documentation
