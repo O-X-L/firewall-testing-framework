@@ -218,3 +218,168 @@ def test_firewall_inherit_table_priority_chain(prio_table, prio_chain, result):
 
     fw._run_tables._inherit_table_priority_to_chain(table=table, chain=chain)
     assert chain.priority == result
+
+
+def test_firewall_chain_filter_pre_routing():
+    from simulator.firewall import Firewall
+    from plugins.system.system_linux_netfilter import SystemLinuxNetfilter
+    from plugins.translate.netfilter.ruleset import NetfilterRuleset, NetfilterChainOutput as Chain
+
+    ruleset = NetfilterRuleset(TESTDATA_RULESET).get()
+    fw = Firewall(
+        system=SystemLinuxNetfilter,
+        ruleset=ruleset,
+    )
+
+    dnat = SystemLinuxNetfilter.FIREWALL_NAT[FlowForward]['dnat']
+
+    chains = [
+        Chain(name='ingress', rules=[], family=ProtoL3IP4, policy=Chain.POLICY_ACCEPT, hook='ingress'),
+        Chain(name='prerouting-early', rules=[], family=ProtoL3IP4, policy=Chain.POLICY_ACCEPT, hook='prerouting', priority=dnat['priority'] - 1),
+        Chain(name='prerouting-dnat', rules=[], family=ProtoL3IP4, policy=Chain.POLICY_ACCEPT, hook='prerouting', priority=dnat['priority']),
+        Chain(name='output-early', rules=[], family=ProtoL3IP4, policy=Chain.POLICY_ACCEPT, hook='output', priority=dnat['priority'] - 1),
+        Chain(name='output-dnat', rules=[], family=ProtoL3IP4, policy=Chain.POLICY_ACCEPT, hook='output', priority=dnat['priority']),
+        Chain(name='prerouting', rules=[], family=ProtoL3IP4, policy=Chain.POLICY_ACCEPT, hook='prerouting', priority=0),
+        Chain(name='input', rules=[], family=ProtoL3IP4, policy=Chain.POLICY_ACCEPT, hook='input'),
+        Chain(name='forward', rules=[], family=ProtoL3IP4, policy=Chain.POLICY_ACCEPT, hook='forward'),
+        Chain(name='postrouting', rules=[], family=ProtoL3IP4, policy=Chain.POLICY_ACCEPT, hook='postrouting'),
+    ]
+
+    filtered_chains = [c for c in chains if fw._run_tables._chain_filter_pre_routing(chain=c, flow=FlowForward)]
+    assert len(filtered_chains) == 3
+    assert filtered_chains[0].name == 'ingress'
+    assert filtered_chains[1].name == 'prerouting-early'
+    assert filtered_chains[2].name == 'prerouting-dnat'
+
+    filtered_chains = [c for c in chains if fw._run_tables._chain_filter_pre_routing(chain=c, flow=FlowInput)]
+    assert len(filtered_chains) == 3
+    assert filtered_chains[0].name == 'ingress'
+    assert filtered_chains[1].name == 'prerouting-early'
+    assert filtered_chains[2].name == 'prerouting-dnat'
+
+    filtered_chains = [c for c in chains if fw._run_tables._chain_filter_pre_routing(chain=c, flow=FlowOutput)]
+    assert len(filtered_chains) == 2
+    assert filtered_chains[0].name == 'output-early'
+    assert filtered_chains[1].name == 'output-dnat'
+
+
+def test_firewall_chain_filter_dnat():
+    from simulator.firewall import Firewall
+    from plugins.system.system_linux_netfilter import SystemLinuxNetfilter
+    from plugins.translate.netfilter.ruleset import NetfilterRuleset, NetfilterChainOutput as Chain
+
+    ruleset = NetfilterRuleset(TESTDATA_RULESET).get()
+    fw = Firewall(
+        system=SystemLinuxNetfilter,
+        ruleset=ruleset,
+    )
+
+    fwd_dnat = SystemLinuxNetfilter.FIREWALL_NAT[FlowForward]['dnat']
+    out_dnat = SystemLinuxNetfilter.FIREWALL_NAT[FlowOutput]['dnat']
+
+    chains = [
+        Chain(name='ingress', rules=[], family=ProtoL3IP4, policy=Chain.POLICY_ACCEPT, hook='ingress'),
+        Chain(name='prerouting-early', rules=[], family=ProtoL3IP4, policy=Chain.POLICY_ACCEPT, hook=fwd_dnat['hook'], priority=fwd_dnat['priority'] - 1),
+        Chain(name='prerouting-filter', rules=[], family=ProtoL3IP4, policy=Chain.POLICY_ACCEPT, hook=fwd_dnat['hook'], priority=fwd_dnat['priority']),
+        Chain(name='prerouting-dnat', rules=[], family=ProtoL3IP4, policy=Chain.POLICY_ACCEPT, hook=fwd_dnat['hook'], priority=fwd_dnat['priority'], type=Chain.TYPE_NAT),
+        Chain(name='prerouting', rules=[], family=ProtoL3IP4, policy=Chain.POLICY_ACCEPT, hook=fwd_dnat['hook']),
+        Chain(name='output', rules=[], family=ProtoL3IP4, policy=Chain.POLICY_ACCEPT, hook=out_dnat['hook']),
+        Chain(name='output-dnat', rules=[], family=ProtoL3IP4, policy=Chain.POLICY_ACCEPT, hook=out_dnat['hook'], priority=out_dnat['priority'], type=Chain.TYPE_NAT),
+        Chain(name='input', rules=[], family=ProtoL3IP4, policy=Chain.POLICY_ACCEPT, hook='input'),
+        Chain(name='forward', rules=[], family=ProtoL3IP4, policy=Chain.POLICY_ACCEPT, hook='forward'),
+        Chain(name='postrouting', rules=[], family=ProtoL3IP4, policy=Chain.POLICY_ACCEPT, hook='postrouting'),
+    ]
+
+    filtered_chains = [c for c in chains if fw._run_tables._chain_filter_dnat(chain=c, flow=FlowForward)]
+    assert len(filtered_chains) == 1
+    assert filtered_chains[0].name == 'prerouting-dnat'
+
+    filtered_chains = [c for c in chains if fw._run_tables._chain_filter_dnat(chain=c, flow=FlowOutput)]
+    assert len(filtered_chains) == 1
+    assert filtered_chains[0].name == 'output-dnat'
+
+
+def test_firewall_chain_filter_main():
+    from simulator.firewall import Firewall
+    from plugins.system.system_linux_netfilter import SystemLinuxNetfilter
+    from plugins.translate.netfilter.ruleset import NetfilterRuleset, NetfilterChainOutput as Chain
+
+    ruleset = NetfilterRuleset(TESTDATA_RULESET).get()
+    fw = Firewall(
+        system=SystemLinuxNetfilter,
+        ruleset=ruleset,
+    )
+
+    dnat = SystemLinuxNetfilter.FIREWALL_NAT[FlowForward]['dnat']
+    snat = SystemLinuxNetfilter.FIREWALL_NAT[FlowForward]['snat']
+
+    chains = [
+        Chain(name='ingress', rules=[], family=ProtoL3IP4, policy=Chain.POLICY_ACCEPT, hook='ingress'),
+        Chain(name='prerouting-dnat', rules=[], family=ProtoL3IP4, policy=Chain.POLICY_ACCEPT, hook=dnat['hook'], priority=dnat['priority'], type=Chain.TYPE_NAT),
+        Chain(name='prerouting-late', rules=[], family=ProtoL3IP4, policy=Chain.POLICY_ACCEPT, hook=dnat['hook'], priority=dnat['priority'] + 1),
+        Chain(name='prerouting', rules=[], family=ProtoL3IP4, policy=Chain.POLICY_ACCEPT, hook=dnat['hook']),
+        Chain(name='input', rules=[], family=ProtoL3IP4, policy=Chain.POLICY_ACCEPT, hook='input'),
+        Chain(name='output', rules=[], family=ProtoL3IP4, policy=Chain.POLICY_ACCEPT, hook='output'),
+        Chain(name='forward', rules=[], family=ProtoL3IP4, policy=Chain.POLICY_ACCEPT, hook='forward'),
+        Chain(name='postrouting', rules=[], family=ProtoL3IP4, policy=Chain.POLICY_ACCEPT, hook=snat['hook']),
+        Chain(name='postrouting-filter', rules=[], family=ProtoL3IP4, policy=Chain.POLICY_ACCEPT, hook=snat['hook'], priority=snat['priority']),
+        Chain(name='postrouting-snat', rules=[], family=ProtoL3IP4, policy=Chain.POLICY_ACCEPT, hook=snat['hook'], priority=snat['priority'], type=Chain.TYPE_NAT),
+        Chain(name='postrouting-late', rules=[], family=ProtoL3IP4, policy=Chain.POLICY_ACCEPT, hook=snat['hook'], priority=snat['priority'] + 1),
+    ]
+
+    filtered_chains = [c for c in chains if fw._run_tables._chain_filter_main(chain=c, flow=FlowForward)]
+    assert len(filtered_chains) == 5
+    assert filtered_chains[0].name == 'prerouting-late'
+    assert filtered_chains[1].name == 'prerouting'
+    assert filtered_chains[2].name == 'forward'
+    assert filtered_chains[3].name == 'postrouting'
+    assert filtered_chains[4].name == 'postrouting-filter'
+
+    filtered_chains = [c for c in chains if fw._run_tables._chain_filter_main(chain=c, flow=FlowInput)]
+    assert len(filtered_chains) == 3
+    assert filtered_chains[0].name == 'prerouting-late'
+    assert filtered_chains[1].name == 'prerouting'
+    assert filtered_chains[2].name == 'input'
+
+    filtered_chains = [c for c in chains if fw._run_tables._chain_filter_main(chain=c, flow=FlowOutput)]
+    assert len(filtered_chains) == 3
+    assert filtered_chains[0].name == 'output'
+    assert filtered_chains[1].name == 'postrouting'
+    assert filtered_chains[2].name == 'postrouting-filter'
+
+
+def test_firewall_chain_filter_snat():
+    from simulator.firewall import Firewall
+    from plugins.system.system_linux_netfilter import SystemLinuxNetfilter
+    from plugins.translate.netfilter.ruleset import NetfilterRuleset, NetfilterChainOutput as Chain
+
+    ruleset = NetfilterRuleset(TESTDATA_RULESET).get()
+    fw = Firewall(
+        system=SystemLinuxNetfilter,
+        ruleset=ruleset,
+    )
+
+    snat = SystemLinuxNetfilter.FIREWALL_NAT[FlowForward]['snat']
+
+    chains = [
+        Chain(name='ingress', rules=[], family=ProtoL3IP4, policy=Chain.POLICY_ACCEPT, hook='ingress'),
+        Chain(name='prerouting-dnat', rules=[], family=ProtoL3IP4, policy=Chain.POLICY_ACCEPT, hook='prerouting', priority=-100, type=Chain.TYPE_NAT),
+        Chain(name='prerouting', rules=[], family=ProtoL3IP4, policy=Chain.POLICY_ACCEPT, hook='prerouting', priority=0),
+        Chain(name='input', rules=[], family=ProtoL3IP4, policy=Chain.POLICY_ACCEPT, hook='input'),
+        Chain(name='forward', rules=[], family=ProtoL3IP4, policy=Chain.POLICY_ACCEPT, hook='forward'),
+        Chain(name='postrouting', rules=[], family=ProtoL3IP4, policy=Chain.POLICY_ACCEPT, hook=snat['hook']),
+        Chain(name='postrouting-filter', rules=[], family=ProtoL3IP4, policy=Chain.POLICY_ACCEPT, hook=snat['hook'], priority=snat['priority']),
+        Chain(name='postrouting-snat', rules=[], family=ProtoL3IP4, policy=Chain.POLICY_ACCEPT, hook=snat['hook'], priority=snat['priority'], type=Chain.TYPE_NAT),
+        Chain(name='postrouting-late', rules=[], family=ProtoL3IP4, policy=Chain.POLICY_ACCEPT, hook=snat['hook'], priority=snat['priority'] + 1),
+    ]
+
+    filtered_chains = [c for c in chains if fw._run_tables._chain_filter_snat(chain=c, flow=FlowForward)]
+    assert len(filtered_chains) == 1
+    assert filtered_chains[0].name == 'postrouting-snat'
+
+    filtered_chains = [c for c in chains if fw._run_tables._chain_filter_snat(chain=c, flow=FlowInput)]
+    assert len(filtered_chains) == 0
+
+    filtered_chains = [c for c in chains if fw._run_tables._chain_filter_snat(chain=c, flow=FlowOutput)]
+    assert len(filtered_chains) == 1
+    assert filtered_chains[0].name == 'postrouting-snat'

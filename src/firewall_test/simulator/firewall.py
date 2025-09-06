@@ -332,6 +332,13 @@ class RunFirewallTables:
         )
         return self._run_chains.process(chain=chain, packet=packet)
 
+    def _chain_filter_pre_routing(self, chain: Chain, flow: type[Flow]) -> bool:
+        if not self._is_chain_in_flow(chain, flow):
+            return False
+
+        before_dnat = self._is_chain_before_eq(chain=chain, **self._fw.system.FIREWALL_NAT[flow]['dnat'])
+        return chain.type != chain.TYPE_NAT and before_dnat
+
     def process_pre_routing(self, packet: PACKET_KINDS, flow: type[Flow]) -> (bool, (Rule, None)):
         """
         :param packet: Packet to process
@@ -340,17 +347,22 @@ class RunFirewallTables:
         """
 
         def _chain_filter(chain: Chain) -> bool:
-            if not self._is_chain_in_flow(chain, flow):
-                return False
-
-            before_dnat = self._is_chain_before_eq(chain=chain, **self._fw.system.FIREWALL_NAT[flow]['dnat'])
-            return chain.type != chain.TYPE_NAT and before_dnat
+            return self._chain_filter_pre_routing(chain=chain, flow=flow)
 
         tables = self.get_tables(packet=packet, ignore_type=[Table.TYPE_NAT])
         if self._fw.system.FIREWALL_PRIO_TABLE_FULL:
             return self._process_by_table_prio(tables=tables, callback_chain_filter=_chain_filter, packet=packet)
 
         return self._process_by_chain_prio(tables=tables, callback_chain_filter=_chain_filter, packet=packet)
+
+    def _chain_filter_dnat(self, chain: Chain, flow: type[Flow]) -> bool:
+        if not self._is_chain_in_flow(chain, flow) or 'dnat' not in self._fw.system.FIREWALL_NAT[flow]:
+            return False
+
+        chain_dnat = self._fw.system.FIREWALL_NAT[flow]['dnat']
+        return chain.type == chain.TYPE_NAT and \
+            chain.hook == chain_dnat['hook'] and \
+            chain.priority == chain_dnat['priority']
 
     def process_dnat(self, packet: PACKET_KINDS, flow: type[Flow]) -> (bool, (Rule, None)):
         """
@@ -362,13 +374,7 @@ class RunFirewallTables:
         """
 
         def _chain_filter(chain: Chain) -> bool:
-            if not self._is_chain_in_flow(chain, flow):
-                return False
-
-            chain_dnat = self._fw.system.FIREWALL_NAT[flow]['dnat']
-            return chain.type == chain.TYPE_NAT and \
-                chain.hook == chain_dnat['hook'] and \
-                chain.priority == chain_dnat['priority']
+            return self._chain_filter_dnat(chain=chain, flow=flow)
 
         tables = self.get_tables(packet=packet)
         if self._fw.system.FIREWALL_PRIO_TABLE_FULL:
@@ -378,6 +384,17 @@ class RunFirewallTables:
             result, rule = self._process_by_chain_prio(tables=tables, callback_chain_filter=_chain_filter, packet=packet)
 
         return not result, rule
+
+    def _chain_filter_main(self, chain: Chain, flow: type[Flow]) -> bool:
+        if not self._is_chain_in_flow(chain, flow):
+            return False
+
+        after_dnat = self._is_chain_after(chain=chain, **self._fw.system.FIREWALL_NAT[flow]['dnat'])
+        before_snat = True
+        if 'snat' in self._fw.system.FIREWALL_NAT[flow]:
+            before_snat = self._is_chain_before_eq(chain=chain, **self._fw.system.FIREWALL_NAT[flow]['snat'])
+
+        return chain.type != chain.TYPE_NAT and after_dnat and before_snat
 
     def process_main(self, packet: PACKET_KINDS, flow: type[Flow]) -> (bool, (Rule, None)):
         """
@@ -387,21 +404,22 @@ class RunFirewallTables:
         """
 
         def _chain_filter(chain: Chain) -> bool:
-            if not self._is_chain_in_flow(chain, flow):
-                return False
-
-            after_dnat = self._is_chain_after(chain=chain, **self._fw.system.FIREWALL_NAT[flow]['dnat'])
-            before_snat = True
-            if 'snat' in self._fw.system.FIREWALL_NAT[flow]:
-                before_snat = self._is_chain_before_eq(chain=chain, **self._fw.system.FIREWALL_NAT[flow]['snat'])
-
-            return chain.type != chain.TYPE_NAT and after_dnat and before_snat
+            return self._chain_filter_main(chain=chain, flow=flow)
 
         tables = self.get_tables(packet=packet, ignore_type=[Table.TYPE_NAT])
         if self._fw.system.FIREWALL_PRIO_TABLE_FULL:
             return self._process_by_table_prio(tables=tables, callback_chain_filter=_chain_filter, packet=packet)
 
         return self._process_by_chain_prio(tables=tables, callback_chain_filter=_chain_filter, packet=packet)
+
+    def _chain_filter_snat(self, chain: Chain, flow: type[Flow]) -> bool:
+        if not self._is_chain_in_flow(chain, flow) or 'snat' not in self._fw.system.FIREWALL_NAT[flow]:
+            return False
+
+        chain_snat = self._fw.system.FIREWALL_NAT[flow]['snat']
+        return chain.type == chain.TYPE_NAT and \
+            chain.hook == chain_snat['hook'] and \
+            chain.priority == chain_snat['priority']
 
     def process_snat(self, packet: PACKET_KINDS, flow: type[Flow]) -> (bool, (Rule, None)):
         """
@@ -411,13 +429,7 @@ class RunFirewallTables:
         """
 
         def _chain_filter(chain: Chain) -> bool:
-            if not self._is_chain_in_flow(chain, flow):
-                return False
-
-            chain_snat = self._fw.system.FIREWALL_NAT[flow]['snat']
-            return chain.type == chain.TYPE_NAT and \
-                chain.hook == chain_snat['hook'] and \
-                chain.priority == chain_snat['priority']
+            return self._chain_filter_snat(chain=chain, flow=flow)
 
         tables = self.get_tables(packet=packet)
         if self._fw.system.FIREWALL_PRIO_TABLE_FULL:
@@ -428,6 +440,13 @@ class RunFirewallTables:
 
         return not result, rule
 
+    def _chain_filter_egress(self, chain: Chain, flow: type[Flow]) -> bool:
+        if not self._is_chain_in_flow(chain, flow):
+            return False
+
+        after_snat = self._is_chain_after(chain=chain, **self._fw.system.FIREWALL_NAT[flow]['snat'])
+        return chain.type != chain.TYPE_NAT and after_snat
+
     def process_egress(self, packet: PACKET_KINDS, flow: type[Flow]) -> (bool, (Rule, None)):
         """
         :param packet: Packet to process
@@ -436,11 +455,7 @@ class RunFirewallTables:
         """
 
         def _chain_filter(chain: Chain) -> bool:
-            if not self._is_chain_in_flow(chain, flow):
-                return False
-
-            after_snat = self._is_chain_after(chain=chain, **self._fw.system.FIREWALL_NAT[flow]['snat'])
-            return chain.type != chain.TYPE_NAT and after_snat
+            return self._chain_filter_egress(chain=chain, flow=flow)
 
         tables = self.get_tables(packet=packet, ignore_type=[Table.TYPE_NAT])
         if self._fw.system.FIREWALL_PRIO_TABLE_FULL:

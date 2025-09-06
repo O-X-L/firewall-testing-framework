@@ -84,17 +84,3 @@ def test_firewall_basic(src, dst, ni_in, ni_out, result_pre, result_dnat, result
     assert passed == (result_eg == RuleActionAccept)
     if rule is not None:
         assert rule.action == result_eg
-
-
-# todo: test multiple testdata-rulesets for edge-case handling (RunFirewallChain.process)
-#   sub-chain (jump) terminal action should end hook
-#   sub-chain (goto) should end parent chain
-#   dnat
-#   snat
-#   masquerade
-#   action return
-#   action continue (?)
-#   lazy action
-#   lazy action mixed with 'quick' action
-#   chain default-policy
-
