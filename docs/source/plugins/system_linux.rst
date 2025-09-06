@@ -56,3 +56,14 @@ Source Code
 * **System Config**: `system/system_linux_netfilter.py <https://github.com/O-X-L/firewall-testing-framework/blob/latest/src/firewall_test/plugins/system/system_linux_netfilter.py>`_
 
 * **Config Parsing**: `translate/linux.py <https://github.com/O-X-L/firewall-testing-framework/tree/latest/src/firewall_test/plugins/translate/linux.py>`_
+
+----
+
+Config-Parsing
+##############
+
+.. warning::
+
+    The plugin does not validate the syntax of the config-export you provide!
+
+    You may encounter unexpected errors when manually modifying it!

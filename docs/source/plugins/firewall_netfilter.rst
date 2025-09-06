@@ -74,6 +74,12 @@ If we were not able to parse any match from the rule-config - the rule will be s
 
 If this happens you will see a warning at runtime! (:code:`Unsupported rule`)
 
+.. warning::
+
+    The plugin does not validate the syntax of the config-export you provide!
+
+    You may encounter unexpected errors when manually modifying it!
+
 Unsupported Expressions
 =======================
 
