@@ -6,9 +6,7 @@
 Firewall - OPNsense
 ===================
 
-.. warning::
-
-    This plugin is still in early development!
+.. include:: ../_include/warn_develop.rst
 
 Config Export
 #############
@@ -22,7 +20,7 @@ Config Export
 Run
 ###
 
-tbd
+.. include:: ../_include/warn_wip.rst
 
 ----
 

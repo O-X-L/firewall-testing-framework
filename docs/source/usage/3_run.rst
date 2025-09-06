@@ -197,15 +197,11 @@ Depending on the system-specific configuration traffic can be dropped by non-fir
 Automated for CI
 ================
 
-.. warning::
-
-    Still under development.
+.. include:: ../_include/warn_develop.rst
 
 ----
 
 Interactive Shell
 =================
 
-.. warning::
-
-    Still under development.
+.. include:: ../_include/warn_develop.rst

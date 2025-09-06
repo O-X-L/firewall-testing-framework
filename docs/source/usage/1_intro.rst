@@ -9,6 +9,8 @@
 1 - Intro
 =========
 
+|topology|
+
 Goal / Reason / Why?
 ####################
 
@@ -96,6 +98,3 @@ Please take a took `at the roadmap <https://github.com/O-X-L/firewall-testing-fr
   * finds the route the packet should take
   * tests the traffic against the rulesets of firewalls that are hops of that route
 
-Take a look at this topology:
-
-|topology|

@@ -156,7 +156,7 @@ The network-traffic configuration as provided by the user is parsed to packets.
 3. Config Loader
 ================
 
-**Files**: :code:`src/firewall_test/simulator/loader.py`, :code:`src/firewall_test/plugins/system/config.py` (mapping target-system to translate-plugins), :code:`:code:`src/firewall_test/system/*` (target-system config), :code:`/home/rath/code/firewall-testing-framework/src/firewall_test/plugins/translate/*` (translate plugins)
+**Files**: :code:`src/firewall_test/simulator/loader.py`, :code:`src/firewall_test/plugins/system/config.py` (mapping target-system to translate-plugins), :code:`src/firewall_test/system/*` (target-system config), :code:`/home/rath/code/firewall-testing-framework/src/firewall_test/plugins/translate/*` (translate plugins)
 
 The configuration-files provided by the user are loaded and parsed as configured for the target firewall-system.
 
@@ -202,7 +202,7 @@ The configuration-files provided by the user are loaded and parsed as configured
 
   .. tip::
 
-      The detailed function of the :ref:`routing- and firewall-simulators are covered later on <dev_intro_router>`_.
+      The detailed function of the :ref:`routing- and firewall-simulators are covered later on <dev_intro_router>`.
 
 4. **Pre-Routing and Pre-DNAT Firewall-Filters are processed**
 
@@ -253,6 +253,8 @@ Routing & Firewalling
 #####################
 
 .. _dev_intro_router:
+
+.. include:: ../_include/warn_wip.rst
 
 Routing Simulator
 =================

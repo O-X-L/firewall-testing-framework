@@ -9,4 +9,4 @@
 Plugin Development
 ##################
 
-tbd
+.. include:: ../_include/warn_wip.rst
