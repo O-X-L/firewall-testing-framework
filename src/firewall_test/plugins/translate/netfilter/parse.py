@@ -1,5 +1,6 @@
 from json import loads as json_loads
 
+from utils.logger import log_warn
 from plugins.translate.netfilter.parts import VALID_ENTRIES
 from plugins.translate.netfilter.elements import NftBase, NftTable, NftChain, NftRule, NftSet
 
@@ -81,7 +82,11 @@ class NetfilterPreParse:
                     seq=seq,
                     sets=self.sets,
                 )
-                self.rules.append(rule)
+                if rule.invalid_matches:
+                    log_warn('Firewall Plugin', 'Got rule with unparsable matches - skipping')
+
+                else:
+                    self.rules.append(rule)
 
     def _init(self):
         for entry in self.raw:

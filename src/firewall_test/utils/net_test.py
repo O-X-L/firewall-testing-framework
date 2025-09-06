@@ -17,5 +17,5 @@ from testdata_test import TEST_WAN_IP4, TEST_WAN_IP6
     ]
 )
 def test_util_ip_is_bogon(ip, result):
-    from util import ip_is_bogon
+    from utils.net import ip_is_bogon
     assert ip_is_bogon(ip_address(ip)) == result

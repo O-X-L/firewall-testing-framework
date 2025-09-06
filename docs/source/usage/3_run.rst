@@ -33,8 +33,8 @@ This is also a good way to test your setup at first!
 .. code-block:: bash
 
     ftf-cli --help
-    > usage: Firewall-Testing-Framework (FTF) [-h] -s SRC_IP -d DST_IP [-4 {tcp,udp,icmp,icmpv6}] [-p PORT] -v {linux_netfilter} -w FILE_INTERFACES -x
-    >                                         FILE_ROUTES [-y FILE_ROUTE_RULES] -z FILE_RULESET
+    > usage: Firewall-Testing-Framework (FTF) [-h] -s SRC_IP -d DST_IP [-4 {tcp,udp,icmp,icmpv6}] [-p PORT] [-n] [-v {0,1,2,3,4,silent}] -u {linux_netfilter} -w
+    >                                         FILE_INTERFACES -x FILE_ROUTES [-y FILE_ROUTE_RULES] -z FILE_RULESET
     >
     > Simulating traffic over network firewalls. License: MIT. (c) 2025 OXL IT Services
     >
@@ -47,7 +47,10 @@ This is also a good way to test your setup at first!
     >   -4 {tcp,udp,icmp,icmpv6}, --proto-l4 {tcp,udp,icmp,icmpv6}
     >                         Packet Layer-4 protocol
     >   -p PORT, --port PORT  Packet destination-port (if L4-proto is tcp/udp)
-    >   -v {linux_netfilter}, --firewall-system {linux_netfilter}
+    >   -n, --no-color        Disable output colors
+    >   -v {0,1,2,3,4,silent}, --verbosity {0,1,2,3,4,silent}
+    >                         Output verbosity
+    >   -u {linux_netfilter}, --firewall-system {linux_netfilter}
     >                         Kind of firewall system
     >   -w FILE_INTERFACES, --file-interfaces FILE_INTERFACES
     >                         Path to the file containing the network-interface information
@@ -58,8 +61,13 @@ This is also a good way to test your setup at first!
     >   -z FILE_RULESET, --file-ruleset FILE_RULESET
     >                         Path to the file containing the firewall-ruleset information
 
+----
 
-    # PASS EXAMPLE:
+Pass Example
+************
+
+.. code-block:: bash
+
     ftf-cli --firewall-system 'linux_netfilter' \
             --file-interfaces 'testdata/plugin_translate_linux_interfaces.json' \
             --file-routes 'testdata/plugin_translate_linux_routes.json' \
@@ -70,120 +78,135 @@ This is also a good way to test your setup at first!
 
     > 🛈 ROUTER: Packet inbound-interface: docker0
     > 🛈 ROUTER: Packet inbound-route: 172.17.0.0/16, scope link
-    > 🛈 FIREWALL: Processing Pre-Routing Filter-Hooks
-    > 🛈 FIREWALL: Processing DNAT
     > 🛈 FIREWALL: Processing Chain: Table nat ip4 | Chain PREROUTING ip4 nat
-    > 🛈 FIREWALL: PREROUTING | Processing Rule: {'action': 'jump', 'seq': 0, 'raw': Rule: #3 | Matches: []}
-    > 🛈 FIREWALL:  > Match: True | Action: jump
-    > 🛈 FIREWALL: PREROUTING | Processing Sub-Chain: Table nat ip4 | Chain DOCKER ip4 filter
-    > 🛈 FIREWALL: DOCKER | Processing Rule: {'action': 'return', 'seq': 0, 'raw': Rule: #10 | Matches: [Match: ['ni_in'] == ['docker0']]}
-    > 🛈 FIREWALL:  > Match: True | Action: return
-    > 🛈 FIREWALL: Flow-type: forward
+    > 🛈 FIREWALL: > Chain PREROUTING | Rule 0
+    > 🛈 FIREWALL: > Chain PREROUTING | Sub-Chain: DOCKER
+    > 🛈 FIREWALL: > Chain DOCKER | Rule 0
     > 🛈 ROUTER: Packet outbound-interface: wan
     > 🛈 ROUTER: Packet outbound-route: 0.0.0.0/0, gw 10.255.255.254, metric 600, scope remote
-    > 🛈 FIREWALL: Processing Main Filter-Hooks
     > 🛈 FIREWALL: Processing Chain: Table filter ip4 | Chain FORWARD ip4 filter
-    > 🛈 FIREWALL: FORWARD | Processing Rule: {'action': 'jump', 'seq': 0, 'raw': Rule: #20 | Matches: []}
-    > 🛈 FIREWALL:  > Match: True | Action: jump
-    > 🛈 FIREWALL: FORWARD | Processing Sub-Chain: Table filter ip4 | Chain DOCKER-USER ip4 filter
-    > 🛈 FIREWALL: DOCKER-USER | Processing Rule: {'action': 'return', 'seq': 0, 'raw': Rule: #19 | Matches: []}
-    > 🛈 FIREWALL:  > Match: True | Action: return
-    > 🛈 FIREWALL: FORWARD | Processing Rule: {'action': 'jump', 'seq': 1, 'raw': Rule: #8 | Matches: []}
-    > 🛈 FIREWALL:  > Match: True | Action: jump
-    > 🛈 FIREWALL: FORWARD | Processing Sub-Chain: Table filter ip4 | Chain DOCKER-FORWARD ip4 filter
-    > 🛈 FIREWALL: DOCKER-FORWARD | Processing Rule: {'action': 'jump', 'seq': 0, 'raw': Rule: #11 | Matches: []}
-    > 🛈 FIREWALL:  > Match: True | Action: jump
-    > 🛈 FIREWALL: DOCKER-FORWARD | Processing Sub-Chain: Table filter ip4 | Chain DOCKER-CT ip4 filter
-    > 🛈 FIREWALL: DOCKER-CT | Processing Rule: {'action': 'accept', 'seq': 0, 'raw': Rule: #23 | Matches: [Match: ['ni_out'] == ['docker0']]}
-    > 🛈 FIREWALL: DOCKER-FORWARD | Processing Rule: {'action': 'jump', 'seq': 1, 'raw': Rule: #10 | Matches: []}
-    > 🛈 FIREWALL:  > Match: True | Action: jump
-    > 🛈 FIREWALL: DOCKER-FORWARD | Processing Sub-Chain: Table filter ip4 | Chain DOCKER-ISOLATION-STAGE-1 ip4 filter
-    > 🛈 FIREWALL: DOCKER-ISOLATION-STAGE-1 | Processing Rule: {'action': 'jump', 'seq': 0, 'raw': Rule: #25 | Matches: [Match: ['ni_in'] == ['docker0'], Match: ['ni_out'] != ['docker0']]}
-    > 🛈 FIREWALL:  > Match: True | Action: jump
-    > 🛈 FIREWALL: DOCKER-ISOLATION-STAGE-1 | Processing Sub-Chain: Table filter ip4 | Chain DOCKER-ISOLATION-STAGE-2 ip4 filter
-    > 🛈 FIREWALL: DOCKER-ISOLATION-STAGE-2 | Processing Rule: {'action': 'drop', 'seq': 0, 'raw': Rule: #26 | Matches: [Match: ['ni_out'] == ['docker0']]}
-    > 🛈 FIREWALL: DOCKER-FORWARD | Processing Rule: {'action': 'jump', 'seq': 2, 'raw': Rule: #9 | Matches: []}
-    > 🛈 FIREWALL:  > Match: True | Action: jump
-    > 🛈 FIREWALL: DOCKER-FORWARD | Processing Sub-Chain: Table filter ip4 | Chain DOCKER-BRIDGE ip4 filter
-    > 🛈 FIREWALL: DOCKER-BRIDGE | Processing Rule: {'action': 'jump', 'seq': 0, 'raw': Rule: #24 | Matches: [Match: ['ni_out'] == ['docker0']]}
-    > 🛈 FIREWALL: DOCKER-FORWARD | Processing Rule: {'action': 'accept', 'seq': 3, 'raw': Rule: #21 | Matches: [Match: ['ni_in'] == ['docker0']]}
-    > 🛈 FIREWALL:  > Match: True | Action: accept
-    > 🛈 FIREWALL: Processing SNAT
+    > 🛈 FIREWALL: > Chain FORWARD | Rule 0
+    > 🛈 FIREWALL: > Chain FORWARD | Sub-Chain: DOCKER-USER
+    > 🛈 FIREWALL: > Chain DOCKER-USER | Rule 0
+    > 🛈 FIREWALL: > Chain FORWARD | Rule 1
+    > 🛈 FIREWALL: > Chain FORWARD | Sub-Chain: DOCKER-FORWARD
+    > 🛈 FIREWALL: > Chain DOCKER-FORWARD | Rule 0
+    > 🛈 FIREWALL: > Chain DOCKER-FORWARD | Sub-Chain: DOCKER-CT
+    > 🛈 FIREWALL: > Chain DOCKER-CT | Rule 0
+    > 🛈 FIREWALL: > Chain DOCKER-FORWARD | Rule 1
+    > 🛈 FIREWALL: > Chain DOCKER-FORWARD | Sub-Chain: DOCKER-ISOLATION-STAGE-1
+    > 🛈 FIREWALL: > Chain DOCKER-ISOLATION-STAGE-1 | Rule 0
+    > 🛈 FIREWALL: > Chain DOCKER-ISOLATION-STAGE-1 | Sub-Chain: DOCKER-ISOLATION-STAGE-2
+    > 🛈 FIREWALL: > Chain DOCKER-ISOLATION-STAGE-2 | Rule 0
+    > 🛈 FIREWALL: > Chain DOCKER-FORWARD | Rule 2
+    > 🛈 FIREWALL: > Chain DOCKER-FORWARD | Sub-Chain: DOCKER-BRIDGE
+    > 🛈 FIREWALL: > Chain DOCKER-BRIDGE | Rule 0
+    > 🛈 FIREWALL: > Chain DOCKER-FORWARD | Rule 3
     > 🛈 FIREWALL: Processing Chain: Table nat ip4 | Chain POSTROUTING ip4 nat
-    > 🛈 FIREWALL: POSTROUTING | Processing Rule: {'action': None, 'seq': 0, 'raw': Rule: #9 | Matches: [Match: ['ni_out'] != ['docker0'], Match: ['proto_l3', 'ip_saddr'] == ['172.17.0.0/16', 'ip4']]}
-    > 🛈 FIREWALL: Performed SNAT: 172.17.11.5 => 10.255.255.48
-    > 🛈 FIREWALL: Processing Egress Filter-Hooks
+    > 🛈 FIREWALL: > Chain POSTROUTING | Rule 0
+    > 🛈 FIREWALL: Performed SNAT
     > ✓ FIREWALL: Packet passed
 
+----
 
-    # BLOCK EXAMPLE:
+Block Example
+*************
+
+.. code-block:: bash
+
     ftf-cli ... --src-ip 10.0.0.1 --dst-ip 172.17.10.6
 
     > 🛈 ROUTER: Packet inbound-interface: wan
     > 🛈 ROUTER: Packet inbound-route: 0.0.0.0/0, gw 10.255.255.254, metric 600, scope remote
-    > 🛈 FIREWALL: Processing Pre-Routing Filter-Hooks
-    > 🛈 FIREWALL: Processing DNAT
     > 🛈 FIREWALL: Processing Chain: Table nat ip4 | Chain PREROUTING ip4 nat
-    > 🛈 FIREWALL: PREROUTING | Processing Rule: {'action': 'jump', 'seq': 0, 'raw': Rule: #3 | Matches: []}
-    > 🛈 FIREWALL:  > Match: True | Action: jump
-    > 🛈 FIREWALL: PREROUTING | Processing Sub-Chain: Table nat ip4 | Chain DOCKER ip4 filter
-    > 🛈 FIREWALL: DOCKER | Processing Rule: {'action': 'return', 'seq': 0, 'raw': Rule: #10 | Matches: [Match: ['ni_in'] == ['docker0']]}
-    > 🛈 FIREWALL: DOCKER | Processing Rule: {'action': 'drop', 'seq': 1, 'raw': Rule: #22 | Matches: [Match: ['ni_in'] != ['docker0'], Match: ['ni_out'] == ['docker0']]}
+    > 🛈 FIREWALL: > Chain PREROUTING | Rule 0
+    > 🛈 FIREWALL: > Chain PREROUTING | Sub-Chain: DOCKER
+    > 🛈 FIREWALL: > Chain DOCKER | Rule 0
+    > 🛈 FIREWALL: > Chain DOCKER | Rule 1
+    > 🛈 ROUTER: Packet outbound-interface: docker0
+    > 🛈 ROUTER: Packet outbound-route: 172.17.0.0/16, scope link
+    > 🛈 FIREWALL: Processing Chain: Table filter ip4 | Chain FORWARD ip4 filter
+    > 🛈 FIREWALL: > Chain FORWARD | Rule 0
+    > 🛈 FIREWALL: > Chain FORWARD | Sub-Chain: DOCKER-USER
+    > 🛈 FIREWALL: > Chain DOCKER-USER | Rule 0
+    > 🛈 FIREWALL: > Chain FORWARD | Rule 1
+    > 🛈 FIREWALL: > Chain FORWARD | Sub-Chain: DOCKER-FORWARD
+    > 🛈 FIREWALL: > Chain DOCKER-FORWARD | Rule 0
+    > 🛈 FIREWALL: > Chain DOCKER-FORWARD | Sub-Chain: DOCKER-CT
+    > 🛈 FIREWALL: > Chain DOCKER-CT | Rule 0
+    > 🛈 FIREWALL: > Chain DOCKER-FORWARD | Rule 1
+    > 🛈 FIREWALL: > Chain DOCKER-FORWARD | Sub-Chain: DOCKER-ISOLATION-STAGE-1
+    > 🛈 FIREWALL: > Chain DOCKER-ISOLATION-STAGE-1 | Rule 0
+    > 🛈 FIREWALL: > Chain DOCKER-FORWARD | Rule 2
+    > 🛈 FIREWALL: > Chain DOCKER-FORWARD | Sub-Chain: DOCKER-BRIDGE
+    > 🛈 FIREWALL: > Chain DOCKER-BRIDGE | Rule 0
+    > 🛈 FIREWALL: > Chain DOCKER-BRIDGE | Sub-Chain: DOCKER
+    > 🛈 FIREWALL: > Chain DOCKER | Rule 0
+    > 🛈 FIREWALL: > Chain DOCKER | Rule 1
+    > ✖ FIREWALL: Packet blocked by rule: {'action': 'drop', 'seq': 1, 'raw': Rule: #22 | Matches: [ni_in != ['docker0'], ni_out == ['docker0']]}
+
+----
+
+Output Verbosity
+****************
+
+You can get more detailed output by increasing the verbosity:
+
+.. code-block:: bash
+
+    ftf-cli ... --src-ip 10.0.0.1 --dst-ip 172.17.10.6 --verbosity 2
+
+    > 🛈 ROUTER: Packet inbound-interface: wan
+    > 🛈 ROUTER: Packet inbound-route: 0.0.0.0/0, gw 10.255.255.254, metric 600, scope remote
+    > 🛈 FIREWALL: Processing Chain: Table nat ip4 | Chain PREROUTING ip4 nat
+    > 🛈 FIREWALL: > Chain PREROUTING | Rule 0: {'action': 'jump', 'seq': 0, 'raw': Rule: #3 | Matches: []}
+    > 🛈 FIREWALL: > Chain PREROUTING | Sub-Chain: DOCKER
+    > 🛈 FIREWALL: > Chain DOCKER | Rule 0: {'action': 'return', 'seq': 0, 'raw': Rule: #10 | Matches: [ni_in == ['docker0']]}
+    > 🛈 FIREWALL: > Chain DOCKER | Rule 1: {'action': 'drop', 'seq': 1, 'raw': Rule: #22 | Matches: [ni_in != ['docker0'], ni_out == ['docker0']]}
     > 🛈 FIREWALL: Flow-type: forward
     > 🛈 ROUTER: Packet outbound-interface: docker0
     > 🛈 ROUTER: Packet outbound-route: 172.17.0.0/16, scope link
-    > 🛈 FIREWALL: Processing Main Filter-Hooks
     > 🛈 FIREWALL: Processing Chain: Table filter ip4 | Chain FORWARD ip4 filter
-    > 🛈 FIREWALL: FORWARD | Processing Rule: {'action': 'jump', 'seq': 0, 'raw': Rule: #20 | Matches: []}
-    > 🛈 FIREWALL:  > Match: True | Action: jump
-    > 🛈 FIREWALL: FORWARD | Processing Sub-Chain: Table filter ip4 | Chain DOCKER-USER ip4 filter
-    > 🛈 FIREWALL: DOCKER-USER | Processing Rule: {'action': 'return', 'seq': 0, 'raw': Rule: #19 | Matches: []}
-    > 🛈 FIREWALL:  > Match: True | Action: return
-    > 🛈 FIREWALL: FORWARD | Processing Rule: {'action': 'jump', 'seq': 1, 'raw': Rule: #8 | Matches: []}
-    > 🛈 FIREWALL:  > Match: True | Action: jump
-    > 🛈 FIREWALL: FORWARD | Processing Sub-Chain: Table filter ip4 | Chain DOCKER-FORWARD ip4 filter
-    > 🛈 FIREWALL: DOCKER-FORWARD | Processing Rule: {'action': 'jump', 'seq': 0, 'raw': Rule: #11 | Matches: []}
-    > 🛈 FIREWALL:  > Match: True | Action: jump
-    > 🛈 FIREWALL: DOCKER-FORWARD | Processing Sub-Chain: Table filter ip4 | Chain DOCKER-CT ip4 filter
-    > 🛈 FIREWALL: DOCKER-CT | Processing Rule: {'action': 'accept', 'seq': 0, 'raw': Rule: #23 | Matches: [Match: ['ni_out'] == ['docker0']]}
-    > 🛈 FIREWALL:  > Match: True | Action: accept
-    > 🛈 FIREWALL: DOCKER-FORWARD | Processing Rule: {'action': 'jump', 'seq': 1, 'raw': Rule: #10 | Matches: []}
-    > 🛈 FIREWALL:  > Match: True | Action: jump
-    > 🛈 FIREWALL: DOCKER-FORWARD | Processing Sub-Chain: Table filter ip4 | Chain DOCKER-ISOLATION-STAGE-1 ip4 filter
-    > 🛈 FIREWALL: DOCKER-ISOLATION-STAGE-1 | Processing Rule: {'action': 'jump', 'seq': 0, 'raw': Rule: #25 | Matches: [Match: ['ni_in'] == ['docker0'], Match: ['ni_out'] != ['docker0']]}
-    > 🛈 FIREWALL: DOCKER-FORWARD | Processing Rule: {'action': 'jump', 'seq': 2, 'raw': Rule: #9 | Matches: []}
-    > 🛈 FIREWALL:  > Match: True | Action: jump
-    > 🛈 FIREWALL: DOCKER-FORWARD | Processing Sub-Chain: Table filter ip4 | Chain DOCKER-BRIDGE ip4 filter
-    > 🛈 FIREWALL: DOCKER-BRIDGE | Processing Rule: {'action': 'jump', 'seq': 0, 'raw': Rule: #24 | Matches: [Match: ['ni_out'] == ['docker0']]}
-    > 🛈 FIREWALL:  > Match: True | Action: jump
-    > 🛈 FIREWALL: DOCKER-BRIDGE | Processing Sub-Chain: Table filter ip4 | Chain DOCKER ip4 filter
-    > 🛈 FIREWALL: DOCKER | Processing Rule: {'action': 'return', 'seq': 0, 'raw': Rule: #10 | Matches: [Match: ['ni_in'] == ['docker0']]}
-    > 🛈 FIREWALL: DOCKER | Processing Rule: {'action': 'drop', 'seq': 1, 'raw': Rule: #22 | Matches: [Match: ['ni_in'] != ['docker0'], Match: ['ni_out'] == ['docker0']]}
-    > 🛈 FIREWALL:  > Match: True | Action: drop
-    > ✖ FIREWALL: Packet blocked by rule: {'action': 'drop', 'seq': 1, 'raw': Rule: #22 | Matches: [Match: ['ni_in'] != ['docker0'], Match: ['ni_out'] == ['docker0']]}
+    > 🛈 FIREWALL: > Chain FORWARD | Rule 0: {'action': 'jump', 'seq': 0, 'raw': Rule: #20 | Matches: []}
+    > 🛈 FIREWALL: > Chain FORWARD | Sub-Chain: DOCKER-USER
+    > 🛈 FIREWALL: > Chain DOCKER-USER | Rule 0: {'action': 'return', 'seq': 0, 'raw': Rule: #19 | Matches: []}
+    > 🛈 FIREWALL: > Chain FORWARD | Rule 1: {'action': 'jump', 'seq': 1, 'raw': Rule: #8 | Matches: []}
+    > 🛈 FIREWALL: > Chain FORWARD | Sub-Chain: DOCKER-FORWARD
+    > 🛈 FIREWALL: > Chain DOCKER-FORWARD | Rule 0: {'action': 'jump', 'seq': 0, 'raw': Rule: #11 | Matches: []}
+    > 🛈 FIREWALL: > Chain DOCKER-FORWARD | Sub-Chain: DOCKER-CT
+    > 🛈 FIREWALL: > Chain DOCKER-CT | Rule 0: {'action': 'accept', 'seq': 0, 'raw': Rule: #23 | Matches: [ni_out == ['docker0']]}
+    > 🛈 FIREWALL: > Chain DOCKER-FORWARD | Rule 1: {'action': 'jump', 'seq': 1, 'raw': Rule: #10 | Matches: []}
+    > 🛈 FIREWALL: > Chain DOCKER-FORWARD | Sub-Chain: DOCKER-ISOLATION-STAGE-1
+    > 🛈 FIREWALL: > Chain DOCKER-ISOLATION-STAGE-1 | Rule 0: {'action': 'jump', 'seq': 0, 'raw': Rule: #25 | Matches: [ni_in == ['docker0'], ni_out != ['docker0']]}
+    > 🛈 FIREWALL: > Chain DOCKER-FORWARD | Rule 2: {'action': 'jump', 'seq': 2, 'raw': Rule: #9 | Matches: []}
+    > 🛈 FIREWALL: > Chain DOCKER-FORWARD | Sub-Chain: DOCKER-BRIDGE
+    > 🛈 FIREWALL: > Chain DOCKER-BRIDGE | Rule 0: {'action': 'jump', 'seq': 0, 'raw': Rule: #24 | Matches: [ni_out == ['docker0']]}
+    > 🛈 FIREWALL: > Chain DOCKER-BRIDGE | Sub-Chain: DOCKER
+    > 🛈 FIREWALL: > Chain DOCKER | Rule 0: {'action': 'return', 'seq': 0, 'raw': Rule: #10 | Matches: [ni_in == ['docker0']]}
+    > 🛈 FIREWALL: > Chain DOCKER | Rule 1: {'action': 'drop', 'seq': 1, 'raw': Rule: #22 | Matches: [ni_in != ['docker0'], ni_out == ['docker0']]}
+    > ✖ FIREWALL: Packet blocked by rule: {'action': 'drop', 'seq': 1, 'raw': Rule: #22 | Matches: [ni_in != ['docker0'], ni_out == ['docker0']]}
 
+----
 
-    # SYSTEM-CONFIG EXAMPLE:
+System-Config Example
+*********************
+
+Depending on the system-specific configuration traffic can be dropped by non-firewall conditions. (like Linux kernel networking)
+
+.. code-block:: bash
+
     ftf-cli ... --src-ip 172.17.11.5 --dst-ip 10.100.1.1
 
-    > 🛈 ROUTER: Packet inbound-interface: docker0
-    > 🛈 ROUTER: Packet inbound-route: 172.17.0.0/16, scope link
-    > 🛈 FIREWALL: Processing Pre-Routing Filter-Hooks
-    > 🛈 FIREWALL: Processing DNAT
+    > 🛈 ROUTER: Packet inbound-interface: wan
+    > 🛈 ROUTER: Packet inbound-route: 0.0.0.0/0, gw 10.255.255.254, metric 600, scope remote
     > 🛈 FIREWALL: Processing Chain: Table nat ip4 | Chain PREROUTING ip4 nat
-    > 🛈 FIREWALL: PREROUTING | Processing Rule: {'action': 'jump', 'seq': 0, 'raw': Rule: #3 | Matches: []}
-    > 🛈 FIREWALL:  > Match: True | Action: jump
-    > 🛈 FIREWALL: PREROUTING | Processing Sub-Chain: Table nat ip4 | Chain DOCKER ip4 filter
-    > 🛈 FIREWALL: DOCKER | Processing Rule: {'action': 'return', 'seq': 0, 'raw': Rule: #10 | Matches: [Match: ['ni_in'] == ['docker0']]}
-    > 🛈 FIREWALL:  > Match: True | Action: return
-    > 🛈 FIREWALL: Flow-type: forward
+    > 🛈 FIREWALL: > Chain PREROUTING | Rule 0
+    > 🛈 FIREWALL: > Chain PREROUTING | Sub-Chain: DOCKER
+    > 🛈 FIREWALL: > Chain DOCKER | Rule 0
+    > 🛈 FIREWALL: > Chain DOCKER | Rule 1
     > 🛈 ROUTER: Packet outbound-interface: wan
     > 🛈 ROUTER: Packet outbound-route: 0.0.0.0/0, gw 10.255.255.254, metric 600, scope remote
-    > ✖ FIREWALL: Dropping traffic to WAN targeting bogons
-
-.. tip::
-
-    You can export the environmental-variable :code:`export DEBUG=1` to enable more verbose output.
+    > ✖ SYSTEM: Dropping traffic to WAN targeting bogons
 
 ----
 

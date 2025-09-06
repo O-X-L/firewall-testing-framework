@@ -3,7 +3,7 @@ from plugins.translate.config import RuleActionKindTerminal, RuleActionKindToCha
 from plugins.translate.abstract import Rule
 from plugins.translate.netfilter.parse import NftRule
 from simulator.packet import PacketIP, PacketTCPUDP, PacketICMP
-from simulator.logger import log_debug, log_warn
+from utils.logger import log_debug, log_warn
 
 
 # pylint: disable=R0912
@@ -20,7 +20,6 @@ class RuleMatcherNetfilter(RuleMatcher):
             return RuleMatchResult(False, None, None, None, None)
 
         if issubclass(rule.action, (RuleActionKindTerminal, RuleActionKindToChain, RuleActionKindNAT)):
-            all_results = []
             results = []
 
             if len(nf_rule.matches) == 0:
@@ -33,6 +32,7 @@ class RuleMatcherNetfilter(RuleMatcher):
                 )
 
             for match in nf_rule.matches:
+                single_l3_result = True  # 'ip6 daddr != XXX' would drop any IPv4 traffic
                 single_results = []
                 # NETWORK INTERFACES
                 if match.match_ni_in:
@@ -44,10 +44,10 @@ class RuleMatcherNetfilter(RuleMatcher):
                 # IP PROTOCOL
                 if match.match_proto_l3:
                     if match.value_proto_l3:
-                        single_results.append(packet.proto_l3 == match.value_proto_l3)
+                        single_l3_result = packet.proto_l3 == match.value_proto_l3
 
                     else:
-                        single_results.append(packet.proto_l3 in match.value)
+                        single_l3_result = packet.proto_l3 in match.value
 
                 # IP SOURCE AND DESTINATION
                 if match.match_ip_saddr:
@@ -80,22 +80,24 @@ class RuleMatcherNetfilter(RuleMatcher):
                     if match.match_ct:
                         single_results.append(packet.ct in match.value)
 
-                all_results.append(single_results)
+                # if we need to separate the L3-result from the actual condition as it can impact the match
+                results.append(single_l3_result)
 
-                if match.operator == match.OP_EQ:
-                    results.append(all(single_results))
+                if len(single_results) > 0:
+                    if match.operator in [match.OP_EQ, match.OP_IN]:
+                        results.append(all(single_results))
 
-                elif match.operator == match.OP_NE:
-                    results.append(not all(single_results))
+                    elif match.operator in [match.OP_NE, match.OP_NOT]:
+                        results.append(not all(single_results))
 
-                else:
-                    log_warn('Firewall', f' > Unable to get results for operator {match.operator}')
+                    else:
+                        log_warn('Firewall Plugin', f' > Unable to get results for operator "{match.operator}"')
 
             if len(results) == 0:
-                log_warn('Firewall', ' > Matches: Found not matches we could process - skipping rule')
+                log_warn('Firewall Plugin', ' > Matches: Found not matches we could process - skipping rule')
 
             else:
-                log_debug('Firewall', f' > Matches: {nf_rule.get_match_types()} | Result: {results}')
+                log_debug('Firewall Plugin', f' > Matches: {nf_rule.get_match_types()} | Result: {results}')
 
                 return RuleMatchResult(
                     matched=all(results),

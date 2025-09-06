@@ -4,7 +4,7 @@ from plugins.system.abstract import FirewallSystem
 from plugins.translate.abstract import StaticRouteRule, StaticRoute
 
 from simulator.packet import PACKET_KINDS
-from simulator.logger import log_debug
+from utils.logger import log_debug
 
 
 class Router:

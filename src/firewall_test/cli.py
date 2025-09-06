@@ -1,6 +1,7 @@
 from os import environ
 from os import path as os_path
 from sys import path as sys_path
+from sys import exit as sys_exit
 from argparse import ArgumentParser
 
 # pylint: disable=C0413
@@ -10,6 +11,7 @@ from plugins.system.config import SYSTEM_MAPPING
 from simulator.loader import load
 from simulator.main import Simulator
 from simulator.packet import PacketTCPUDP, PacketICMP
+from config import ENV_DEBUG, ENV_VERBOSITY, VERBOSITY_DEBUG, VERBOSITY_DEFAULT, ENV_LOG_COLOR
 
 
 def main():
@@ -36,7 +38,16 @@ def main():
     )
 
     parser.add_argument(
-        '-v', '--firewall-system', help='Kind of firewall system',
+        '-n', '--no-color', help='Disable output colors',
+        action='store_true',
+    )
+    parser.add_argument(
+        '-v', '--verbosity', help='Output verbosity',
+        choices=['0', '1', '2', '3', VERBOSITY_DEBUG, 'silent'], default=VERBOSITY_DEFAULT,
+    )
+
+    parser.add_argument(
+        '-u', '--firewall-system', help='Kind of firewall system',
         choices=list(SYSTEM_MAPPING.keys()),
         required = True,
     )
@@ -62,6 +73,9 @@ def main():
 
     args = parser.parse_args()
 
+    environ.setdefault(ENV_VERBOSITY, args.verbosity)
+    environ.setdefault(ENV_LOG_COLOR, '0' if args.no_color else '1')
+
     if args.proto_l4 in ['tcp', 'udp']:
         packet = PacketTCPUDP(
             src=args.src_ip,
@@ -86,10 +100,13 @@ def main():
     s = Simulator(**loaded)
     r = s.run(packet)
 
-    if 'DEBUG' in environ:
+    if ENV_DEBUG in environ:
         print('\n', r.to_json())
 
     print()
+
+    if not r.passed:
+        sys_exit(1)
 
 
 if __name__ == '__main__':

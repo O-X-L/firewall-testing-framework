@@ -4,9 +4,9 @@ from ipaddress import IPv4Address, IPv6Address
 from simulator.packet import PACKET_KINDS
 from simulator.routes import Router
 from simulator.firewall import Firewall
-from simulator.logger import log_info, log_error, log_ok, log_warn
+from utils.logger import log_info, log_error, log_ok, log_warn
 
-from util import ip_is_bogon
+from utils.net import ip_is_bogon
 from config import DEFAULT_ROUTES, Flow, FlowForward, FlowInput, FlowInputForward, FlowOutput
 from plugins.system.abstract import FirewallSystem
 from plugins.translate.abstract import NetworkInterface, StaticRoute, StaticRouteRule, Ruleset
@@ -16,10 +16,11 @@ MODE_INTERACTIVE = 1
 MODE_CI = 2
 
 
-# pylint: disable=R0912,R0915
+# pylint: disable=R0911,R0912,R0915
 class SimulatorRun:
     def __init__(self, packet: PACKET_KINDS, simulator):
         self.packet = packet
+        self.passed = False
         self._s = simulator
 
         self._ipp = 4 if isinstance(self.packet.src, IPv4Address) else 6
@@ -41,7 +42,7 @@ class SimulatorRun:
             log_info('Router', f'Packet inbound-interface: {packet.ni_in}')
 
         if self.route_src is None:
-            log_error('Router', 'No Source-Route found')
+            log_error('Router', 'No Source-Route found', final=True)
             return
 
         self._log_route(out=False, route=self.route_src)
@@ -50,7 +51,7 @@ class SimulatorRun:
 
         result, rule = self._s.fw.process_pre_routing(packet=packet, flow=self.flow_type)
         if not result:
-            log_error('Firewall', f'Packet blocked by rule: {rule.dump()}')
+            log_error(label='Firewall', v0='Packet blocked by rule', v1=f': {rule.dump()}', final=True)
             return
 
         ### PROCESSING DNAT ###
@@ -58,13 +59,13 @@ class SimulatorRun:
         _, self.dnat = self._s.fw.process_dnat(packet=packet, flow=self.flow_type)
         self._dnat_done = True
         if self.dnat is not None:
-            log_info('Firewall', f'Performed DNAT: {self.packet.dnat_str}')
+            log_info(label='Firewall', v0='Performed DNAT', v1=f': {self.packet.dnat_str}')
 
         ### UPDATE TRAFFIC FLOW AND OUTBOUND-NETWORK-INTERFACE ###
 
         self.local_dst, packet.ni_out = self._is_ip_local(packet.dst)
         self.flow_type = self._get_flow_type()
-        log_info('Firewall', f'Flow-type: {self.flow_type.N}')
+        log_info('Firewall', v1=f'Flow-type: {self.flow_type.N}')
 
         ### CHECK DESTINATION-ROUTE ###
 
@@ -75,7 +76,7 @@ class SimulatorRun:
 
         if self.flow_type != FlowInput:
             if self.route_dst is None:
-                log_error('Router', 'No Destination-Route found')
+                log_error('Router', 'No Destination-Route found', final=True)
                 return
 
             self._log_route(out=True, route=self.route_dst)
@@ -84,15 +85,15 @@ class SimulatorRun:
 
         if self.flow_type != FlowInput:
             # DROP PACKET IF TRAFFIC TO BOGONS ON WAN
-            if self._is_bogon_to_wan() and self._s.system.FIREWALL_DROP_WAN_BOGONS:
-                log_error('Firewall', 'Dropping traffic to WAN targeting bogons')
+            if self._is_bogon_to_wan() and self._s.system.SYSTEM_DROP_WAN_BOGONS:
+                log_error('System', 'Dropping traffic to WAN targeting bogons', final=True)
                 return
 
         ### PROCESSING MAIN FIREWALL-FILTERS ###
 
         result, rule = self._s.fw.process_main(packet=packet, flow=self.flow_type)
         if not result:
-            log_error('Firewall', f'Packet blocked by rule: {rule.dump()}')
+            log_error(label='Firewall', v0='Packet blocked by rule', v1=f': {rule.dump()}', final=True)
             return
 
         ### PROCESSING SOURCE-NAT ###
@@ -108,7 +109,7 @@ class SimulatorRun:
                 else:
                     self.packet.src = self._get_snat_masquerade_ip()
 
-            log_info('Firewall', f'Performed SNAT: {self.packet.snat_str()}')
+            log_info(label='Firewall', v0='Performed SNAT', v1=f': {self.packet.snat_str()}')
 
         elif self.flow_type == FlowOutput:
             # use the correct outbound-IP if the traffic originated from this host itself
@@ -121,12 +122,13 @@ class SimulatorRun:
 
         result, rule = self._s.fw.process_egress(packet=packet, flow=self.flow_type)
         if not result:
-            log_error('Firewall', f'Packet blocked by rule: {rule.dump()}')
+            log_error(label='Firewall', v0='Packet blocked by rule', v1=f': {rule.dump()}', final=True)
             return
 
         ### DONE ###
 
-        log_ok('Firewall', 'Packet passed')
+        log_ok('Firewall', 'Packet passed', final=True)
+        self.passed = True
 
     def dump(self) -> dict:
         return {

@@ -1,6 +1,12 @@
 from abc import ABC
 from ipaddress import ip_network
 
+ENV_VERBOSITY = 'VERB'
+ENV_DEBUG = 'DEBUG'
+ENV_LOG_COLOR = 'LOG_COLOR'
+VERBOSITY_DEBUG = '4'
+VERBOSITY_DEFAULT = '1'
+
 DEFAULT_ROUTE_IP4 = ip_network('0.0.0.0/0')
 DEFAULT_ROUTE_IP6 = ip_network('::/0')
 DEFAULT_ROUTES = [DEFAULT_ROUTE_IP4, DEFAULT_ROUTE_IP6]

@@ -7,7 +7,7 @@ from plugins.translate.abstract import Ruleset, Table, Chain, Rule
 from plugins.translate.config import RuleAction, RuleActionKindTerminal, RuleActionKindToChain, RuleActionContinue, \
     RuleActionKindTerminalKill, RuleActionGoTo, RuleActionKindNAT, RuleActionDNAT
 from simulator.packet import PACKET_KINDS, PacketTCPUDP
-from simulator.logger import log_debug, log_info, log_warn
+from utils.logger import log_debug, log_info, log_warn
 
 
 class RunFirewallChain:
@@ -26,7 +26,7 @@ class RunFirewallChain:
             log_debug('Firewall', msg)
 
         else:
-            log_info('Firewall', msg)
+            log_info('Firewall', v2=msg)
 
     def _get_chain_by_name_and_family(self, packet: PACKET_KINDS, name: str, family: str) -> (Chain, None):
         for table in self._run_tables.get_tables(packet):
@@ -53,8 +53,9 @@ class RunFirewallChain:
 
         for rule in chain.rules:
             log_info(
-                'Firewall',
-                f'{chain.name} | Processing Rule: {rule.dump()}'
+                label='Firewall',
+                v0=f'> Chain {chain.name} | Rule {rule.seq}',
+                v1=f': {rule.dump()}'
             )
 
             result: RuleMatchResult = rule_matcher.matches(packet=packet, rule=rule)
@@ -85,7 +86,7 @@ class RunFirewallChain:
                 if result.target_chain_name is None:
                     log_warn(
                         'Firewall',
-                        f'{chain.name} | Got to-chain action "{result.action.N}" but '
+                        f'> Chain {chain.name} | Got to-chain action "{result.action.N}" but '
                         'rule-matcher did not return target-chain!'
                     )
                     continue
@@ -99,16 +100,15 @@ class RunFirewallChain:
                 if target_chain is None:
                     log_warn(
                         'Firewall',
-                        f'{chain.name} | Got to-chain action "{result.action.N}" '
+                        f'> {chain.name} | Got to-chain action "{result.action.N}" '
                         f'did not find target-chain "{result.target_chain_name}"!'
                     )
                     continue
 
                 log_info(
-                    'Firewall',
-                    f'{chain.name} | Processing Sub-Chain: '
-                    f'Table {chain.run_table.name} {chain.run_table.family.N} | '
-                    f'Chain {target_chain.name} {target_chain.family.N} {target_chain.type}'
+                    label='Firewall',
+                    v0=f'> Chain {chain.name} | Sub-Chain: {target_chain.name}',
+                    v2=f' {target_chain.family.N} {target_chain.type}'
                 )
                 target_chain.run_table = chain.run_table
                 jump_result, jump_rule = self.process(chain=target_chain, packet=packet)
@@ -138,7 +138,7 @@ class RunFirewallChain:
 
         if self._fw.system.FIREWALL_ACTION_LAZY and lazy_rule is not None:
             action_str = '' if lazy_action is None else f' | Action: {lazy_action.N}'
-            log_debug('Firewall', f'{chain.name} | Applying lazy-action: {action_str}')
+            log_debug('Firewall', f'> Chain {chain.name} | Applying lazy-action: {action_str}')
             return not issubclass(lazy_action, RuleActionKindTerminalKill), lazy_rule
 
         return True, None
@@ -449,7 +449,7 @@ class Firewall:
         self._run_tables = RunFirewallTables(self)
 
     def process_pre_routing(self, packet: PACKET_KINDS, flow: type[Flow]) -> (bool, (Rule, None)):
-        log_info('Firewall', 'Processing Pre-Routing Filter-Hooks')
+        log_info('Firewall', v2='Processing Pre-Routing Filter-Hooks')
         if flow == FlowInputForward:
             # before DNAT we cannot know for sure
             flow = FlowInput
@@ -465,12 +465,12 @@ class Firewall:
             # system or flow has no DNAT capability
             return False, None
 
-        log_info('Firewall', 'Processing DNAT')
+        log_info('Firewall', v2='Processing DNAT')
 
         return self._run_tables.process_dnat(packet=packet, flow=flow)
 
     def process_main(self, packet: PACKET_KINDS, flow: type[Flow]) -> (bool, (Rule, None)):
-        log_info('Firewall', 'Processing Main Filter-Hooks')
+        log_info('Firewall', v2='Processing Main Filter-Hooks')
 
         return self._run_tables.process_main(packet=packet, flow=flow)
 
@@ -479,7 +479,7 @@ class Firewall:
             # system or flow has no SNAT capability
             return False, None
 
-        log_info('Firewall', 'Processing SNAT')
+        log_info('Firewall', v2='Processing SNAT')
 
         return self._run_tables.process_snat(packet=packet, flow=flow)
 
@@ -488,6 +488,6 @@ class Firewall:
             # already processed all chains
             return True, None
 
-        log_info('Firewall', 'Processing Egress Filter-Hooks')
+        log_info('Firewall', v2='Processing Egress Filter-Hooks')
 
         return self._run_tables.process_egress(packet=packet, flow=flow)

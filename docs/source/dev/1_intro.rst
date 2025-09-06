@@ -69,10 +69,44 @@ Principles
 Tools & Know-How
 ################
 
+Unit Tests
+**********
+
+The code-base is unit-tested via pytest.
+
+To run the tests:
+
+.. code-block:: bash
+
+    make test
+
+    # OR
+    bash scripts/test.sh
+
+Any changes should be covered by tests. Plugins also have to implement unit-tests!
+
+Linting
+*******
+
+The code-base is unit-tested via pylint.
+
+To run the tests:
+
+.. code-block:: bash
+
+    make lint
+
+    # OR
+    bash scripts/lint.sh
+
+Any changes should be covered by tests. Plugins also have to implement unit-tests!
+
 Debug Output
 ************
 
-You can set the environmental-variable :code:`export DEBUG=1` to get more verbose output!
+You can set the environmental-variable :code:`export DEBUG=1` increase the verbosity to its maximum.
+
+You are also able to set the env-var :code:`export VERB=3` to set the verbosity specifically.
 
 ----
 

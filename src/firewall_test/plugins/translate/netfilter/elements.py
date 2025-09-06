@@ -2,8 +2,9 @@ from abc import ABC
 from ipaddress import ip_network, summarize_address_range, ip_address, IPv4Network, IPv6Network
 
 from config import ProtoL3, ProtoL3IP4, ProtoL3IP6, MatchPort, ProtoL4ICMP, ProtoL4TCP, ProtoL4UDP, ProtoL3IP4IP6, \
-    PROTO_L4_MAPPING, PROTO_L3_MAPPING
-from plugins.translate.netfilter.parts import RULE_ACTIONS
+    PROTO_L4_MAPPING, PROTO_L3_MAPPING, PROTOS_L3, PROTOS_L4
+from plugins.translate.netfilter.parts import RULE_ACTIONS, IGNORE_RULE_EXPRESSIONS, IGNORE_LEFT
+from utils.logger import log_warn
 
 # for schema see: https://www.mankier.com/5/libnftables-json
 
@@ -85,7 +86,9 @@ class NftSet(NftBase):
 # pylint: disable=R0912,R1702
 class NftMatch:
     OP_EQ = '=='
+    OP_IN = 'in'
     OP_NE = '!='
+    OP_NOT = '!'
     OP_GT = '>'
     OP_LT = '<'
 
@@ -119,6 +122,11 @@ class NftMatch:
 
     def _parse_left(self):
         left = self._left
+        for e in IGNORE_LEFT:
+            if left == e or e in left:
+                self._left = None
+                return
+
         if 'payload' in self._left:
             pl = self._left['payload']
 
@@ -248,7 +256,7 @@ class NftMatch:
 
         self.value = values
 
-    def get_match_types(self) -> list[str]:
+    def get_match_types(self) -> (list[str], None):
         match = []
         if self.match_proto_l3:
             match.append('proto_l3')
@@ -278,7 +286,7 @@ class NftMatch:
             match.append('ct')
 
         if len(match) == 0:
-            match = self._left
+            match = None
 
         return match
 
@@ -287,6 +295,9 @@ class NftMatch:
         for v in self.value:
             if isinstance(v, (IPv4Network, IPv6Network)):
                 values.append(str(v))
+
+            elif v in PROTOS_L3 or v in PROTOS_L4:
+                values.append(v.N)
 
             else:
                 values.append(v)
@@ -297,7 +308,34 @@ class NftMatch:
         if self.value_proto_l4 is not None:
             values.append(self.value_proto_l4.N)
 
-        return f"Match: {self.get_match_types()} {self.operator} {values}"
+        matches = self.get_match_types()
+        if matches is None:
+            return 'None (unsupported)'
+
+        if len(matches) == 1:
+            return f"{matches[0]} {self.operator} {values}"
+
+        match_proto = None
+        value_proto = None
+        for proto_kind, proto_mapping in {
+            'proto_l3': PROTO_L3_MAPPING,
+            'proto_l4': PROTO_L4_MAPPING,
+        }.items():
+            if proto_kind in matches:
+                match_proto = proto_kind
+                for v in values:
+                    if v in proto_mapping:
+                        value_proto = v
+
+        if match_proto is not None and value_proto is not None:
+            matches.remove(match_proto)
+            values.remove(value_proto)
+            if len(matches) == 1:
+                matches = matches[0]
+
+            return f"{match_proto} {self.OP_EQ} {value_proto} & {matches} {self.operator} {values}"
+
+        return f"{matches} {self.operator} {values}"
 
 
 class NftRule(NftBase):
@@ -311,21 +349,34 @@ class NftRule(NftBase):
 
         self.action = None
         self.matches: list[NftMatch] = []
+        self.invalid_matches = False
         self.target_chain = None
         self.target_nat_ip = None
         self.target_nat_port = None
 
         for expression in raw['expr']:
+            supported = False
             for a in RULE_ACTIONS:
                 if a in expression:
                     self.action = a
+                    supported = True
 
-            self._init_match(expression)
-            self._init_jump(expression)
-            self._init_goto(expression)
-            self._init_dnat(expression)
-            self._init_snat(expression)
-            self._init_nat_xt(expression)
+            supported = any([
+                supported,
+                self._init_match(expression),
+                self._init_jump(expression),
+                self._init_goto(expression),
+                self._init_dnat(expression),
+                self._init_snat(expression),
+                self._init_nat_xt(expression),
+            ])
+
+            if not supported:
+                ignored = any(
+                    e in expression for e in IGNORE_RULE_EXPRESSIONS
+                )
+                if not ignored:
+                    log_warn('Firewall Plugin', f'Got unsupported rule-expression: "{expression}"')
 
         for match in self.matches:
             if match.value_is_set:
@@ -336,44 +387,63 @@ class NftRule(NftBase):
                 match.parse_right()
                 match.update_value_type()
 
-    def _init_goto(self, e: dict):
+    def _init_goto(self, e: dict) -> bool:
         if 'goto' in e:
             self.target_chain = e['goto']['target']
+            return True
 
-    def _init_jump(self, e: dict):
+        return False
+
+    def _init_jump(self, e: dict) -> bool:
         if 'jump' in e:
             self.target_chain = e['jump']['target']
+            return True
 
-    def _init_match(self, e: dict):
+        return False
+
+    def _init_match(self, e: dict) -> bool:
         if 'match' in e:
-            self.matches.append(
-                NftMatch(
-                    operator=e['match']['op'],
-                    left=e['match']['left'],
-                    right=e['match']['right'],
-                )
+            match = NftMatch(
+                operator=e['match']['op'],
+                left=e['match']['left'],
+                right=e['match']['right'],
             )
+            if match.get_match_types() is None:
+                self.invalid_matches = True
 
-    def _init_dnat(self, e: dict):
+            else:
+                self.matches.append(match)
+
+            return True
+
+        return False
+
+    def _init_dnat(self, e: dict) -> bool:
         if 'dnat' not in e:
-            return
+            return False
 
         self.target_nat_ip = ip_address(e['dnat']['addr'])
         if 'port' in e['dnat']:
             self.target_nat_port = e['dnat']['port']
 
-    def _init_snat(self, e: dict):
+        return True
+
+    def _init_snat(self, e: dict) -> bool:
         if 'snat' not in e:
-            return
+            return False
 
         self.target_nat_ip = ip_address(e['snat']['addr'])
+        return True
 
-    def _init_nat_xt(self, e: dict):
+    def _init_nat_xt(self, e: dict) -> bool:
         if 'xt' not in e:
-            return
+            return False
 
         if 'name' in e['xt'] and e['xt']['name'] == 'MASQUERADE':
             self.action = 'masquerade'
+            return True
+
+        return False
 
     def get_match_types(self) -> list[str]:
         matches = []
@@ -387,4 +457,8 @@ class NftRule(NftBase):
         if self.comment is not None:
             cmt = f' "{self.comment}"'
 
-        return f"Rule: #{self.handle}{cmt} | Matches: {self.matches}"
+        matches = str(self.matches)
+        if len(matches) > 500:
+            matches = matches[:500] + '...'
+
+        return f"Rule: #{self.handle}{cmt} | Matches: {matches}"
