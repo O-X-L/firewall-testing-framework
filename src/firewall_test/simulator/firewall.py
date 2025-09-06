@@ -5,7 +5,7 @@ from plugins.system.abstract import FirewallSystem
 from plugins.system.abstract_rule_match import RuleMatchResult
 from plugins.translate.abstract import Ruleset, Table, Chain, Rule
 from plugins.translate.config import RuleAction, RuleActionKindTerminal, RuleActionKindToChain, RuleActionContinue, \
-    RuleActionKindTerminalKill, RuleActionGoTo, RuleActionKindNAT, RuleActionDNAT
+    RuleActionKindTerminalKill, RuleActionGoTo, RuleActionKindNAT, RuleActionDNAT, RuleActionReturn
 from simulator.packet import PACKET_KINDS, PacketTCPUDP
 from utils.logger import log_debug, log_info, log_warn
 
@@ -15,19 +15,6 @@ class RunFirewallChain:
         self._fw = fw
         self._run_tables = run_tables
 
-    @staticmethod
-    def _log_rule_match(matches: bool, action: (None, RuleAction), debug: bool = False):
-        msg = f' > Match: {matches}'
-
-        if action is not None:
-            msg += f' | Action: {action.N}'
-
-        if debug:
-            log_debug('Firewall', msg)
-
-        else:
-            log_info('Firewall', v2=msg)
-
     def _get_chain_by_name_and_family(self, packet: PACKET_KINDS, name: str, family: str) -> (Chain, None):
         for table in self._run_tables.get_tables(packet):
             for chain in self._run_tables.get_chains(packet=packet, table=table):
@@ -36,7 +23,20 @@ class RunFirewallChain:
 
         return None
 
-    # pylint: disable=R0911
+    def _log_match(self, chain: Chain, rule: Rule, debug: bool = False):
+        lazy_action = ''
+        if self._fw.system.FIREWALL_ACTION_LAZY and rule.action_lazy:
+            lazy_action = ' (lazy)'
+
+        msg = f'> Chain {chain.name} | Rule {rule.seq} | Match => {rule.action.N}{lazy_action}'
+        v2 = f' | {rule.dump()}'
+        if debug:
+            log_debug('Firewall', msg + v2)
+
+        else:
+            log_info(label='Firewall', v1=msg, v2=v2)
+
+    # pylint: disable=R0911,R0912
     def process(self, chain: Chain, packet: PACKET_KINDS) -> (bool, (Rule, None)):
         """
         :param chain: Firewall chain to process; if any rule has an action that targets another chain - it will also be processed
@@ -52,23 +52,27 @@ class RunFirewallChain:
         lazy_rule: (None, Rule) = None
 
         for rule in chain.rules:
-            log_info(
-                label='Firewall',
-                v0=f'> Chain {chain.name} | Rule {rule.seq}',
-                v1=f': {rule.dump()}'
-            )
-
             result: RuleMatchResult = rule_matcher.matches(packet=packet, rule=rule)
-            requires_action = result.matched and result.action is not None
 
-            if not requires_action:
-                self._log_rule_match(matches=result.matched, action=result.action, debug=True)
+            if not result.matched:
+                log_info(
+                    label='Firewall',
+                    v1=f'> Chain {chain.name} | Rule {rule.seq}',
+                    v2=f' | {rule.dump()}'
+                )
                 continue
 
-            self._log_rule_match(matches=result.matched, action=result.action)
+            elif result.action is None:
+                self._log_match(chain=chain, rule=rule)
+                continue
+
+            self._log_match(chain=chain, rule=rule)
 
             if result.action == RuleActionContinue:
                 continue
+
+            if result.action == RuleActionReturn:
+                return True, None
 
             ### ACCEPT / DENY / REJECT / ... ###
 
@@ -107,8 +111,8 @@ class RunFirewallChain:
 
                 log_info(
                     label='Firewall',
-                    v0=f'> Chain {chain.name} | Sub-Chain: {target_chain.name}',
-                    v2=f' {target_chain.family.N} {target_chain.type}'
+                    v1=f'> Chain {chain.name} | Sub-Chain: {target_chain.name}',
+                    v3=f' {target_chain.family.N} {target_chain.type}'
                 )
                 target_chain.run_table = chain.run_table
                 jump_result, jump_rule = self.process(chain=target_chain, packet=packet)
@@ -449,7 +453,7 @@ class Firewall:
         self._run_tables = RunFirewallTables(self)
 
     def process_pre_routing(self, packet: PACKET_KINDS, flow: type[Flow]) -> (bool, (Rule, None)):
-        log_info('Firewall', v2='Processing Pre-Routing Filter-Hooks')
+        log_info('Firewall', v3='Processing Pre-Routing Filter-Hooks')
         if flow == FlowInputForward:
             # before DNAT we cannot know for sure
             flow = FlowInput
@@ -465,12 +469,12 @@ class Firewall:
             # system or flow has no DNAT capability
             return False, None
 
-        log_info('Firewall', v2='Processing DNAT')
+        log_info('Firewall', v3='Processing DNAT')
 
         return self._run_tables.process_dnat(packet=packet, flow=flow)
 
     def process_main(self, packet: PACKET_KINDS, flow: type[Flow]) -> (bool, (Rule, None)):
-        log_info('Firewall', v2='Processing Main Filter-Hooks')
+        log_info('Firewall', v3='Processing Main Filter-Hooks')
 
         return self._run_tables.process_main(packet=packet, flow=flow)
 
@@ -479,7 +483,7 @@ class Firewall:
             # system or flow has no SNAT capability
             return False, None
 
-        log_info('Firewall', v2='Processing SNAT')
+        log_info('Firewall', v3='Processing SNAT')
 
         return self._run_tables.process_snat(packet=packet, flow=flow)
 
@@ -488,6 +492,6 @@ class Firewall:
             # already processed all chains
             return True, None
 
-        log_info('Firewall', v2='Processing Egress Filter-Hooks')
+        log_info('Firewall', v3='Processing Egress Filter-Hooks')
 
         return self._run_tables.process_egress(packet=packet, flow=flow)

@@ -99,7 +99,7 @@ To run the tests:
     # OR
     bash scripts/lint.sh
 
-Any changes should be covered by tests. Plugins also have to implement unit-tests!
+Linter-failures should only be disabled if the code will be refactored anyway. (:code:`# pylint: disable=<CODE>`)
 
 Debug Output
 ************

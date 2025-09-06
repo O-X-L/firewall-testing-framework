@@ -51,7 +51,7 @@ class SimulatorRun:
 
         result, rule = self._s.fw.process_pre_routing(packet=packet, flow=self.flow_type)
         if not result:
-            log_error(label='Firewall', v0='Packet blocked by rule', v1=f': {rule.dump()}', final=True)
+            log_error(label='Firewall', v1='Packet blocked by rule', v2=f': {rule.dump()}', final=True)
             return
 
         ### PROCESSING DNAT ###
@@ -59,13 +59,13 @@ class SimulatorRun:
         _, self.dnat = self._s.fw.process_dnat(packet=packet, flow=self.flow_type)
         self._dnat_done = True
         if self.dnat is not None:
-            log_info(label='Firewall', v0='Performed DNAT', v1=f': {self.packet.dnat_str}')
+            log_info(label='Firewall', v1='Performed DNAT', v2=f': {self.packet.dnat_str}')
 
         ### UPDATE TRAFFIC FLOW AND OUTBOUND-NETWORK-INTERFACE ###
 
         self.local_dst, packet.ni_out = self._is_ip_local(packet.dst)
         self.flow_type = self._get_flow_type()
-        log_info('Firewall', v1=f'Flow-type: {self.flow_type.N}')
+        log_info('Firewall', v2=f'Flow-type: {self.flow_type.N}')
 
         ### CHECK DESTINATION-ROUTE ###
 
@@ -98,7 +98,7 @@ class SimulatorRun:
 
         result, rule = self._s.fw.process_main(packet=packet, flow=self.flow_type)
         if not result:
-            log_error(label='Firewall', v0='Packet blocked by rule', v1=f': {rule.dump()}', final=True)
+            log_error(label='Firewall', v1='Packet blocked by rule', v2=f': {rule.dump()}', final=True)
             return
 
         ### PROCESSING SOURCE-NAT ###
@@ -114,7 +114,7 @@ class SimulatorRun:
                 else:
                     self.packet.src = self._get_snat_masquerade_ip()
 
-            log_info(label='Firewall', v0='Performed SNAT', v1=f': {self.packet.snat_str()}')
+            log_info(label='Firewall', v1='Performed SNAT', v2=f': {self.packet.snat_str()}')
 
         elif self.flow_type == FlowOutput:
             # use the correct outbound-IP if the traffic originated from this host itself
@@ -127,7 +127,7 @@ class SimulatorRun:
 
         result, rule = self._s.fw.process_egress(packet=packet, flow=self.flow_type)
         if not result:
-            log_error(label='Firewall', v0='Packet blocked by rule', v1=f': {rule.dump()}', final=True)
+            log_error(label='Firewall', v1='Packet blocked by rule', v2=f': {rule.dump()}', final=True)
             return
 
         ### DONE ###

@@ -18,6 +18,4 @@ fi
 
 cd "$(dirname "$0")/.."
 
-export DEBUG=1
-
 python3 src/firewall_test/cli.py --firewall-system 'linux_netfilter' --file-interfaces 'testdata/plugin_translate_linux_interfaces.json' --file-routes 'testdata/plugin_translate_linux_routes.json' --file-route-rules 'testdata/plugin_translate_linux_route-rules.json' --file-ruleset 'testdata/plugin_translate_netfilter_ruleset.json' --src-ip "$SRC" --dst-ip "$DST"
