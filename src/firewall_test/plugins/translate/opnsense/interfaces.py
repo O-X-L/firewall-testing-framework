@@ -28,6 +28,7 @@ class OPNsenseNetworkInterfaces(TranslatePluginNetworkInterfaces):
             'net4': [],
             'net6': [],
             'up': raw['status'] == 'up',
+            'desc': raw.get('description', None),
         }
 
         ips = raw.get('ipv4', [])

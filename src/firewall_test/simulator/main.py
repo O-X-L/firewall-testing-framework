@@ -39,7 +39,7 @@ class SimulatorRun:
         self.route_src = self._s.router.get_src_route(self.packet)
         self._update_packet_ni_in()
         if packet.ni_in is not None:
-            log_info('Router', f'Packet inbound-interface: {packet.ni_in}')
+            self._log_ni(in_out='in', name=packet.ni_in)
 
         if self.route_src is None:
             log_error('Router', 'No Source-Route found', final=True)
@@ -72,7 +72,7 @@ class SimulatorRun:
         self.route_dst = self._s.router.get_route(self.packet)
         self._update_packet_ni_out()
         if packet.ni_out is not None:
-            log_info('Router', f'Packet outbound-interface: {packet.ni_out}')
+            self._log_ni(in_out='out', name=packet.ni_out)
 
         if self.flow_type != FlowInput:
             if self.route_dst is None:
@@ -243,6 +243,17 @@ class SimulatorRun:
             msg += f', preferred-source-IP {route.src_pref}'
 
         log_info('Router', msg)
+
+    def _log_ni(self, in_out: str, name: str):
+        desc = ''
+        for ni in self._s.nis:
+            if ni.name == name:
+                if ni.desc is not None:
+                    desc = f' ({ni.desc})'
+
+                break
+
+        log_info('Router', f'Packet {in_out}bound-interface: {name}{desc}')
 
     @staticmethod
     def _log_block(rule: (Rule, None)):

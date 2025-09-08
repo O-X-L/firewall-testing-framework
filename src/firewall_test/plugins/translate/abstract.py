@@ -161,7 +161,7 @@ class NetworkInterface(TranslateOutput):
     def __init__(
             self,
             name: str, up: bool, ip4: list[str], ip6: list[str],
-            net4: list[str], net6: list[str], mac: str = None,
+            net4: list[str], net6: list[str], mac: str = None, desc: str = None,
     ):
         self.name = name
         self.up = up
@@ -170,9 +170,11 @@ class NetworkInterface(TranslateOutput):
         self.net4 = net4
         self.net6 = net6
         self.mac = mac
+        self.desc = desc
 
     def __repr__(self) -> str:
-        return f'NETWORK-INTERFACE: {self.name} with IPv4 {self.ip4} and IPv6 {self.ip6}'
+        desc = '' if self.desc is None else f' description {self.desc}'
+        return f'NETWORK-INTERFACE: {self.name} with IPv4 {self.ip4} and IPv6 {self.ip6}{desc}'
 
     def dump(self) -> dict:
         ip4, ip6, net4, net6 = [], [], [], []
@@ -196,6 +198,7 @@ class NetworkInterface(TranslateOutput):
             'net4': net4,
             'net6': net6,
             'mac': self.mac,
+            'desc': self.desc,
         }
 
     def validate(self):
