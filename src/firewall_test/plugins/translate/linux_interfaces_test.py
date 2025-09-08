@@ -7,10 +7,11 @@ with open(TESTDATA_FILE_NIS, 'r', encoding='utf-8') as f:
 def test_linux_nis():
     from plugins.translate.linux import LinuxNetworkInterfaces
 
-    r = LinuxNetworkInterfaces(TESTDATA_NICS)
-    o = r.get()
+    nis = LinuxNetworkInterfaces(TESTDATA_NICS).get()
 
-    for ni in o:
+    assert len(nis) == 4
+
+    for ni in nis:
         ni.validate()
 
         if ni.name == 'lo':

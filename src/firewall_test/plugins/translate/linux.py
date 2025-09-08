@@ -1,9 +1,11 @@
-from ipaddress import ip_address, ip_network, IPv4Address
 from json import loads as json_loads
+from ipaddress import ip_address, ip_network, IPv4Address
 
 from config import DEFAULT_ROUTE_IP4, DEFAULT_ROUTE_IP6, ProtoL3IP4, ProtoL3IP6
 from plugins.translate.abstract import TranslatePluginStaticRoutes, TranslatePluginStaticRouteRules, \
     StaticRoute, StaticRouteRule, TranslatePluginNetworkInterfaces, NetworkInterface
+
+# pylint: disable=R0801
 
 
 class LinuxRouteRules(TranslatePluginStaticRouteRules):
@@ -48,18 +50,22 @@ class LinuxRoutes(TranslatePluginStaticRoutes):
         return [
             StaticRoute(**self._parse_route(r))
             for r in self.raw
+            if r.get('type', '') not in ['broadcast', 'multicast']
         ]
 
     @staticmethod
     def _parse_route(raw: dict) -> dict:
+        scope = raw.get('scope', 'global')
+        if scope == 'host':
+            scope = 'local'
+
         r = {
-            'scope': raw.get('scope', 'remote'),
+            'scope':scope,
             'ni': raw.get('dev', None),
             'metric': raw.get('metric', None),
             'src_pref': raw.get('prefsrc', None),
             'gw': raw.get('gateway', None),
             'table': raw.get('table', 'default'),
-            'type': raw.get('type', 'default'),
         }
 
         if raw.get('dst') == 'default':
@@ -92,14 +98,14 @@ class LinuxNetworkInterfaces(TranslatePluginNetworkInterfaces):
     @staticmethod
     def _parse_ni(raw: dict) -> dict:
         r = {
-            'name': raw.get('ifname'),
-            'mac': raw.get('address'),
+            'name': raw['ifname'],
+            'mac': raw['address'],
             ProtoL3IP4.N: [],
             ProtoL3IP6.N: [],
             'net4': [],
             'net6': [],
+            'up': raw.get('operstate') == 'UP' or raw['ifname'] == 'lo',
         }
-        r['up'] = raw.get('operstate') == 'UP' or r['name'] == 'lo'
 
         for info in raw.get('addr_info'):
             ip = ip_address(info['local'])

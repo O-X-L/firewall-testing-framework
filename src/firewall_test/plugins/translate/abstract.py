@@ -32,13 +32,12 @@ class TranslateOutput(ABC):
 class StaticRoute(TranslateOutput):
     # pylint: disable=W0622
     def __init__(
-        self, table: str, net: str, scope: str, type: str, gw: str = None, src_pref: str = None,
+        self, table: str, net: str, scope: str, gw: str = None, src_pref: str = None,
         ni: str = None, metric: int = None,
     ):
         self.table = table
         self.net = net
         self.scope = scope
-        self.type = type
         self.gw = gw
         self.src_pref = src_pref
         self.ni = ni
@@ -48,7 +47,7 @@ class StaticRoute(TranslateOutput):
             self.src_pref = ip_address(self.src_pref)
 
     def __repr__(self) -> str:
-        return f'ROUTE: Network {self.net} in Table {self.table} via {self.ni} {self.gw} metric {self.metric} type {self.type}'
+        return f'ROUTE: Network {self.net} in Table {self.table} via {self.ni} {self.gw} metric {self.metric}'
 
     def dump(self) -> dict:
         gw, net = None, None
@@ -66,7 +65,6 @@ class StaticRoute(TranslateOutput):
             'table': self.table,
             'net': net,
             'scope': self.scope,
-            'type': self.type,
             'gw': gw,
             'src_pref': self.src_pref,
             'ni': self.ni,
@@ -84,8 +82,7 @@ class StaticRoute(TranslateOutput):
             assert isinstance(r['src_pref'], (IPv4Address, IPv6Address))
 
         assert r['table'] in ['default', 'main', 'local', 'test']
-        assert r['type'] in ['default', 'local', 'broadcast', 'multicast']
-        assert r['scope'] in ['link', 'host', 'global', 'remote']
+        assert r['scope'] in ['link', 'local', 'global']
 
     def ip_count(self) -> int:
         cidr = int(str(self.net).split('/')[1])

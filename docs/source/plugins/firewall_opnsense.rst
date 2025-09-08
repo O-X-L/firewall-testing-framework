@@ -1,5 +1,11 @@
 .. _plugins_fw_opnsense:
 
+.. |export_backup| image:: ../_static/img/plugin-opnsense-backup.png
+   :class: wiki-img
+
+.. |export_network| image:: ../_static/img/plugin-opnsense-export.png
+   :class: wiki-img
+
 .. include:: ../_include/head.rst
 
 ===================
@@ -11,16 +17,29 @@ Firewall - OPNsense
 Config Export
 #############
 
-1. `Download a Config-Backup <https://docs.opnsense.org/manual/backups.html>`_
+1. `Download a Config-Backup <https://docs.opnsense.org/manual/backups.html>`_ (referenced as :code:`config.xml`)
 
-2. `Supply the runtime routes manually <https://docs.opnsense.org/manual/routes.html#status>`_ or `query them via API <https://docs.opnsense.org/development/api/core/diagnostics.html#id6>`_
+    |export_backup|
+
+2. Download the current network status via the WebUI: :code:`Interfaces - Overview - Download Buttom` (referenced as :code:`network.json`)
+
+    |export_network|
 
 ----
 
 Run
 ###
 
-.. include:: ../_include/warn_wip.rst
+Here is an example on how to run supply the exported config:
+
+.. code-block:: bash
+
+    ftf-cli --firewall-system 'linux_netfilter' \
+            --file-ruleset 'config.xml' \
+            --file-interfaces 'network.json' \
+            --file-routes 'network.json' \
+            --src-ip 172.17.11.5 \
+            --dst-ip 1.1.1.1
 
 ----
 

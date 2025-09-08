@@ -1,0 +1,3980 @@
+<?xml version="1.0"?>
+<opnsense>
+  <system>
+    <hostname>fw01</hostname>
+    <domain>test.ftf.oxl.app</domain>
+  </system>
+  <interfaces>
+    <wan>
+      <if>vtnet0</if>
+      <descr/>
+      <enable>1</enable>
+      <spoofmac/>
+      <blockpriv>1</blockpriv>
+      <blockbogons>1</blockbogons>
+    </wan>
+    <lan>
+      <if>vtnet1</if>
+      <descr/>
+      <enable>1</enable>
+      <spoofmac/>
+      <ipaddr>10.34.28.251</ipaddr>
+      <subnet>24</subnet>
+    </lan>
+    <lo0>
+      <internal_dynamic>1</internal_dynamic>
+      <descr>Loopback</descr>
+      <enable>1</enable>
+      <if>lo0</if>
+      <ipaddr>127.0.0.1</ipaddr>
+      <ipaddrv6>::1</ipaddrv6>
+      <subnet>8</subnet>
+      <subnetv6>128</subnetv6>
+      <type>none</type>
+      <virtual>1</virtual>
+    </lo0>
+    <opt3>
+      <if>vtnet3</if>
+      <descr>LAN2</descr>
+      <enable>1</enable>
+      <spoofmac/>
+      <ipaddr>10.86.21.251</ipaddr>
+      <subnet>24</subnet>
+    </opt3>
+    <opt4>
+      <if>wg2</if>
+      <descr>C2S_VPN</descr>
+      <enable>1</enable>
+      <spoofmac/>
+    </opt4>
+    <wireguard>
+      <internal_dynamic>1</internal_dynamic>
+      <descr>WireGuard (Group)</descr>
+      <if>wireguard</if>
+      <virtual>1</virtual>
+      <enable>1</enable>
+      <type>group</type>
+      <networks/>
+    </wireguard>
+    <openvpn>
+      <internal_dynamic>1</internal_dynamic>
+      <enable>1</enable>
+      <if>openvpn</if>
+      <descr>OpenVPN</descr>
+      <type>group</type>
+      <virtual>1</virtual>
+      <networks/>
+    </openvpn>
+    <opt1>
+      <if>wg0</if>
+      <descr>VPN1</descr>
+      <enable>1</enable>
+      <spoofmac/>
+    </opt1>
+    <opt5>
+      <if>vtnet4</if>
+      <descr>WAN2</descr>
+      <enable>1</enable>
+      <lock>1</lock>
+      <spoofmac/>
+      <blockpriv>1</blockpriv>
+      <blockbogons>1</blockbogons>
+      <ipaddr>169.169.169.4</ipaddr>
+      <subnet>28</subnet>
+      <gateway>WAN2_GW</gateway>
+      <ipaddrv6>2a01:beef:beef:f5::1:1</ipaddrv6>
+      <subnetv6>64</subnetv6>
+      <gatewayv6>WAN2_GW6</gatewayv6>
+    </opt5>
+    <opt6>
+      <if>vtnet5</if>
+      <descr>LAN3</descr>
+      <enable>1</enable>
+      <spoofmac/>
+      <ipaddr>10.57.65.251</ipaddr>
+      <subnet>24</subnet>
+    </opt6>
+    <GRP_MAIL>
+      <internal_dynamic>1</internal_dynamic>
+      <enable>1</enable>
+      <networks/>
+      <if>GRP_MAIL</if>
+      <descr>GRP_MAIL</descr>
+      <virtual>1</virtual>
+      <type>group</type>
+    </GRP_MAIL>
+    <opt2>
+      <if>vtnet2</if>
+      <descr>HA_SYNC</descr>
+      <enable>1</enable>
+      <lock>1</lock>
+      <spoofmac/>
+      <ipaddr>192.168.0.1</ipaddr>
+      <subnet>30</subnet>
+    </opt2>
+  </interfaces>
+  <nat>
+    <outbound>
+      <mode>hybrid</mode>
+      <rule>
+        <source>
+          <network>GROUP_MAIL_SEND</network>
+        </source>
+        <destination>
+          <network>NET_PRIVATE</network>
+          <not>1</not>
+        </destination>
+        <descr/>
+        <category>Inet,Mailing</category>
+        <interface>opt5</interface>
+        <tag/>
+        <tagged/>
+        <poolopts/>
+        <poolopts_sourcehashkey/>
+        <ipprotocol>inet</ipprotocol>
+        <target>HOST_WAN6</target>
+        <sourceport/>
+        <dstport>25</dstport>
+        <protocol>tcp</protocol>
+      </rule>
+      <rule>
+        <source>
+          <network>GROUP_MAIL_SEND</network>
+        </source>
+        <destination>
+          <network>NET_PRIVATE</network>
+          <not>1</not>
+        </destination>
+        <descr/>
+        <category>Inet,Mailing</category>
+        <interface>opt5</interface>
+        <tag/>
+        <tagged/>
+        <poolopts/>
+        <poolopts_sourcehashkey/>
+        <ipprotocol>inet</ipprotocol>
+        <target>HOST_WAN6</target>
+        <sourceport/>
+        <dstport>SVC_SMTP_TLS</dstport>
+        <protocol>tcp</protocol>
+      </rule>
+      <rule>
+        <source>
+          <network>opt3</network>
+        </source>
+        <destination>
+          <network>NET_PRIVATE</network>
+          <not>1</not>
+        </destination>
+        <descr/>
+        <category>Inet</category>
+        <interface>opt5</interface>
+        <tag/>
+        <tagged/>
+        <poolopts/>
+        <poolopts_sourcehashkey/>
+        <ipprotocol>inet</ipprotocol>
+        <target>HOST_WAN5</target>
+        <sourceport/>
+      </rule>
+      <rule>
+        <source>
+          <network>HOST_SRV48</network>
+        </source>
+        <destination>
+          <network>bogons</network>
+          <not>1</not>
+        </destination>
+        <descr/>
+        <category>Inet,Mailing</category>
+        <interface>opt5</interface>
+        <tag/>
+        <tagged/>
+        <poolopts/>
+        <poolopts_sourcehashkey/>
+        <ipprotocol>inet</ipprotocol>
+        <target>HOST_WAN3</target>
+        <sourceport/>
+        <dstport>25</dstport>
+        <protocol>tcp</protocol>
+        <disabled>1</disabled>
+      </rule>
+      <rule>
+        <source>
+          <network>HOST_SVC1</network>
+        </source>
+        <destination>
+          <network>NET_PRIVATE</network>
+          <not>1</not>
+        </destination>
+        <descr/>
+        <category>Inet,Mailing</category>
+        <interface>opt5</interface>
+        <tag/>
+        <tagged/>
+        <poolopts/>
+        <poolopts_sourcehashkey/>
+        <ipprotocol>inet</ipprotocol>
+        <target>HOST_WAN6</target>
+        <sourceport/>
+        <dstport>SVC_SVC1</dstport>
+        <protocol>tcp</protocol>
+      </rule>
+      <rule>
+        <source>
+          <network>(self)</network>
+        </source>
+        <destination>
+          <address>172.16.0.0/16</address>
+        </destination>
+        <descr/>
+        <category/>
+        <interface>wireguard</interface>
+        <tag/>
+        <tagged/>
+        <poolopts/>
+        <poolopts_sourcehashkey/>
+        <ipprotocol>inet</ipprotocol>
+        <target>lanip</target>
+        <sourceport/>
+        <protocol>tcp</protocol>
+      </rule>
+      <rule>
+        <source>
+          <network>NET_PRIVATE</network>
+        </source>
+        <destination>
+          <network>bogons</network>
+          <not>1</not>
+        </destination>
+        <descr/>
+        <category/>
+        <interface>wan</interface>
+        <tag/>
+        <tagged/>
+        <poolopts/>
+        <poolopts_sourcehashkey/>
+        <ipprotocol>inet</ipprotocol>
+        <target>wanip</target>
+        <sourceport/>
+      </rule>
+      <rule>
+        <source>
+          <network>NET_PRIVATE</network>
+        </source>
+        <destination>
+          <network>bogons</network>
+          <not>1</not>
+        </destination>
+        <descr/>
+        <category/>
+        <interface>opt5</interface>
+        <tag/>
+        <tagged/>
+        <poolopts/>
+        <poolopts_sourcehashkey/>
+        <ipprotocol>inet</ipprotocol>
+        <target>opt5ip</target>
+        <sourceport/>
+      </rule>
+      <rule>
+        <source>
+          <network>(self)</network>
+          <not>1</not>
+        </source>
+        <destination>
+          <network>(self)</network>
+          <not>1</not>
+        </destination>
+        <descr>DNS Catchall</descr>
+        <category/>
+        <interface>wan</interface>
+        <tag/>
+        <tagged/>
+        <poolopts/>
+        <poolopts_sourcehashkey/>
+        <ipprotocol>inet</ipprotocol>
+        <target>other-subnet</target>
+        <targetip>127.0.0.1</targetip>
+        <targetip_subnet>32</targetip_subnet>
+        <sourceport/>
+        <dstport>53</dstport>
+        <protocol>tcp/udp</protocol>
+      </rule>
+    </outbound>
+    <rule>
+      <protocol>tcp/udp</protocol>
+      <interface>lan</interface>
+      <category/>
+      <ipprotocol>inet</ipprotocol>
+      <descr>DNS Catchall</descr>
+      <tag/>
+      <tagged/>
+      <poolopts/>
+      <associated-rule-id>nat_676ab50353a326.55807794</associated-rule-id>
+      <target>127.0.0.1</target>
+      <local-port>53</local-port>
+      <source>
+        <network>(self)</network>
+        <not>1</not>
+      </source>
+      <destination>
+        <network>(self)</network>
+        <not>1</not>
+        <port>53</port>
+      </destination>
+    </rule>
+    <rule>
+      <protocol>tcp</protocol>
+      <interface>opt5</interface>
+      <category>Public,Web</category>
+      <ipprotocol>inet</ipprotocol>
+      <descr>LAN2 Test Web</descr>
+      <tag/>
+      <tagged/>
+      <poolopts/>
+      <associated-rule-id>nat_66d5f07f5bf0d5.86241599</associated-rule-id>
+      <target>HOST_LAN2_DOCKER</target>
+      <local-port>8080</local-port>
+      <source>
+        <any>1</any>
+      </source>
+      <destination>
+        <address>HOST_WAN5</address>
+        <port>80</port>
+      </destination>
+    </rule>
+    <rule>
+      <protocol>tcp</protocol>
+      <interface>opt5</interface>
+      <category>Public,SVC9</category>
+      <ipprotocol>inet</ipprotocol>
+      <descr>SVC_34 Proxies</descr>
+      <tag/>
+      <tagged/>
+      <poolopts/>
+      <associated-rule-id>nat_671b841fb57463.64284189</associated-rule-id>
+      <target>HOST_SVC1</target>
+      <local-port>SVC_SVC1_PROXY</local-port>
+      <source>
+        <address>GEOIP_NEARBY</address>
+      </source>
+      <destination>
+        <address>HOST_WAN6</address>
+        <port>SVC_SVC1_PROXY</port>
+      </destination>
+    </rule>
+    <rule>
+      <protocol>tcp</protocol>
+      <interface>opt5</interface>
+      <category>Public,Mailing</category>
+      <ipprotocol>inet</ipprotocol>
+      <descr>CMP Mailing</descr>
+      <tag/>
+      <tagged/>
+      <poolopts/>
+      <associated-rule-id>nat_66d5e4af686690.25220183</associated-rule-id>
+      <target>HOST_SRV48</target>
+      <local-port>25</local-port>
+      <source>
+        <any>1</any>
+      </source>
+      <destination>
+        <address>HOST_WAN3</address>
+        <port>25</port>
+      </destination>
+    </rule>
+    <rule>
+      <protocol>tcp</protocol>
+      <interface>opt5</interface>
+      <category>Public,Mailing</category>
+      <ipprotocol>inet</ipprotocol>
+      <descr>CMP Mailing</descr>
+      <tag/>
+      <tagged/>
+      <poolopts/>
+      <associated-rule-id>nat_66d5fb44137212.61651789</associated-rule-id>
+      <target>HOST_SRV48</target>
+      <local-port>465</local-port>
+      <source>
+        <any>1</any>
+      </source>
+      <destination>
+        <address>HOST_WAN3</address>
+        <port>465</port>
+      </destination>
+    </rule>
+    <rule>
+      <protocol>tcp</protocol>
+      <interface>opt5</interface>
+      <category>Public,Mailing</category>
+      <ipprotocol>inet</ipprotocol>
+      <descr>CMP Mailing</descr>
+      <tag/>
+      <tagged/>
+      <poolopts/>
+      <associated-rule-id>nat_66d5f01434fe30.40287920</associated-rule-id>
+      <target>HOST_SRV48</target>
+      <local-port>80</local-port>
+      <source>
+        <any>1</any>
+      </source>
+      <destination>
+        <address>HOST_WAN3</address>
+        <port>80</port>
+      </destination>
+    </rule>
+    <rule>
+      <protocol>tcp</protocol>
+      <interface>opt5</interface>
+      <category>Public,Mailing</category>
+      <ipprotocol>inet</ipprotocol>
+      <descr>LAN3 1</descr>
+      <tag/>
+      <tagged/>
+      <poolopts/>
+      <associated-rule-id>nat_66d5e964c39ae5.67919802</associated-rule-id>
+      <target>HOST_SRV67</target>
+      <local-port>22</local-port>
+      <source>
+        <any>1</any>
+      </source>
+      <destination>
+        <address>HOST_WAN11</address>
+        <port>PORT_SVC_55</port>
+      </destination>
+    </rule>
+    <rule>
+      <protocol>udp</protocol>
+      <interface>opt5</interface>
+      <category>Public,Mailing</category>
+      <ipprotocol>inet</ipprotocol>
+      <descr>LAN3 1</descr>
+      <tag/>
+      <tagged/>
+      <poolopts/>
+      <associated-rule-id>nat_66d5e9072e86e8.17629119</associated-rule-id>
+      <target>HOST_SRV67</target>
+      <local-port>PORT_SVC_59</local-port>
+      <source>
+        <any>1</any>
+      </source>
+      <destination>
+        <address>HOST_WAN11</address>
+        <port>PORT_SVC_59</port>
+      </destination>
+    </rule>
+    <rule>
+      <protocol>tcp</protocol>
+      <interface>opt5</interface>
+      <category>Public,Mailing</category>
+      <ipprotocol>inet</ipprotocol>
+      <descr>LAN3 1</descr>
+      <tag/>
+      <tagged/>
+      <poolopts/>
+      <associated-rule-id>nat_66d5e9a2acc807.85871668</associated-rule-id>
+      <target>HOST_SRV67</target>
+      <local-port>8000</local-port>
+      <source>
+        <any>1</any>
+      </source>
+      <destination>
+        <address>HOST_WAN11</address>
+        <port>PORT_SVC85</port>
+      </destination>
+    </rule>
+    <rule>
+      <protocol>tcp/udp</protocol>
+      <interface>opt3,opt6,lan,opt2</interface>
+      <category>BaseServices,NAT</category>
+      <ipprotocol>inet</ipprotocol>
+      <descr/>
+      <tag/>
+      <tagged/>
+      <poolopts/>
+      <associated-rule-id>nat_63233b61c46d42.45688196</associated-rule-id>
+      <target>127.0.0.1</target>
+      <local-port>53</local-port>
+      <source>
+        <any>1</any>
+      </source>
+      <destination>
+        <network>(self)</network>
+        <not>1</not>
+        <port>53</port>
+      </destination>
+      <natreflection>disable</natreflection>
+    </rule>
+  </nat>
+  <filter>
+    <rule uuid="7410c3d7-317a-4a4c-82d8-bac37c50a9e0">
+      <type>pass</type>
+      <interface>opt2</interface>
+      <ipprotocol>inet</ipprotocol>
+      <statetype>keep state</statetype>
+      <direction>any</direction>
+      <floating>yes</floating>
+      <log>1</log>
+      <quick>1</quick>
+      <source>
+        <network>opt2</network>
+      </source>
+      <destination>
+        <network>opt2</network>
+      </destination>
+    </rule>
+    <rule uuid="d81b9bed-7695-4f59-a0f9-4f4d65609191">
+      <type>block</type>
+      <ipprotocol>inet</ipprotocol>
+      <statetype>keep state</statetype>
+      <descr>SpamHaus DROP Block Outbound</descr>
+      <direction>in</direction>
+      <category>Inet,Security</category>
+      <floating>yes</floating>
+      <log>1</log>
+      <quick>1</quick>
+      <source>
+        <any>1</any>
+      </source>
+      <destination>
+        <address>IPLIST_SpamHaus_DROP</address>
+      </destination>
+    </rule>
+    <rule uuid="30acd49e-a957-4217-8fb9-50d448586a3b">
+      <type>block</type>
+      <ipprotocol>inet</ipprotocol>
+      <statetype>keep state</statetype>
+      <descr>SpamHaus DROP Block Inbound</descr>
+      <direction>in</direction>
+      <category>Inet,Security</category>
+      <floating>yes</floating>
+      <log>1</log>
+      <quick>1</quick>
+      <source>
+        <address>IPLIST_SpamHaus_DROP</address>
+      </source>
+      <destination>
+        <any>1</any>
+      </destination>
+    </rule>
+    <rule uuid="96a253d5-2aa9-465c-8df4-04953e098c39">
+      <type>block</type>
+      <ipprotocol>inet</ipprotocol>
+      <statetype>keep state</statetype>
+      <descr>SpamHaus EDROP Block Outbound</descr>
+      <direction>in</direction>
+      <category>Inet,Security</category>
+      <floating>yes</floating>
+      <log>1</log>
+      <quick>1</quick>
+      <source>
+        <any>1</any>
+      </source>
+      <destination>
+        <address>IPLIST_SpamHaus_EDROP</address>
+      </destination>
+    </rule>
+    <rule uuid="e92342c3-862f-49a3-9109-4d0713706287">
+      <type>block</type>
+      <ipprotocol>inet</ipprotocol>
+      <statetype>keep state</statetype>
+      <descr>SpamHaus EDROP Block Inbound</descr>
+      <direction>in</direction>
+      <category>Inet,Security</category>
+      <floating>yes</floating>
+      <log>1</log>
+      <quick>1</quick>
+      <source>
+        <address>IPLIST_SpamHaus_EDROP</address>
+      </source>
+      <destination>
+        <any>1</any>
+      </destination>
+    </rule>
+    <rule uuid="5d79d76c-9e45-4fce-b99b-a79ca89a6529">
+      <type>block</type>
+      <ipprotocol>inet6</ipprotocol>
+      <statetype>keep state</statetype>
+      <descr>SpamHaus DROPv6 Block Outbound</descr>
+      <direction>in</direction>
+      <category>Inet,Security</category>
+      <floating>yes</floating>
+      <log>1</log>
+      <quick>1</quick>
+      <source>
+        <any>1</any>
+      </source>
+      <destination>
+        <address>IPLIST_SpamHaus_DROPv6</address>
+      </destination>
+    </rule>
+    <rule uuid="383972c6-9f26-451d-8c2f-74b09b54aed8">
+      <type>block</type>
+      <ipprotocol>inet6</ipprotocol>
+      <statetype>keep state</statetype>
+      <descr>SpamHaus DROPv6 Block Inbound</descr>
+      <direction>in</direction>
+      <category>Inet,Security</category>
+      <floating>yes</floating>
+      <log>1</log>
+      <quick>1</quick>
+      <source>
+        <address>IPLIST_SpamHaus_DROPv6</address>
+      </source>
+      <destination>
+        <any>1</any>
+      </destination>
+    </rule>
+    <rule uuid="cc96a6c9-2c73-4638-b910-0844c3ba8940">
+      <type>pass</type>
+      <ipprotocol>inet</ipprotocol>
+      <statetype>keep state</statetype>
+      <direction>in</direction>
+      <floating>yes</floating>
+      <quick>1</quick>
+      <protocol>icmp</protocol>
+      <source>
+        <address>NET_PRIVATE</address>
+      </source>
+      <destination>
+        <any>1</any>
+      </destination>
+    </rule>
+    <rule uuid="337a8ad4-bf94-4388-b78c-1bb0cf99237e">
+      <type>pass</type>
+      <interface>opt3,lan,opt2,wireguard</interface>
+      <ipprotocol>inet</ipprotocol>
+      <statetype>keep state</statetype>
+      <descr>System Mails</descr>
+      <direction>in</direction>
+      <category>Mailing,Internal</category>
+      <floating>yes</floating>
+      <quick>1</quick>
+      <protocol>tcp</protocol>
+      <source>
+        <address>NET_PRIVATE</address>
+      </source>
+      <destination>
+        <address>HOST_SRV48</address>
+        <port>SVC_SMTP_TLS</port>
+      </destination>
+    </rule>
+    <rule uuid="f11a103a-e238-4b9a-ba7e-950f64a195f7">
+      <type>pass</type>
+      <ipprotocol>inet</ipprotocol>
+      <statetype>keep state</statetype>
+      <descr>CMP Web Services</descr>
+      <direction>in</direction>
+      <category>Mailing,Internal</category>
+      <floating>yes</floating>
+      <quick>1</quick>
+      <protocol>tcp/udp</protocol>
+      <source>
+        <address>NET_PRIVATE</address>
+      </source>
+      <destination>
+        <address>HOST_DNS_CMP</address>
+        <port>SVC_HTTP_HTTPS</port>
+      </destination>
+    </rule>
+    <rule uuid="e70a5538-e65f-4e4d-a647-78704b4ba1c3">
+      <type>pass</type>
+      <ipprotocol>inet</ipprotocol>
+      <statetype>keep state</statetype>
+      <direction>in</direction>
+      <category>Internal</category>
+      <floating>yes</floating>
+      <quick>1</quick>
+      <protocol>tcp/udp</protocol>
+      <source>
+        <address>NET_PRIVATE</address>
+      </source>
+      <destination>
+        <network>(self)</network>
+        <port>53</port>
+      </destination>
+    </rule>
+    <rule uuid="d659f9f8-4504-414f-83b0-efb749f2c69d">
+      <source>
+        <any>1</any>
+      </source>
+      <interface>opt3,opt6,lan,opt2</interface>
+      <statetype>keep state</statetype>
+      <protocol>tcp/udp</protocol>
+      <ipprotocol>inet</ipprotocol>
+      <destination>
+        <address>127.0.0.1</address>
+        <port>53</port>
+      </destination>
+      <descr/>
+      <category>BaseServices,NAT</category>
+      <associated-rule-id>nat_63233b61c46d42.45688196</associated-rule-id>
+      <floating>1</floating>
+      <quick>yes</quick>
+    </rule>
+    <rule uuid="68939aee-2eb0-4675-9c2b-cfbca35b0566">
+      <type>pass</type>
+      <ipprotocol>inet</ipprotocol>
+      <statetype>keep state</statetype>
+      <direction>in</direction>
+      <floating>yes</floating>
+      <quick>1</quick>
+      <protocol>tcp/udp</protocol>
+      <source>
+        <address>NET_PRIVATE</address>
+      </source>
+      <destination>
+        <address>HOST_DNS_TRUSTED_REPOS</address>
+        <port>SVC_HTTP_HTTPS</port>
+      </destination>
+    </rule>
+    <rule uuid="614d0f4a-7a48-40fa-8e68-bd557e2c1af2">
+      <type>pass</type>
+      <ipprotocol>inet</ipprotocol>
+      <statetype>keep state</statetype>
+      <direction>in</direction>
+      <floating>yes</floating>
+      <quick>1</quick>
+      <protocol>tcp/udp</protocol>
+      <source>
+        <address>NET_PRIVATE</address>
+      </source>
+      <destination>
+        <address>HOST_DNS_DEBIAN_NTP</address>
+        <port>123</port>
+      </destination>
+    </rule>
+    <rule uuid="cc4c59c1-456e-48c8-bc26-e65253e5e93b">
+      <type>pass</type>
+      <ipprotocol>inet</ipprotocol>
+      <statetype>keep state</statetype>
+      <direction>in</direction>
+      <floating>yes</floating>
+      <quick>1</quick>
+      <protocol>tcp/udp</protocol>
+      <source>
+        <address>NET_PRIVATE</address>
+      </source>
+      <destination>
+        <address>HOST_SRV39</address>
+        <port>5140</port>
+      </destination>
+    </rule>
+    <rule uuid="564e4c20-9cb9-423c-9d66-a203df56b9c0">
+      <type>pass</type>
+      <ipprotocol>inet</ipprotocol>
+      <statetype>keep state</statetype>
+      <direction>in</direction>
+      <floating>yes</floating>
+      <quick>1</quick>
+      <protocol>tcp/udp</protocol>
+      <source>
+        <address>GRP_DOCKER</address>
+      </source>
+      <destination>
+        <address>HOST_DNS_DOCKER</address>
+        <port>443</port>
+      </destination>
+    </rule>
+    <rule uuid="be4cfbdb-6ac8-46a8-ae8c-3728fbe98d61">
+      <type>pass</type>
+      <interface>opt5</interface>
+      <ipprotocol>inet6</ipprotocol>
+      <statetype>keep state</statetype>
+      <direction>in</direction>
+      <floating>yes</floating>
+      <quick>1</quick>
+      <protocol>ipv6-icmp</protocol>
+      <icmp6-type>echoreq</icmp6-type>
+      <source>
+        <network>opt5</network>
+      </source>
+      <destination>
+        <network>(self)</network>
+      </destination>
+    </rule>
+    <rule uuid="138512d4-2914-4f40-88c7-044392fb9b66">
+      <type>pass</type>
+      <interface>opt5</interface>
+      <ipprotocol>inet</ipprotocol>
+      <statetype>keep state</statetype>
+      <direction>in</direction>
+      <floating>yes</floating>
+      <quick>1</quick>
+      <protocol>icmp</protocol>
+      <icmptype>echoreq</icmptype>
+      <source>
+        <address>GEOIP_NEARBY</address>
+      </source>
+      <destination>
+        <network>(self)</network>
+      </destination>
+    </rule>
+    <rule uuid="fd9a959f-627c-4cbc-b103-403b79a12af4">
+      <type>block</type>
+      <interface>wan</interface>
+      <ipprotocol>inet46</ipprotocol>
+      <statetype>keep state</statetype>
+      <descr>TorExitNodes Block</descr>
+      <direction>in</direction>
+      <category>Security</category>
+      <log>1</log>
+      <quick>1</quick>
+      <source>
+        <address>IPLIST_TOR_EXIT_NODES</address>
+      </source>
+      <destination>
+        <any>1</any>
+      </destination>
+    </rule>
+    <rule uuid="4e1b405d-43f2-49b5-9dc4-cc2c09281896">
+      <type>block</type>
+      <interface>wan</interface>
+      <ipprotocol>inet</ipprotocol>
+      <statetype>keep state</statetype>
+      <descr>SpamHaus EDROP Block</descr>
+      <direction>in</direction>
+      <category>Security</category>
+      <log>1</log>
+      <quick>1</quick>
+      <source>
+        <address>IPLIST_SpamHaus_EDROP</address>
+      </source>
+      <destination>
+        <any>1</any>
+      </destination>
+    </rule>
+    <rule uuid="be6404e6-868e-4912-aa38-5eb271255aea">
+      <type>block</type>
+      <interface>wan</interface>
+      <ipprotocol>inet</ipprotocol>
+      <statetype>keep state</statetype>
+      <descr>SpamHaus DROP Block</descr>
+      <direction>in</direction>
+      <category>Security</category>
+      <log>1</log>
+      <quick>1</quick>
+      <source>
+        <address>IPLIST_SpamHaus_DROP</address>
+      </source>
+      <destination>
+        <any>1</any>
+      </destination>
+    </rule>
+    <rule uuid="4d207cba-7008-4cd4-a66d-110c93fbefc6">
+      <type>block</type>
+      <interface>wan</interface>
+      <ipprotocol>inet6</ipprotocol>
+      <statetype>keep state</statetype>
+      <descr>SpamHaus DROPv6 Block</descr>
+      <direction>in</direction>
+      <category>Security</category>
+      <log>1</log>
+      <quick>1</quick>
+      <source>
+        <address>IPLIST_SpamHaus_DROPv6</address>
+      </source>
+      <destination>
+        <any>1</any>
+      </destination>
+    </rule>
+    <rule uuid="22661a7a-3de7-4d18-a17b-b4e47fc94d7e">
+      <type>pass</type>
+      <interface>wan</interface>
+      <ipprotocol>inet46</ipprotocol>
+      <statetype>keep state</statetype>
+      <descr>mp01.host-svc.com Mailing</descr>
+      <direction>in</direction>
+      <category>Public,Mailing</category>
+      <log>1</log>
+      <quick>1</quick>
+      <protocol>tcp</protocol>
+      <source>
+        <any>1</any>
+      </source>
+      <destination>
+        <address>HOST_SRV29</address>
+        <port>25</port>
+      </destination>
+    </rule>
+    <rule uuid="097e8fe2-5abc-4e14-b82d-4ce21347d162">
+      <type>pass</type>
+      <interface>wan</interface>
+      <ipprotocol>inet46</ipprotocol>
+      <statetype>keep state</statetype>
+      <descr>LetsEncrypt</descr>
+      <direction>in</direction>
+      <category>Public,LetsEncrypt</category>
+      <log>1</log>
+      <quick>1</quick>
+      <protocol>tcp</protocol>
+      <source>
+        <any>1</any>
+      </source>
+      <destination>
+        <address>HOST_SRV96</address>
+        <port>80</port>
+      </destination>
+    </rule>
+    <rule uuid="9ce19de4-1b36-40c2-a39a-c3001153dabf">
+      <type>pass</type>
+      <interface>wan</interface>
+      <ipprotocol>inet46</ipprotocol>
+      <statetype>keep state</statetype>
+      <descr>test.ansibleguy.net LetsEncrypt</descr>
+      <direction>in</direction>
+      <category>Public,Mailing</category>
+      <log>1</log>
+      <quick>1</quick>
+      <protocol>tcp</protocol>
+      <source>
+        <any>1</any>
+      </source>
+      <destination>
+        <address>HOST_LAN2_DOCKER</address>
+        <port>8080</port>
+      </destination>
+    </rule>
+    <rule uuid="832a0d3e-2ed9-4eb1-94eb-fe2b6365ef7e">
+      <type>pass</type>
+      <interface>wan</interface>
+      <ipprotocol>inet46</ipprotocol>
+      <statetype>keep state</statetype>
+      <descr>Web Proxy</descr>
+      <direction>in</direction>
+      <category>Public,Web</category>
+      <log>1</log>
+      <quick>1</quick>
+      <protocol>tcp</protocol>
+      <source>
+        <any>1</any>
+      </source>
+      <destination>
+        <address>HOST_SRV93</address>
+        <port>SVC_HTTP_HTTPS</port>
+      </destination>
+      <disabled>1</disabled>
+    </rule>
+    <rule uuid="7812fd55-a1a1-49d2-bf1e-d3a59658c1f2">
+      <type>block</type>
+      <interface>wan</interface>
+      <ipprotocol>inet46</ipprotocol>
+      <statetype>keep state</statetype>
+      <descr>GeoIP Block</descr>
+      <direction>in</direction>
+      <category>Security</category>
+      <log>1</log>
+      <quick>1</quick>
+      <source>
+        <address>GEOIP_NEARBY</address>
+        <not>1</not>
+      </source>
+      <destination>
+        <any>1</any>
+      </destination>
+    </rule>
+    <rule uuid="ab2fd4fe-5446-4da0-bcb0-4e084c3101bc">
+      <type>pass</type>
+      <interface>wan</interface>
+      <ipprotocol>inet</ipprotocol>
+      <statetype>keep state</statetype>
+      <descr>Ping FW WAN</descr>
+      <direction>in</direction>
+      <category>Public,SVC9</category>
+      <log>1</log>
+      <quick>1</quick>
+      <protocol>icmp</protocol>
+      <icmptype>echoreq</icmptype>
+      <source>
+        <any>1</any>
+      </source>
+      <destination>
+        <network>(self)</network>
+      </destination>
+    </rule>
+    <rule uuid="cabd4900-5b39-4cb9-856f-d866dfd0d9ef">
+      <type>pass</type>
+      <interface>wan</interface>
+      <ipprotocol>inet</ipprotocol>
+      <statetype>keep state</statetype>
+      <direction>in</direction>
+      <category>Public,VPN</category>
+      <log>1</log>
+      <quick>1</quick>
+      <protocol>udp</protocol>
+      <source>
+        <any>1</any>
+      </source>
+      <destination>
+        <network>(self)</network>
+        <port>SVC_34</port>
+      </destination>
+    </rule>
+    <rule uuid="d01fcd4d-fa80-46e5-bec1-337263721d8b">
+      <type>pass</type>
+      <interface>wan</interface>
+      <ipprotocol>inet46</ipprotocol>
+      <statetype>keep state</statetype>
+      <descr>Web Proxy</descr>
+      <direction>in</direction>
+      <category>Public,Web</category>
+      <log>1</log>
+      <quick>1</quick>
+      <protocol>tcp</protocol>
+      <source>
+        <any>1</any>
+      </source>
+      <destination>
+        <address>HOST_SRV96</address>
+        <port>443</port>
+      </destination>
+    </rule>
+    <rule uuid="adbb0bc5-8f14-464f-a1a1-6d3c3be41830">
+      <type>pass</type>
+      <interface>wan</interface>
+      <ipprotocol>inet</ipprotocol>
+      <statetype>keep state</statetype>
+      <descr>Web Proxy Tunnels</descr>
+      <direction>in</direction>
+      <category>Public,VPN</category>
+      <log>1</log>
+      <quick>1</quick>
+      <protocol>udp</protocol>
+      <source>
+        <any>1</any>
+      </source>
+      <destination>
+        <address>HOST_SRV93</address>
+        <port>42252-42260</port>
+      </destination>
+      <disabled>1</disabled>
+    </rule>
+    <rule uuid="80558b5c-4099-4989-ba82-107c8cf16309">
+      <type>pass</type>
+      <interface>wan</interface>
+      <ipprotocol>inet</ipprotocol>
+      <statetype>keep state</statetype>
+      <descr>mail.host-svc.com Mail Relay</descr>
+      <direction>in</direction>
+      <category>Public,Mailing</category>
+      <log>1</log>
+      <quick>1</quick>
+      <protocol>tcp</protocol>
+      <source>
+        <any>1</any>
+      </source>
+      <destination>
+        <address>HOST_SRV48</address>
+        <port>SVC_SMTP_TLS</port>
+      </destination>
+    </rule>
+    <rule uuid="cd44b336-794b-4edc-a937-28628a09f17e">
+      <type>pass</type>
+      <interface>wan</interface>
+      <ipprotocol>inet</ipprotocol>
+      <statetype>keep state</statetype>
+      <descr>mail.host-svc.com Mail Clients</descr>
+      <direction>in</direction>
+      <category>Public,Mailing</category>
+      <log>1</log>
+      <quick>1</quick>
+      <protocol>tcp</protocol>
+      <source>
+        <any>1</any>
+      </source>
+      <destination>
+        <address>HOST_SRV48</address>
+        <port>SVC_IMAPS</port>
+      </destination>
+    </rule>
+    <rule uuid="348fbf4f-7ff0-41af-a30a-a3965383d703">
+      <type>pass</type>
+      <interface>wan</interface>
+      <ipprotocol>inet</ipprotocol>
+      <statetype>keep state</statetype>
+      <direction>in</direction>
+      <category>Public</category>
+      <log>1</log>
+      <quick>1</quick>
+      <protocol>icmp</protocol>
+      <icmptype>echoreq</icmptype>
+      <source>
+        <address>bogons</address>
+        <not>1</not>
+      </source>
+      <destination>
+        <any>1</any>
+      </destination>
+      <disabled>1</disabled>
+    </rule>
+    <rule uuid="6db3ba49-a4b8-4cc5-b566-8bc14fc12446">
+      <type>pass</type>
+      <interface>lan</interface>
+      <ipprotocol>inet</ipprotocol>
+      <statetype>keep state</statetype>
+      <descr>TMP</descr>
+      <direction>in</direction>
+      <log>1</log>
+      <quick>1</quick>
+      <protocol>tcp/udp</protocol>
+      <source>
+        <address>HOST_SRV39</address>
+      </source>
+      <destination>
+        <address>NET_PRIVATE</address>
+        <not>1</not>
+      </destination>
+      <disabled>1</disabled>
+    </rule>
+    <rule uuid="0919e443-bb11-4dcf-ad5d-5bb739644e2d">
+      <type>pass</type>
+      <interface>lan</interface>
+      <ipprotocol>inet</ipprotocol>
+      <statetype>keep state</statetype>
+      <direction>in</direction>
+      <category>Backup</category>
+      <quick>1</quick>
+      <protocol>tcp</protocol>
+      <source>
+        <address>HOST_SRV34</address>
+      </source>
+      <destination>
+        <address>HOST_SRV93</address>
+        <port>SVC_19</port>
+      </destination>
+      <disabled>1</disabled>
+    </rule>
+    <rule uuid="345c2d46-9210-4c8e-93cf-1355e9c64793">
+      <type>pass</type>
+      <interface>lan</interface>
+      <ipprotocol>inet</ipprotocol>
+      <statetype>keep state</statetype>
+      <direction>in</direction>
+      <category>Inet,BaseServices</category>
+      <quick>1</quick>
+      <protocol>tcp/udp</protocol>
+      <source>
+        <any>1</any>
+      </source>
+      <destination>
+        <address>1.1.1.1</address>
+        <port>53</port>
+      </destination>
+    </rule>
+    <rule uuid="44df883e-35e7-4f62-b1c1-350f2dd64b84">
+      <type>pass</type>
+      <interface>lan</interface>
+      <ipprotocol>inet</ipprotocol>
+      <statetype>keep state</statetype>
+      <direction>in</direction>
+      <category>Inet,BaseServices</category>
+      <quick>1</quick>
+      <protocol>tcp/udp</protocol>
+      <source>
+        <any>1</any>
+      </source>
+      <destination>
+        <address>8.8.8.8</address>
+        <port>53</port>
+      </destination>
+    </rule>
+    <rule uuid="6790cbf5-4198-426c-abf4-de34fb3f246b">
+      <type>pass</type>
+      <interface>lan</interface>
+      <ipprotocol>inet</ipprotocol>
+      <statetype>keep state</statetype>
+      <direction>in</direction>
+      <category>Inet,BaseServices</category>
+      <quick>1</quick>
+      <protocol>tcp</protocol>
+      <source>
+        <any>1</any>
+      </source>
+      <destination>
+        <address>HOST_DNS_TRUSTED_REPOS</address>
+        <port>80</port>
+      </destination>
+    </rule>
+    <rule uuid="a741a795-fc75-499e-a9e6-1badaee4881d">
+      <type>pass</type>
+      <interface>lan</interface>
+      <ipprotocol>inet</ipprotocol>
+      <statetype>keep state</statetype>
+      <direction>in</direction>
+      <category>Inet,BaseServices</category>
+      <quick>1</quick>
+      <protocol>udp</protocol>
+      <source>
+        <any>1</any>
+      </source>
+      <destination>
+        <address>HOST_DNS_DEBIAN_NTP</address>
+        <port>123</port>
+      </destination>
+    </rule>
+    <rule uuid="f93a4d0d-5866-402c-8ddf-fbba4c183cfa">
+      <type>pass</type>
+      <interface>lan</interface>
+      <ipprotocol>inet</ipprotocol>
+      <statetype>keep state</statetype>
+      <direction>in</direction>
+      <category>Inet,BaseServices</category>
+      <quick>1</quick>
+      <protocol>tcp/udp</protocol>
+      <source>
+        <any>1</any>
+      </source>
+      <destination>
+        <address>HOST_DNS_TRUSTED_REPOS</address>
+        <port>443</port>
+      </destination>
+    </rule>
+    <rule uuid="aca6efaf-5054-4ae6-b0c1-1a78e732c754">
+      <type>pass</type>
+      <interface>lan</interface>
+      <ipprotocol>inet</ipprotocol>
+      <statetype>keep state</statetype>
+      <direction>in</direction>
+      <category>Inet,Security,BaseServices</category>
+      <quick>1</quick>
+      <protocol>tcp/udp</protocol>
+      <source>
+        <any>1</any>
+      </source>
+      <destination>
+        <address>HOST_DNS_CLAMAV</address>
+        <port>443</port>
+      </destination>
+      <disabled>1</disabled>
+    </rule>
+    <rule uuid="4c58ad3a-4c2f-47cf-ab7e-06fba677abb3">
+      <type>pass</type>
+      <interface>lan</interface>
+      <ipprotocol>inet</ipprotocol>
+      <statetype>keep state</statetype>
+      <direction>in</direction>
+      <category>Inet,Security,BaseServices</category>
+      <quick>1</quick>
+      <protocol>tcp/udp</protocol>
+      <source>
+        <any>1</any>
+      </source>
+      <destination>
+        <address>HOST_DNS_SPAMASSASSIN</address>
+        <port>SVC_HTTP_HTTPS</port>
+      </destination>
+      <disabled>1</disabled>
+    </rule>
+    <rule uuid="62da5718-2e31-4790-9c0c-c110f22da0b8">
+      <type>pass</type>
+      <interface>lan</interface>
+      <ipprotocol>inet</ipprotocol>
+      <statetype>keep state</statetype>
+      <direction>in</direction>
+      <category>Inet,LetsEncrypt,BaseServices</category>
+      <quick>1</quick>
+      <protocol>tcp/udp</protocol>
+      <source>
+        <any>1</any>
+      </source>
+      <destination>
+        <address>HOST_DNS_LETSENCRYPT</address>
+        <port>SVC_HTTP_HTTPS</port>
+      </destination>
+    </rule>
+    <rule uuid="f4ee2786-8133-4ac8-b817-75566b2a5779">
+      <type>pass</type>
+      <interface>lan</interface>
+      <ipprotocol>inet</ipprotocol>
+      <statetype>keep state</statetype>
+      <descr>WebProxy</descr>
+      <direction>in</direction>
+      <category>Public,Internal,Web</category>
+      <quick>1</quick>
+      <protocol>tcp/udp</protocol>
+      <source>
+        <address>HOST_SVC43</address>
+      </source>
+      <destination>
+        <network>opt3</network>
+        <port>SVC_HTTP_HTTPS</port>
+      </destination>
+    </rule>
+    <rule uuid="de43d27c-039e-4bbf-a60c-e7c4e6d1f928">
+      <type>pass</type>
+      <interface>lan</interface>
+      <ipprotocol>inet</ipprotocol>
+      <statetype>keep state</statetype>
+      <descr>WebProxy</descr>
+      <direction>in</direction>
+      <category>Public,Internal,Web</category>
+      <quick>1</quick>
+      <protocol>tcp</protocol>
+      <source>
+        <address>HOST_SVC43</address>
+      </source>
+      <destination>
+        <network>opt3</network>
+        <port>8000</port>
+      </destination>
+    </rule>
+    <rule uuid="bfeff396-5f4f-41e5-8e13-d8f5fd618429">
+      <type>pass</type>
+      <interface>lan</interface>
+      <ipprotocol>inet</ipprotocol>
+      <statetype>keep state</statetype>
+      <direction>in</direction>
+      <category>Inet</category>
+      <quick>1</quick>
+      <protocol>tcp</protocol>
+      <source>
+        <address>HOST_SRV93</address>
+      </source>
+      <destination>
+        <address>HOST_DNS_PYPIP</address>
+        <port>SVC_HTTP_HTTPS</port>
+      </destination>
+      <disabled>1</disabled>
+    </rule>
+    <rule uuid="6a137e80-f2fe-4470-8491-10a17edab6ae">
+      <type>pass</type>
+      <interface>lan</interface>
+      <ipprotocol>inet</ipprotocol>
+      <statetype>keep state</statetype>
+      <direction>in</direction>
+      <category>Inet</category>
+      <quick>1</quick>
+      <protocol>tcp</protocol>
+      <source>
+        <address>HOST_SVC43</address>
+      </source>
+      <destination>
+        <address>HOST_DNS_GEOIP</address>
+        <port>SVC_HTTP_HTTPS</port>
+      </destination>
+    </rule>
+    <rule uuid="a5182a7b-4b59-426f-97d0-247eeeb922e3">
+      <type>pass</type>
+      <interface>lan</interface>
+      <ipprotocol>inet</ipprotocol>
+      <statetype>keep state</statetype>
+      <descr>Website update</descr>
+      <direction>in</direction>
+      <category>Inet</category>
+      <quick>1</quick>
+      <protocol>tcp</protocol>
+      <source>
+        <address>HOST_SVC37</address>
+      </source>
+      <destination>
+        <address>HOST_DNS_GITHUB</address>
+        <port>SVC_HTTP_HTTPS</port>
+      </destination>
+    </rule>
+    <rule uuid="fc8fc06b-12bd-4e3a-a899-34c0667c24c0">
+      <type>pass</type>
+      <interface>lan</interface>
+      <ipprotocol>inet</ipprotocol>
+      <statetype>keep state</statetype>
+      <descr>Website update</descr>
+      <direction>in</direction>
+      <category>Inet</category>
+      <quick>1</quick>
+      <protocol>tcp</protocol>
+      <source>
+        <address>HOST_SVC37</address>
+      </source>
+      <destination>
+        <address>NET_GITHUB</address>
+        <port>SVC_HTTP_HTTPS</port>
+      </destination>
+    </rule>
+    <rule uuid="817e7c30-5c84-4b5d-b8f5-accbbf34b3d1">
+      <type>pass</type>
+      <interface>lan</interface>
+      <ipprotocol>inet</ipprotocol>
+      <statetype>keep state</statetype>
+      <descr>Website update</descr>
+      <direction>in</direction>
+      <category>Inet</category>
+      <quick>1</quick>
+      <protocol>tcp</protocol>
+      <source>
+        <address>HOST_SVC37</address>
+      </source>
+      <destination>
+        <address>HOST_DNS_NODEJS</address>
+        <port>SVC_HTTP_HTTPS</port>
+      </destination>
+    </rule>
+    <rule uuid="93ccce2f-b0d4-4e35-b05f-ce2d1032aaa5">
+      <type>pass</type>
+      <interface>lan</interface>
+      <ipprotocol>inet</ipprotocol>
+      <statetype>keep state</statetype>
+      <descr>RiskDB IP-Lists</descr>
+      <direction>in</direction>
+      <category>Inet</category>
+      <quick>1</quick>
+      <protocol>tcp</protocol>
+      <source>
+        <address>HOST_SVC37</address>
+      </source>
+      <destination>
+        <address>HOST_DNS_IPLISTS</address>
+        <port>SVC_HTTP_HTTPS</port>
+      </destination>
+    </rule>
+    <rule uuid="064c1301-bb1e-47c4-811e-aa9c58211982">
+      <type>pass</type>
+      <interface>lan</interface>
+      <ipprotocol>inet</ipprotocol>
+      <statetype>keep state</statetype>
+      <descr>Docker Update</descr>
+      <direction>in</direction>
+      <category>Inet</category>
+      <quick>1</quick>
+      <protocol>tcp</protocol>
+      <source>
+        <address>HOST_SRV39</address>
+      </source>
+      <destination>
+        <address>NET_GITHUB</address>
+        <port>SVC_HTTP_HTTPS</port>
+      </destination>
+    </rule>
+    <rule uuid="90d176e1-e0be-4c55-b078-94ac3ea292bf">
+      <type>pass</type>
+      <interface>lan</interface>
+      <ipprotocol>inet</ipprotocol>
+      <statetype>keep state</statetype>
+      <descr>Ansible ARA PIP</descr>
+      <direction>in</direction>
+      <category>Inet</category>
+      <quick>1</quick>
+      <protocol>tcp</protocol>
+      <source>
+        <address>HOST_SRV39</address>
+      </source>
+      <destination>
+        <address>HOST_DNS_PYPIP</address>
+        <port>SVC_HTTP_HTTPS</port>
+      </destination>
+    </rule>
+    <rule uuid="db824679-1fd4-41a4-ba0b-3d0e72c5e7ac">
+      <type>pass</type>
+      <interface>lan</interface>
+      <ipprotocol>inet</ipprotocol>
+      <statetype>keep state</statetype>
+      <descr>Docker Images</descr>
+      <direction>in</direction>
+      <category>Inet</category>
+      <quick>1</quick>
+      <protocol>tcp</protocol>
+      <source>
+        <address>GRP_DOCKER</address>
+      </source>
+      <destination>
+        <address>HOST_DNS_DockerHub</address>
+        <port>SVC_HTTP_HTTPS</port>
+      </destination>
+    </rule>
+    <rule uuid="5b440a5e-2abe-449f-8f73-8d7926ff5725">
+      <type>pass</type>
+      <interface>lan</interface>
+      <ipprotocol>inet</ipprotocol>
+      <statetype>keep state</statetype>
+      <direction>in</direction>
+      <category>SVC9</category>
+      <quick>1</quick>
+      <protocol>icmp</protocol>
+      <source>
+        <address>HOST_SVC1</address>
+      </source>
+      <destination>
+        <any>1</any>
+      </destination>
+    </rule>
+    <rule uuid="5e486e19-e9ee-48ec-af90-fd9b68197a38">
+      <type>pass</type>
+      <interface>lan</interface>
+      <ipprotocol>inet</ipprotocol>
+      <statetype>keep state</statetype>
+      <descr>Docker Images</descr>
+      <direction>in</direction>
+      <category>Inet</category>
+      <quick>1</quick>
+      <protocol>tcp</protocol>
+      <source>
+        <address>HOST_SVC1</address>
+      </source>
+      <destination>
+        <address>HOST_DNS_DockerHub</address>
+        <port>SVC_HTTP_HTTPS</port>
+      </destination>
+    </rule>
+    <rule uuid="f90ff1d8-44b2-452e-80f3-dd6ff549b127">
+      <type>pass</type>
+      <interface>lan</interface>
+      <ipprotocol>inet</ipprotocol>
+      <statetype>keep state</statetype>
+      <descr>SVC9 Pull</descr>
+      <direction>in</direction>
+      <category>Inet</category>
+      <quick>1</quick>
+      <protocol>tcp/udp</protocol>
+      <source>
+        <address>HOST_SVC1</address>
+      </source>
+      <destination>
+        <address>NET_PRIVATE</address>
+      </destination>
+    </rule>
+    <rule uuid="43c6f16b-a797-4f68-9d38-7b43df08c029">
+      <type>pass</type>
+      <interface>lan</interface>
+      <ipprotocol>inet</ipprotocol>
+      <statetype>keep state</statetype>
+      <descr>SVC9 Pull</descr>
+      <direction>in</direction>
+      <category>Inet</category>
+      <quick>1</quick>
+      <protocol>tcp/udp</protocol>
+      <source>
+        <address>HOST_SVC1</address>
+      </source>
+      <destination>
+        <network>(self)</network>
+        <port>SVC_SVC1</port>
+      </destination>
+    </rule>
+    <rule uuid="80c669bb-9bab-41f3-a47b-05821ebca0b0">
+      <type>pass</type>
+      <interface>lan</interface>
+      <ipprotocol>inet</ipprotocol>
+      <statetype>keep state</statetype>
+      <descr>SVC9 Pull</descr>
+      <direction>in</direction>
+      <category>Inet</category>
+      <quick>1</quick>
+      <protocol>tcp</protocol>
+      <source>
+        <address>HOST_SVC1</address>
+      </source>
+      <destination>
+        <address>NET_PRIVATE</address>
+        <not>1</not>
+        <port>2645</port>
+      </destination>
+    </rule>
+    <rule uuid="bb2282bd-fd44-40d4-996d-084032106e2c">
+      <type>pass</type>
+      <interface>lan</interface>
+      <ipprotocol>inet</ipprotocol>
+      <statetype>keep state</statetype>
+      <descr>Docker Images</descr>
+      <direction>in</direction>
+      <category>Inet</category>
+      <quick>1</quick>
+      <protocol>tcp</protocol>
+      <source>
+        <address>HOST_DOCKER</address>
+      </source>
+      <destination>
+        <address>HOST_DNS_PYPIP</address>
+        <port>SVC_HTTP_HTTPS</port>
+      </destination>
+    </rule>
+    <rule uuid="70ee690f-4a45-4864-b201-e2429033b99c">
+      <type>pass</type>
+      <interface>lan</interface>
+      <ipprotocol>inet</ipprotocol>
+      <statetype>keep state</statetype>
+      <descr>Website updater</descr>
+      <direction>in</direction>
+      <category>Inet</category>
+      <quick>1</quick>
+      <protocol>tcp</protocol>
+      <source>
+        <address>HOST_SVC43</address>
+      </source>
+      <destination>
+        <address>HOST_DNS_PYPIP</address>
+        <port>SVC_HTTP_HTTPS</port>
+      </destination>
+    </rule>
+    <rule uuid="39d7fdfd-d4fd-4d92-b690-62601e898c2e">
+      <type>pass</type>
+      <interface>lan</interface>
+      <ipprotocol>inet</ipprotocol>
+      <statetype>keep state</statetype>
+      <descr>Risk-DB</descr>
+      <direction>in</direction>
+      <category>Inet</category>
+      <quick>1</quick>
+      <protocol>tcp</protocol>
+      <source>
+        <address>HOST_SVC43</address>
+      </source>
+      <destination>
+        <address>HOST_DNS_IPLIST_DL</address>
+        <port>SVC_HTTP_HTTPS</port>
+      </destination>
+    </rule>
+    <rule uuid="b5082066-18c7-4fd6-b516-9dd164378673">
+      <type>pass</type>
+      <interface>lan</interface>
+      <ipprotocol>inet</ipprotocol>
+      <statetype>keep state</statetype>
+      <direction>in</direction>
+      <category>Inet</category>
+      <quick>1</quick>
+      <protocol>tcp</protocol>
+      <source>
+        <address>HOST_SRV63</address>
+      </source>
+      <destination>
+        <address>HOST_DNS_SVC2</address>
+        <port>SVC_HTTP_HTTPS</port>
+      </destination>
+    </rule>
+    <rule uuid="a4ed2f5a-2e3c-4071-8199-5986e0ebf86c">
+      <type>pass</type>
+      <interface>lan</interface>
+      <ipprotocol>inet</ipprotocol>
+      <statetype>keep state</statetype>
+      <direction>in</direction>
+      <category>Inet</category>
+      <quick>1</quick>
+      <protocol>tcp</protocol>
+      <source>
+        <address>HOST_SRV63</address>
+      </source>
+      <destination>
+        <address>bogons</address>
+        <not>1</not>
+        <port>SVC_HTTP_HTTPS</port>
+      </destination>
+      <disabled>1</disabled>
+    </rule>
+    <rule uuid="d1ab51e7-3ba6-40ca-b5b7-2b7a8f774e27">
+      <type>pass</type>
+      <interface>lan</interface>
+      <ipprotocol>inet</ipprotocol>
+      <statetype>keep state</statetype>
+      <direction>in</direction>
+      <category>Inet,Mailing</category>
+      <log>1</log>
+      <quick>1</quick>
+      <protocol>tcp</protocol>
+      <source>
+        <address>GROUP_MAIL_SEND</address>
+      </source>
+      <destination>
+        <address>NET_PRIVATE</address>
+        <not>1</not>
+        <port>25</port>
+      </destination>
+    </rule>
+    <rule uuid="c7458a96-b18b-43bf-b2ef-4d32dd678272">
+      <type>pass</type>
+      <interface>lan</interface>
+      <ipprotocol>inet</ipprotocol>
+      <statetype>keep state</statetype>
+      <direction>in</direction>
+      <category>Inet,Mailing</category>
+      <log>1</log>
+      <quick>1</quick>
+      <protocol>tcp</protocol>
+      <source>
+        <address>GROUP_MAIL_SEND</address>
+      </source>
+      <destination>
+        <address>NET_PRIVATE</address>
+        <not>1</not>
+        <port>SVC_SMTP_TLS</port>
+      </destination>
+    </rule>
+    <rule uuid="c3e9de45-1447-4199-874a-214e1fabed93">
+      <type>pass</type>
+      <interface>lan</interface>
+      <ipprotocol>inet</ipprotocol>
+      <statetype>keep state</statetype>
+      <descr>TMP INET</descr>
+      <direction>in</direction>
+      <category>Inet</category>
+      <quick>1</quick>
+      <protocol>tcp</protocol>
+      <source>
+        <address>HOST_DOCKER</address>
+      </source>
+      <destination>
+        <address>bogons</address>
+        <not>1</not>
+        <port>SVC_HTTP_HTTPS</port>
+      </destination>
+      <disabled>1</disabled>
+    </rule>
+    <rule uuid="15a29f6e-8be6-4894-9839-9656b11653e5">
+      <type>pass</type>
+      <interface>lan</interface>
+      <ipprotocol>inet</ipprotocol>
+      <statetype>keep state</statetype>
+      <descr>Postfix Relay</descr>
+      <direction>in</direction>
+      <category>Inet</category>
+      <quick>1</quick>
+      <protocol>tcp</protocol>
+      <source>
+        <address>HOST_DOCKER</address>
+      </source>
+      <destination>
+        <address>bogons</address>
+        <not>1</not>
+        <port>25</port>
+      </destination>
+      <disabled>1</disabled>
+    </rule>
+    <rule uuid="e4f7fee2-c756-4a1e-a273-ce28809ac438">
+      <associated-rule-id>nat_676ab50353a326.55807794</associated-rule-id>
+      <source>
+        <network>(self)</network>
+        <not>1</not>
+      </source>
+      <interface>lan</interface>
+      <statetype>keep state</statetype>
+      <protocol>tcp/udp</protocol>
+      <ipprotocol>inet</ipprotocol>
+      <destination>
+        <address>127.0.0.1</address>
+        <port>53</port>
+      </destination>
+      <descr>DNS Catchall</descr>
+      <category/>
+    </rule>
+    <rule uuid="67e15d1d-c879-422d-a517-74a2cd4aad80">
+      <type>pass</type>
+      <interface>GRP_MAIL</interface>
+      <ipprotocol>inet</ipprotocol>
+      <statetype>keep state</statetype>
+      <direction>in</direction>
+      <quick>1</quick>
+      <protocol>tcp/udp</protocol>
+      <source>
+        <address>GROUP_MAILCOW</address>
+      </source>
+      <destination>
+        <address>HOST_DNS_CLAMAV</address>
+        <port>SVC_HTTP_HTTPS</port>
+      </destination>
+      <disabled>1</disabled>
+    </rule>
+    <rule uuid="7b1f3a8d-c637-4e14-8520-1004ed2f9bdb">
+      <type>pass</type>
+      <interface>GRP_MAIL</interface>
+      <ipprotocol>inet</ipprotocol>
+      <statetype>keep state</statetype>
+      <direction>in</direction>
+      <quick>1</quick>
+      <protocol>tcp/udp</protocol>
+      <source>
+        <address>GROUP_MAILCOW</address>
+      </source>
+      <destination>
+        <address>HOST_DNS_SPAMASSASSIN</address>
+      </destination>
+      <disabled>1</disabled>
+    </rule>
+    <rule uuid="0bd38d66-cf83-4fa0-b0b2-24d3dfa80716">
+      <type>pass</type>
+      <interface>GRP_MAIL</interface>
+      <ipprotocol>inet</ipprotocol>
+      <statetype>keep state</statetype>
+      <direction>in</direction>
+      <quick>1</quick>
+      <protocol>tcp</protocol>
+      <source>
+        <address>GROUP_MAILCOW</address>
+      </source>
+      <destination>
+        <address>HOST_DNS_RAZOR2</address>
+      </destination>
+      <disabled>1</disabled>
+    </rule>
+    <rule uuid="b25c7075-ffe3-4e50-a2a7-ed86954d2554">
+      <type>pass</type>
+      <interface>GRP_MAIL</interface>
+      <ipprotocol>inet</ipprotocol>
+      <statetype>keep state</statetype>
+      <descr>Send Mails</descr>
+      <direction>in</direction>
+      <quick>1</quick>
+      <protocol>tcp</protocol>
+      <source>
+        <address>GROUP_MAILCOW</address>
+      </source>
+      <destination>
+        <address>NET_PRIVATE</address>
+        <not>1</not>
+        <port>25</port>
+      </destination>
+      <log>1</log>
+      <disabled>1</disabled>
+    </rule>
+    <rule uuid="e0261b3f-a650-44b3-b9e6-6ed318ad648a">
+      <type>pass</type>
+      <interface>GRP_MAIL</interface>
+      <ipprotocol>inet</ipprotocol>
+      <statetype>keep state</statetype>
+      <descr>Mail Syncing</descr>
+      <direction>in</direction>
+      <quick>1</quick>
+      <protocol>tcp</protocol>
+      <source>
+        <address>GROUP_MAILCOW</address>
+      </source>
+      <destination>
+        <address>NET_PRIVATE</address>
+        <not>1</not>
+        <port>SVC_IMAPS</port>
+      </destination>
+      <disabled>1</disabled>
+    </rule>
+    <rule uuid="590f7d9e-adac-4e82-96c1-091b080c59ea">
+      <type>pass</type>
+      <interface>GRP_MAIL</interface>
+      <ipprotocol>inet</ipprotocol>
+      <statetype>keep state</statetype>
+      <descr>Mailcow Code Update/Download</descr>
+      <direction>in</direction>
+      <quick>1</quick>
+      <protocol>tcp/udp</protocol>
+      <source>
+        <address>GROUP_MAILCOW</address>
+      </source>
+      <destination>
+        <address>NET_GITHUB</address>
+        <port>SVC_HTTP_HTTPS</port>
+      </destination>
+      <disabled>1</disabled>
+    </rule>
+    <rule uuid="32cef2c8-429e-467c-954c-5d9bb35393ca">
+      <type>pass</type>
+      <interface>GRP_MAIL</interface>
+      <ipprotocol>inet</ipprotocol>
+      <statetype>keep state</statetype>
+      <descr>TMP</descr>
+      <direction>in</direction>
+      <quick>1</quick>
+      <protocol>tcp/udp</protocol>
+      <source>
+        <address>GROUP_MAILCOW</address>
+      </source>
+      <destination>
+        <address>NET_PRIVATE</address>
+        <not>1</not>
+        <port>SVC_HTTP_HTTPS</port>
+      </destination>
+      <disabled>1</disabled>
+    </rule>
+    <rule uuid="4311f463-be26-489c-8f39-c6fdc1862669">
+      <type>pass</type>
+      <interface>opt1</interface>
+      <ipprotocol>inet</ipprotocol>
+      <statetype>keep state</statetype>
+      <direction>in</direction>
+      <quick>1</quick>
+      <protocol>icmp</protocol>
+      <source>
+        <network>opt1</network>
+      </source>
+      <destination>
+        <network>opt1</network>
+      </destination>
+    </rule>
+    <rule uuid="a124d903-12d9-47e9-8aaa-88e3c9ce2c63">
+      <type>pass</type>
+      <interface>opt1</interface>
+      <ipprotocol>inet</ipprotocol>
+      <statetype>keep state</statetype>
+      <direction>in</direction>
+      <quick>1</quick>
+      <protocol>tcp</protocol>
+      <source>
+        <network>opt1</network>
+      </source>
+      <destination>
+        <network>lan</network>
+      </destination>
+    </rule>
+    <rule uuid="113ec4fe-2632-4259-9590-d89282865b4a">
+      <type>pass</type>
+      <interface>opt1</interface>
+      <ipprotocol>inet</ipprotocol>
+      <statetype>keep state</statetype>
+      <direction>in</direction>
+      <quick>1</quick>
+      <protocol>tcp</protocol>
+      <source>
+        <network>opt1</network>
+      </source>
+      <destination>
+        <network>opt3</network>
+      </destination>
+    </rule>
+    <rule uuid="7c010d8b-f8d3-463c-b4ba-f3a79c31641a">
+      <type>pass</type>
+      <interface>opt2</interface>
+      <ipprotocol>inet</ipprotocol>
+      <statetype>keep state</statetype>
+      <direction>in</direction>
+      <quick>1</quick>
+      <source>
+        <network>opt2</network>
+      </source>
+      <destination>
+        <network>opt2</network>
+      </destination>
+    </rule>
+    <rule uuid="dd84a1b9-3277-498a-9db2-9e9b659a5586">
+      <type>block</type>
+      <interface>opt3</interface>
+      <ipprotocol>inet</ipprotocol>
+      <statetype>keep state</statetype>
+      <descr>SpamHaus DROP Block Outbound</descr>
+      <direction>in</direction>
+      <category>Inet,Security</category>
+      <log>1</log>
+      <quick>1</quick>
+      <source>
+        <any>1</any>
+      </source>
+      <destination>
+        <address>IPLIST_SpamHaus_DROP</address>
+      </destination>
+    </rule>
+    <rule uuid="bdf85170-4e5b-4591-8cf0-f7f4c44c3941">
+      <type>block</type>
+      <interface>opt3</interface>
+      <ipprotocol>inet</ipprotocol>
+      <statetype>keep state</statetype>
+      <descr>SpamHaus EDROP Block Outbound</descr>
+      <direction>in</direction>
+      <category>Inet,Security</category>
+      <log>1</log>
+      <quick>1</quick>
+      <source>
+        <any>1</any>
+      </source>
+      <destination>
+        <address>IPLIST_SpamHaus_EDROP</address>
+      </destination>
+    </rule>
+    <rule uuid="ae93661d-23c2-4140-8484-070e773c7df2">
+      <type>block</type>
+      <interface>opt3</interface>
+      <ipprotocol>inet6</ipprotocol>
+      <statetype>keep state</statetype>
+      <descr>SpamHaus DROPv6 Block Outbound</descr>
+      <direction>in</direction>
+      <category>Inet,Security</category>
+      <log>1</log>
+      <quick>1</quick>
+      <source>
+        <any>1</any>
+      </source>
+      <destination>
+        <address>IPLIST_SpamHaus_DROPv6</address>
+      </destination>
+    </rule>
+    <rule uuid="93efb485-d4c2-41f8-b097-ca797778d9da">
+      <type>pass</type>
+      <interface>opt3</interface>
+      <ipprotocol>inet</ipprotocol>
+      <statetype>keep state</statetype>
+      <direction>in</direction>
+      <category>Inet,BaseServices</category>
+      <quick>1</quick>
+      <protocol>tcp/udp</protocol>
+      <source>
+        <any>1</any>
+      </source>
+      <destination>
+        <address>1.1.1.1</address>
+        <port>53</port>
+      </destination>
+    </rule>
+    <rule uuid="a291b767-5730-431a-b130-f3ef14eff4b5">
+      <type>pass</type>
+      <interface>opt3</interface>
+      <ipprotocol>inet</ipprotocol>
+      <statetype>keep state</statetype>
+      <direction>in</direction>
+      <category>Inet,BaseServices</category>
+      <quick>1</quick>
+      <protocol>tcp/udp</protocol>
+      <source>
+        <any>1</any>
+      </source>
+      <destination>
+        <address>8.8.8.8</address>
+        <port>53</port>
+      </destination>
+    </rule>
+    <rule uuid="aad8928f-15ea-4fe1-99ee-831fea41cb5d">
+      <type>pass</type>
+      <interface>opt3</interface>
+      <ipprotocol>inet</ipprotocol>
+      <statetype>keep state</statetype>
+      <direction>in</direction>
+      <category>Inet,BaseServices</category>
+      <quick>1</quick>
+      <protocol>tcp</protocol>
+      <source>
+        <any>1</any>
+      </source>
+      <destination>
+        <address>HOST_DNS_TRUSTED_REPOS</address>
+        <port>80</port>
+      </destination>
+    </rule>
+    <rule uuid="2a391ea6-8a78-4389-a688-f2b066ac9c54">
+      <type>pass</type>
+      <interface>opt3</interface>
+      <ipprotocol>inet</ipprotocol>
+      <statetype>keep state</statetype>
+      <direction>in</direction>
+      <category>Inet,BaseServices</category>
+      <quick>1</quick>
+      <protocol>tcp/udp</protocol>
+      <source>
+        <any>1</any>
+      </source>
+      <destination>
+        <address>HOST_DNS_TRUSTED_REPOS</address>
+        <port>443</port>
+      </destination>
+    </rule>
+    <rule uuid="4a55ec6d-b897-4c4d-a4f5-cd5277b100a7">
+      <type>pass</type>
+      <interface>opt3</interface>
+      <ipprotocol>inet</ipprotocol>
+      <statetype>keep state</statetype>
+      <direction>in</direction>
+      <category>Inet,Security</category>
+      <quick>1</quick>
+      <protocol>tcp</protocol>
+      <source>
+        <any>1</any>
+      </source>
+      <destination>
+        <address>HOST_DNS_RAZOR2</address>
+        <port>SVC_RAZOR2</port>
+      </destination>
+    </rule>
+    <rule uuid="4ca69100-6b0c-4041-aecb-c28d5ca201ec">
+      <type>pass</type>
+      <interface>opt3</interface>
+      <ipprotocol>inet</ipprotocol>
+      <statetype>keep state</statetype>
+      <direction>in</direction>
+      <category>Inet,Security</category>
+      <quick>1</quick>
+      <protocol>tcp</protocol>
+      <source>
+        <any>1</any>
+      </source>
+      <destination>
+        <address>NET_RAZOR2</address>
+        <port>SVC_RAZOR2</port>
+      </destination>
+    </rule>
+    <rule uuid="fc43059c-4282-4daf-9061-4bd533464d4f">
+      <type>pass</type>
+      <interface>opt3</interface>
+      <ipprotocol>inet</ipprotocol>
+      <statetype>keep state</statetype>
+      <direction>in</direction>
+      <category>Inet,BaseServices</category>
+      <quick>1</quick>
+      <protocol>udp</protocol>
+      <source>
+        <any>1</any>
+      </source>
+      <destination>
+        <address>HOST_DNS_DEBIAN_NTP</address>
+        <port>123</port>
+      </destination>
+    </rule>
+    <rule uuid="13a752ce-de93-45c8-b5ec-f6c7db897815">
+      <type>pass</type>
+      <interface>opt3</interface>
+      <ipprotocol>inet</ipprotocol>
+      <statetype>keep state</statetype>
+      <direction>in</direction>
+      <category>Inet,BaseServices</category>
+      <quick>1</quick>
+      <protocol>tcp/udp</protocol>
+      <source>
+        <any>1</any>
+      </source>
+      <destination>
+        <address>HOST_DNS_LETSENCRYPT</address>
+        <port>SVC_HTTP_HTTPS</port>
+      </destination>
+    </rule>
+    <rule uuid="9703e03b-035d-4718-a119-6d6ce54d112b">
+      <type>pass</type>
+      <interface>opt3</interface>
+      <ipprotocol>inet</ipprotocol>
+      <statetype>keep state</statetype>
+      <descr>Tester01 to WAN</descr>
+      <direction>in</direction>
+      <category>Inet,Testing,Untrusted</category>
+      <quick>1</quick>
+      <protocol>tcp/udp</protocol>
+      <source>
+        <address>10.86.21.51</address>
+      </source>
+      <destination>
+        <address>NET_PRIVATE</address>
+        <not>1</not>
+        <port>SVC_HTTP_HTTPS</port>
+      </destination>
+    </rule>
+    <rule uuid="207969c4-986b-457b-a27b-5a60ee2cd287">
+      <type>pass</type>
+      <interface>opt3</interface>
+      <ipprotocol>inet</ipprotocol>
+      <statetype>keep state</statetype>
+      <descr>Docker images, Ansible repos</descr>
+      <direction>in</direction>
+      <category>Inet</category>
+      <quick>1</quick>
+      <protocol>tcp/udp</protocol>
+      <source>
+        <address>HOST_LAN2_DOCKER</address>
+      </source>
+      <destination>
+        <address>NET_PRIVATE</address>
+        <not>1</not>
+        <port>SVC_HTTP_HTTPS</port>
+      </destination>
+    </rule>
+    <rule uuid="6a010a01-a1d6-45c5-bc1c-3a41bdf573d1">
+      <type>pass</type>
+      <interface>opt3</interface>
+      <ipprotocol>inet</ipprotocol>
+      <statetype>keep state</statetype>
+      <descr>Docker images, Ansible repos, WebUI-Demo Git-Repos</descr>
+      <direction>in</direction>
+      <category>Inet</category>
+      <quick>1</quick>
+      <protocol>tcp/udp</protocol>
+      <source>
+        <address>HOST_LAN2_DOCKER</address>
+      </source>
+      <destination>
+        <address>NET_PRIVATE</address>
+        <not>1</not>
+        <port>SVC_HTTP_HTTPS</port>
+      </destination>
+    </rule>
+    <rule uuid="46160269-834e-4b82-9f82-b721ddc6ad4b">
+      <type>pass</type>
+      <interface>opt3</interface>
+      <ipprotocol>inet</ipprotocol>
+      <statetype>keep state</statetype>
+      <descr>OpnSense Update</descr>
+      <direction>in</direction>
+      <category>Inet</category>
+      <quick>1</quick>
+      <protocol>tcp/udp</protocol>
+      <source>
+        <address>10.86.21.52</address>
+      </source>
+      <destination>
+        <address>NET_PRIVATE</address>
+        <not>1</not>
+        <port>SVC_HTTP_HTTPS</port>
+      </destination>
+    </rule>
+    <rule uuid="980e0942-abcc-4141-9aba-8405d5e0c723">
+      <type>pass</type>
+      <interface>opt3</interface>
+      <ipprotocol>inet</ipprotocol>
+      <statetype>keep state</statetype>
+      <descr>OPN-CC Setup</descr>
+      <direction>in</direction>
+      <category>Inet</category>
+      <quick>1</quick>
+      <protocol>tcp/udp</protocol>
+      <source>
+        <address>10.86.21.55</address>
+      </source>
+      <destination>
+        <address>bogons</address>
+        <not>1</not>
+        <port>SVC_HTTP_HTTPS</port>
+      </destination>
+      <disabled>1</disabled>
+    </rule>
+    <rule uuid="2520383d-a4ee-452c-b78d-f6e37e7c3ba2">
+      <type>pass</type>
+      <interface>opt3</interface>
+      <ipprotocol>inet</ipprotocol>
+      <statetype>keep state</statetype>
+      <descr>NFTables REC</descr>
+      <direction>in</direction>
+      <category>Inet</category>
+      <quick>1</quick>
+      <protocol>tcp/udp</protocol>
+      <source>
+        <address>10.86.21.0/29</address>
+      </source>
+      <destination>
+        <address>NET_PRIVATE</address>
+        <not>1</not>
+        <port>SVC_HTTP_HTTPS</port>
+      </destination>
+      <disabled>1</disabled>
+    </rule>
+    <rule uuid="8c41ee3b-2757-4b14-a332-592316635db9">
+      <type>pass</type>
+      <interface>opt3</interface>
+      <ipprotocol>inet</ipprotocol>
+      <statetype>keep state</statetype>
+      <direction>in</direction>
+      <category>Mailing,Internal</category>
+      <quick>1</quick>
+      <protocol>tcp</protocol>
+      <source>
+        <any>1</any>
+      </source>
+      <destination>
+        <address>HOST_SRV48</address>
+        <port>SVC_SMTP_TLS</port>
+      </destination>
+    </rule>
+    <rule uuid="fbe8ee4c-14d0-4e95-a7ca-9e5ce61a006b">
+      <type>pass</type>
+      <interface>opt3</interface>
+      <ipprotocol>inet</ipprotocol>
+      <statetype>keep state</statetype>
+      <descr>Checks</descr>
+      <direction>in</direction>
+      <category>Cloud-Service</category>
+      <log>1</log>
+      <quick>1</quick>
+      <protocol>tcp</protocol>
+      <source>
+        <address>HOST_SRV21</address>
+      </source>
+      <destination>
+        <address>NET_PRIVATE</address>
+        <not>1</not>
+      </destination>
+    </rule>
+    <rule uuid="b1fea203-a50a-44a8-8d15-187bffefddfb">
+      <type>pass</type>
+      <interface>opt4</interface>
+      <ipprotocol>inet</ipprotocol>
+      <statetype>keep state</statetype>
+      <direction>in</direction>
+      <category>VPN</category>
+      <quick>1</quick>
+      <protocol>icmp</protocol>
+      <source>
+        <network>opt4</network>
+      </source>
+      <destination>
+        <network>opt4</network>
+      </destination>
+    </rule>
+    <rule uuid="cb63105d-dfca-42f5-b652-c1901bc1c33c">
+      <associated-rule-id>nat_66d5e4af686690.25220183</associated-rule-id>
+      <source>
+        <any>1</any>
+      </source>
+      <interface>opt5</interface>
+      <statetype>keep state</statetype>
+      <protocol>tcp</protocol>
+      <ipprotocol>inet</ipprotocol>
+      <destination>
+        <address>HOST_SRV48</address>
+        <port>25</port>
+      </destination>
+      <descr>CMP Mailing</descr>
+      <category>Public,Mailing</category>
+    </rule>
+    <rule uuid="bfe53f72-e9b5-486d-bb26-313ae6fd293f">
+      <associated-rule-id>nat_66d5f01434fe30.40287920</associated-rule-id>
+      <source>
+        <any>1</any>
+      </source>
+      <interface>opt5</interface>
+      <statetype>keep state</statetype>
+      <protocol>tcp</protocol>
+      <ipprotocol>inet</ipprotocol>
+      <destination>
+        <address>HOST_SRV48</address>
+        <port>80</port>
+      </destination>
+      <descr>CMP Mailing</descr>
+      <category>Public,Mailing</category>
+    </rule>
+    <rule uuid="5acf0b1d-2610-4f42-8434-d7e1b991147b">
+      <associated-rule-id>nat_66d5f07f5bf0d5.86241599</associated-rule-id>
+      <source>
+        <any>1</any>
+      </source>
+      <interface>opt5</interface>
+      <statetype>keep state</statetype>
+      <protocol>tcp</protocol>
+      <ipprotocol>inet</ipprotocol>
+      <destination>
+        <address>HOST_LAN2_DOCKER</address>
+        <port>8080</port>
+      </destination>
+      <descr>LAN2 Test Web</descr>
+      <category>Public,Web</category>
+    </rule>
+    <rule uuid="48b844b2-a595-4e64-9125-bc6034608194">
+      <associated-rule-id>nat_66d5fb44137212.61651789</associated-rule-id>
+      <source>
+        <any>1</any>
+      </source>
+      <interface>opt5</interface>
+      <statetype>keep state</statetype>
+      <protocol>tcp</protocol>
+      <ipprotocol>inet</ipprotocol>
+      <destination>
+        <address>HOST_SRV48</address>
+        <port>465</port>
+      </destination>
+      <descr>CMP Mailing</descr>
+      <category>Public,Mailing</category>
+    </rule>
+    <rule uuid="ec73dfb9-183b-4bca-8f23-3fe607b5252f">
+      <type>block</type>
+      <interface>opt5</interface>
+      <ipprotocol>inet46</ipprotocol>
+      <statetype>keep state</statetype>
+      <direction>in</direction>
+      <quick>1</quick>
+      <source>
+        <address>GEOIP_NEARBY</address>
+        <not>1</not>
+      </source>
+      <destination>
+        <any>1</any>
+      </destination>
+    </rule>
+    <rule uuid="aa15ede4-95dd-4f4e-a5fa-fd2313805448">
+      <associated-rule-id>nat_66d5e9072e86e8.17629119</associated-rule-id>
+      <source>
+        <any>1</any>
+      </source>
+      <interface>opt5</interface>
+      <statetype>keep state</statetype>
+      <protocol>udp</protocol>
+      <ipprotocol>inet</ipprotocol>
+      <destination>
+        <address>HOST_SRV67</address>
+        <port>PORT_SVC_59</port>
+      </destination>
+      <descr>LAN3 1</descr>
+      <category>Public,Mailing</category>
+    </rule>
+    <rule uuid="6b042b5a-33b4-4539-ad2f-70a498b038e3">
+      <associated-rule-id>nat_66d5e964c39ae5.67919802</associated-rule-id>
+      <source>
+        <any>1</any>
+      </source>
+      <interface>opt5</interface>
+      <statetype>keep state</statetype>
+      <protocol>tcp</protocol>
+      <ipprotocol>inet</ipprotocol>
+      <destination>
+        <address>HOST_SRV67</address>
+        <port>22</port>
+      </destination>
+      <descr>LAN3 1</descr>
+      <category>Public,Mailing</category>
+    </rule>
+    <rule uuid="299e1b30-a579-44dd-a3e2-b20725ad5f6f">
+      <associated-rule-id>nat_66d5e9a2acc807.85871668</associated-rule-id>
+      <source>
+        <any>1</any>
+      </source>
+      <interface>opt5</interface>
+      <statetype>keep state</statetype>
+      <protocol>tcp</protocol>
+      <ipprotocol>inet</ipprotocol>
+      <destination>
+        <address>HOST_SRV67</address>
+        <port>8000</port>
+      </destination>
+      <descr>LAN3 1</descr>
+      <category>Public,Mailing</category>
+    </rule>
+    <rule uuid="2ab23adc-4023-4216-82a7-54750afb2da3">
+      <type>pass</type>
+      <interface>opt5</interface>
+      <ipprotocol>inet46</ipprotocol>
+      <statetype>keep state</statetype>
+      <direction>in</direction>
+      <quick>1</quick>
+      <protocol>udp</protocol>
+      <source>
+        <any>1</any>
+      </source>
+      <destination>
+        <network>(self)</network>
+        <port>SVC_34</port>
+      </destination>
+    </rule>
+    <rule uuid="8f49d161-6ee5-49a7-a190-3c5f2cd1c9b8">
+      <associated-rule-id>nat_671b841fb57463.64284189</associated-rule-id>
+      <source>
+        <address>GEOIP_NEARBY</address>
+      </source>
+      <interface>opt5</interface>
+      <statetype>keep state</statetype>
+      <protocol>tcp</protocol>
+      <ipprotocol>inet</ipprotocol>
+      <destination>
+        <address>HOST_SVC1</address>
+        <port>SVC_SVC1_PROXY</port>
+      </destination>
+      <descr>SVC_1 Proxies</descr>
+      <category>Public,SVC9</category>
+    </rule>
+  </filter>
+  <OPNsense>
+    <Firewall>
+      <Lvtemplate version="0.0.1">
+        <templates>
+          <template uuid="c3428a3b-94e6-4414-8b8c-2954ef6a2d4d">
+            <name>Mailserver</name>
+            <or>0</or>
+            <filters>src~172.17.6.2</filters>
+          </template>
+        </templates>
+      </Lvtemplate>
+      <Alias version="1.0.1">
+        <geoip>
+          <url>https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-Country-CSV&amp;license_key=PfFhDGfiQaKjmBGc&amp;suffix=zip</url>
+        </geoip>
+        <aliases>
+          <alias uuid="00286c85-ecd9-48a4-840c-55f61e66690c">
+            <enabled>1</enabled>
+            <name>SVC_INET_UDP</name>
+            <type>port</type>
+            <path_expression/>
+            <proto/>
+            <interface/>
+            <counters>1</counters>
+            <updatefreq/>
+            <content>53
+123</content>
+            <password/>
+            <username/>
+            <authtype/>
+            <categories/>
+            <description/>
+          </alias>
+          <alias uuid="cf8dd0e5-cb5e-4ccb-ab3f-9419b31d297c">
+            <enabled>1</enabled>
+            <name>SVC_INET_TCP</name>
+            <type>port</type>
+            <path_expression/>
+            <proto/>
+            <interface/>
+            <counters>0</counters>
+            <updatefreq/>
+            <content>80
+443
+53</content>
+            <password/>
+            <username/>
+            <authtype/>
+            <categories/>
+            <description/>
+          </alias>
+          <alias uuid="2243f649-a9d9-4090-b644-18cf62cb7a21">
+            <enabled>1</enabled>
+            <name>HOST_SRV93</name>
+            <type>host</type>
+            <path_expression/>
+            <proto/>
+            <interface/>
+            <counters>1</counters>
+            <updatefreq/>
+            <content>10.34.28.100</content>
+            <password/>
+            <username/>
+            <authtype/>
+            <categories/>
+            <description/>
+          </alias>
+          <alias uuid="7a000829-4f16-4758-81a8-5e546e7df50e">
+            <enabled>1</enabled>
+            <name>HOST_SVC1</name>
+            <type>host</type>
+            <path_expression/>
+            <proto/>
+            <interface/>
+            <counters>1</counters>
+            <updatefreq/>
+            <content>10.34.28.205</content>
+            <password/>
+            <username/>
+            <authtype/>
+            <categories/>
+            <description/>
+          </alias>
+          <alias uuid="e86dab59-cb4f-4106-a4af-b0442354088e">
+            <enabled>1</enabled>
+            <name>SVC_SVC1</name>
+            <type>port</type>
+            <path_expression/>
+            <proto/>
+            <interface/>
+            <counters>0</counters>
+            <updatefreq/>
+            <content>161
+443
+2645</content>
+            <password/>
+            <username/>
+            <authtype/>
+            <categories/>
+            <description/>
+          </alias>
+          <alias uuid="4335e3f8-cd1f-468b-bc1e-4dedc77b7c29">
+            <enabled>1</enabled>
+            <name>SVC_34</name>
+            <type>port</type>
+            <path_expression/>
+            <proto/>
+            <interface/>
+            <counters>0</counters>
+            <updatefreq/>
+            <content>45855:45860</content>
+            <password/>
+            <username/>
+            <authtype/>
+            <categories/>
+            <description/>
+          </alias>
+          <alias uuid="0519d22b-8fd8-48e4-a120-1b9e4c0b3aa3">
+            <enabled>1</enabled>
+            <name>HOST_SRV34</name>
+            <type>host</type>
+            <path_expression/>
+            <proto/>
+            <interface/>
+            <counters>1</counters>
+            <updatefreq/>
+            <content>10.34.28.241
+10.34.28.242
+10.34.28.243
+10.34.28.244</content>
+            <password/>
+            <username/>
+            <authtype/>
+            <categories/>
+            <description/>
+          </alias>
+          <alias uuid="47107e10-5aea-4e8a-a139-e836edd297fa">
+            <enabled>1</enabled>
+            <name>GEOIP_NEARBY</name>
+            <type>geoip</type>
+            <path_expression/>
+            <proto/>
+            <interface/>
+            <counters>1</counters>
+            <updatefreq/>
+            <content>AT
+CH
+DE
+IT
+SI</content>
+            <password/>
+            <username/>
+            <authtype/>
+            <categories/>
+            <description/>
+          </alias>
+          <alias uuid="a96f02f5-5888-4ce8-95e6-d40eb4cfc7f4">
+            <enabled>1</enabled>
+            <name>HOST_DNS_TRUSTED_REPOS</name>
+            <type>host</type>
+            <path_expression/>
+            <proto/>
+            <interface/>
+            <counters>0</counters>
+            <updatefreq/>
+            <content>deb.debian.org
+repo.zabbix.com
+download.proxmox.com
+enterprise.proxmox.com
+security.debian.org
+debian.map.fastlydns.net
+download.docker.com</content>
+            <password/>
+            <username/>
+            <authtype/>
+            <categories/>
+            <description/>
+          </alias>
+          <alias uuid="658f0b5d-d763-43ae-8d25-eab8d7f8e0a8">
+            <enabled>1</enabled>
+            <name>HOST_CMP_VPN001</name>
+            <type>host</type>
+            <path_expression/>
+            <proto/>
+            <interface/>
+            <counters>0</counters>
+            <updatefreq/>
+            <content>172.17.4.5</content>
+            <password/>
+            <username/>
+            <authtype/>
+            <categories/>
+            <description/>
+          </alias>
+          <alias uuid="ab416add-c571-4c79-b9e3-8136477b9fb2">
+            <enabled>1</enabled>
+            <name>SVC_34_DYNAMIC</name>
+            <type>port</type>
+            <path_expression/>
+            <proto/>
+            <interface/>
+            <counters>0</counters>
+            <updatefreq/>
+            <content>45855
+45856
+</content>
+            <password/>
+            <username/>
+            <authtype/>
+            <categories/>
+            <description/>
+          </alias>
+          <alias uuid="d21fc781-787c-4511-9644-a9afac7847f7">
+            <enabled>1</enabled>
+            <name>HOST_DNS_DEBIAN_NTP</name>
+            <type>host</type>
+            <path_expression/>
+            <proto/>
+            <interface/>
+            <counters>0</counters>
+            <updatefreq/>
+            <content>0.debian.pool.ntp.org
+1.debian.pool.ntp.org</content>
+            <password/>
+            <username/>
+            <authtype/>
+            <categories/>
+            <description/>
+          </alias>
+          <alias uuid="9529a3bd-94f3-4897-9039-243e80b4e3b7">
+            <enabled>1</enabled>
+            <name>IPLIST_SpamHaus_DROP</name>
+            <type>urltable</type>
+            <path_expression/>
+            <proto/>
+            <interface/>
+            <counters>0</counters>
+            <updatefreq>7</updatefreq>
+            <content>https://www.spamhaus.org/drop/drop.txt</content>
+            <password/>
+            <username/>
+            <authtype/>
+            <categories/>
+            <description/>
+          </alias>
+          <alias uuid="8e39737d-86de-4bb2-b320-94ea86f85cac">
+            <enabled>1</enabled>
+            <name>IPLIST_SpamHaus_DROPv6</name>
+            <type>urltable</type>
+            <path_expression/>
+            <proto/>
+            <interface/>
+            <counters>0</counters>
+            <updatefreq>7</updatefreq>
+            <content>https://www.spamhaus.org/drop/dropv6.txt</content>
+            <password/>
+            <username/>
+            <authtype/>
+            <categories/>
+            <description/>
+          </alias>
+          <alias uuid="1c359f0a-b664-4aa2-bf24-e9f3247f8379">
+            <enabled>1</enabled>
+            <name>IPLIST_SpamHaus_EDROP</name>
+            <type>urltable</type>
+            <path_expression/>
+            <proto/>
+            <interface/>
+            <counters>0</counters>
+            <updatefreq>7</updatefreq>
+            <content>	https://www.spamhaus.org/drop/edrop.txt</content>
+            <password/>
+            <username/>
+            <authtype/>
+            <categories/>
+            <description/>
+          </alias>
+          <alias uuid="adc6eb1c-8fec-464d-91a0-24c70386e5fb">
+            <enabled>1</enabled>
+            <name>IPLIST_TOR_EXIT_NODES</name>
+            <type>urltable</type>
+            <path_expression/>
+            <proto/>
+            <interface/>
+            <counters>0</counters>
+            <updatefreq>7</updatefreq>
+            <content>	https://check.torproject.org/torbulkexitlist</content>
+            <password/>
+            <username/>
+            <authtype/>
+            <categories/>
+            <description/>
+          </alias>
+          <alias uuid="505e06e6-d748-4c01-93dd-321d19a5148a">
+            <enabled>1</enabled>
+            <name>HOST_MAIL</name>
+            <type>host</type>
+            <path_expression/>
+            <proto/>
+            <interface/>
+            <counters>0</counters>
+            <updatefreq/>
+            <content>10.34.28.101</content>
+            <password/>
+            <username/>
+            <authtype/>
+            <categories/>
+            <description>m01.host-svc.com</description>
+          </alias>
+          <alias uuid="ec1e390b-9d00-4717-b78d-e860ce2c47c1">
+            <enabled>1</enabled>
+            <name>SVC_SMTP_TLS</name>
+            <type>port</type>
+            <path_expression/>
+            <proto/>
+            <interface/>
+            <counters>0</counters>
+            <updatefreq/>
+            <content>587</content>
+            <password/>
+            <username/>
+            <authtype/>
+            <categories/>
+            <description/>
+          </alias>
+          <alias uuid="6fab7ef1-34bc-476a-94b7-49944383adc3">
+            <enabled>1</enabled>
+            <name>SVC_POPS</name>
+            <type>port</type>
+            <path_expression/>
+            <proto/>
+            <interface/>
+            <counters>0</counters>
+            <updatefreq/>
+            <content>995</content>
+            <password/>
+            <username/>
+            <authtype/>
+            <categories/>
+            <description/>
+          </alias>
+          <alias uuid="d7843c6c-f4bf-41e2-80e0-0ca5fdd9093e">
+            <enabled>1</enabled>
+            <name>SVC_IMAPS</name>
+            <type>port</type>
+            <path_expression/>
+            <proto/>
+            <interface/>
+            <counters>0</counters>
+            <updatefreq/>
+            <content>993</content>
+            <password/>
+            <username/>
+            <authtype/>
+            <categories/>
+            <description/>
+          </alias>
+          <alias uuid="324bedb5-1fc0-46e2-a180-d24695911868">
+            <enabled>1</enabled>
+            <name>SVC_MAILSERVER_BASE</name>
+            <type>port</type>
+            <path_expression/>
+            <proto/>
+            <interface/>
+            <counters>0</counters>
+            <updatefreq/>
+            <content>25
+587
+465
+80
+443</content>
+            <password/>
+            <username/>
+            <authtype/>
+            <categories/>
+            <description/>
+          </alias>
+          <alias uuid="2b7d951d-8dc5-49aa-ba3a-29392331b0b1">
+            <enabled>1</enabled>
+            <name>SVC_MAILSERVER_FULL</name>
+            <type>port</type>
+            <path_expression/>
+            <proto/>
+            <interface/>
+            <counters>0</counters>
+            <updatefreq/>
+            <content>25
+465
+587
+80
+443
+993
+995
+143
+110</content>
+            <password/>
+            <username/>
+            <authtype/>
+            <categories/>
+            <description/>
+          </alias>
+          <alias uuid="3b100738-dcc9-4e08-bd7b-bb16b244ece5">
+            <enabled>1</enabled>
+            <name>HOST_DNS_CLAMAV</name>
+            <type>host</type>
+            <path_expression/>
+            <proto/>
+            <interface/>
+            <counters>0</counters>
+            <updatefreq/>
+            <content>database.clamav.net</content>
+            <password/>
+            <username/>
+            <authtype/>
+            <categories/>
+            <description/>
+          </alias>
+          <alias uuid="344e6ecd-faf8-4a98-b730-c77ecf657414">
+            <enabled>1</enabled>
+            <name>SVC_HTTP_HTTPS</name>
+            <type>port</type>
+            <path_expression/>
+            <proto/>
+            <interface/>
+            <counters>0</counters>
+            <updatefreq/>
+            <content>80
+443</content>
+            <password/>
+            <username/>
+            <authtype/>
+            <categories/>
+            <description/>
+          </alias>
+          <alias uuid="4589ce97-a110-487e-830d-66d705610bea">
+            <enabled>1</enabled>
+            <name>HOST_DNS_LETSENCRYPT</name>
+            <type>host</type>
+            <path_expression/>
+            <proto/>
+            <interface/>
+            <counters>0</counters>
+            <updatefreq/>
+            <content>acme-v02.api.letsencrypt.org
+staging-v02.api.letsencrypt.org
+r3.o.lencr.org</content>
+            <password/>
+            <username/>
+            <authtype/>
+            <categories/>
+            <description/>
+          </alias>
+          <alias uuid="edd8020a-fe5b-44c0-ac3f-451f5162f4a0">
+            <enabled>1</enabled>
+            <name>HOST_DNS_SPAMASSASSIN</name>
+            <type>host</type>
+            <path_expression/>
+            <proto/>
+            <interface/>
+            <counters>0</counters>
+            <updatefreq/>
+            <content>spamassassin.apache.org
+sa-update.dnswl.org
+sa-update.spamassassin.org
+sa-update.mailfud.org
+sa-update.fossies.org
+www.spamassassin.heinlein-support.de</content>
+            <password/>
+            <username/>
+            <authtype/>
+            <categories/>
+            <description>https://spamassassin.apache.org/updates/MIRRORED.BY</description>
+          </alias>
+          <alias uuid="76f6089f-177b-498a-93ef-991beac11b07">
+            <enabled>1</enabled>
+            <name>HOST_DNS_PYPIP</name>
+            <type>host</type>
+            <path_expression/>
+            <proto/>
+            <interface/>
+            <counters>0</counters>
+            <updatefreq/>
+            <content>pypi.io
+pypi.org
+pypi.python.org
+pythonhosted.org</content>
+            <password/>
+            <username/>
+            <authtype/>
+            <categories/>
+            <description/>
+          </alias>
+          <alias uuid="c525dea9-9ab2-4c2b-89aa-8d787a0faa12">
+            <enabled>1</enabled>
+            <name>HOST_DNS_DockerHub</name>
+            <type>host</type>
+            <path_expression/>
+            <proto/>
+            <interface/>
+            <counters>0</counters>
+            <updatefreq/>
+            <content>registry-1.docker.io
+registry.hub.docker.com
+index.docker.io
+download.docker.com
+registry-origin.docker.io
+auth.docker.io
+docker.io
+production.cloudflare.docker.com</content>
+            <password/>
+            <username/>
+            <authtype/>
+            <categories/>
+            <description/>
+          </alias>
+          <alias uuid="3f31551e-ec1d-4758-9e30-65e08c5a24f7">
+            <enabled>1</enabled>
+            <name>HOST_LAN2_DOCKER</name>
+            <type>host</type>
+            <path_expression/>
+            <proto/>
+            <interface/>
+            <counters>0</counters>
+            <updatefreq/>
+            <content>10.86.21.50</content>
+            <password/>
+            <username/>
+            <authtype/>
+            <categories/>
+            <description/>
+          </alias>
+          <alias uuid="b02278eb-8c63-44c5-9bae-267335f5ea64">
+            <enabled>1</enabled>
+            <name>HOST_WAN5</name>
+            <type>host</type>
+            <path_expression/>
+            <proto/>
+            <interface/>
+            <counters>0</counters>
+            <updatefreq/>
+            <content>169.169.169.7</content>
+            <password/>
+            <username/>
+            <authtype/>
+            <categories/>
+            <description/>
+          </alias>
+          <alias uuid="7eb122d4-9c84-4677-8608-8869d939c090">
+            <enabled>1</enabled>
+            <name>HOST_DNS_RAZOR2</name>
+            <type>host</type>
+            <path_expression/>
+            <proto/>
+            <interface/>
+            <counters>0</counters>
+            <updatefreq/>
+            <content>discovery.razor.cloudmark.com</content>
+            <password/>
+            <username/>
+            <authtype/>
+            <categories/>
+            <description/>
+          </alias>
+          <alias uuid="d4815548-1a99-4f20-b745-69f8f8c89e95">
+            <enabled>1</enabled>
+            <name>NET_RAZOR2</name>
+            <type>network</type>
+            <path_expression/>
+            <proto/>
+            <interface/>
+            <counters>0</counters>
+            <updatefreq/>
+            <content>208.83.137.0/24</content>
+            <password/>
+            <username/>
+            <authtype/>
+            <categories/>
+            <description/>
+          </alias>
+          <alias uuid="74a1cae2-3ce3-4613-b9d8-5c3400fbbe49">
+            <enabled>1</enabled>
+            <name>SVC_RAZOR2</name>
+            <type>port</type>
+            <path_expression/>
+            <proto/>
+            <interface/>
+            <counters>0</counters>
+            <updatefreq/>
+            <content>2703</content>
+            <password/>
+            <username/>
+            <authtype/>
+            <categories/>
+            <description/>
+          </alias>
+          <alias uuid="d79cb468-20a2-423c-8604-bda4bb7f9ad4">
+            <enabled>1</enabled>
+            <name>HOST_SRV29</name>
+            <type>host</type>
+            <path_expression/>
+            <proto/>
+            <interface/>
+            <counters>0</counters>
+            <updatefreq/>
+            <content>172.17.6.1</content>
+            <password/>
+            <username/>
+            <authtype/>
+            <categories/>
+            <description/>
+          </alias>
+          <alias uuid="8bca2749-181a-43a9-9507-47cac32bcd51">
+            <enabled>1</enabled>
+            <name>HOST_DNS_MAILCOW</name>
+            <type>host</type>
+            <path_expression/>
+            <proto/>
+            <interface/>
+            <counters>0</counters>
+            <updatefreq/>
+            <content>www.servercow.de</content>
+            <password/>
+            <username/>
+            <authtype/>
+            <categories/>
+            <description/>
+          </alias>
+          <alias uuid="d50f65ea-12a5-4d73-b0ff-290f525c0a10">
+            <enabled>1</enabled>
+            <name>HOST_SRV48</name>
+            <type>host</type>
+            <path_expression/>
+            <proto/>
+            <interface/>
+            <counters>0</counters>
+            <updatefreq/>
+            <content>10.34.28.206</content>
+            <password/>
+            <username/>
+            <authtype/>
+            <categories/>
+            <description/>
+          </alias>
+          <alias uuid="ad48d74b-d984-4444-85de-0e623fb613cf">
+            <enabled>1</enabled>
+            <name>HOST_SRV96</name>
+            <type>host</type>
+            <path_expression/>
+            <proto/>
+            <interface/>
+            <counters>0</counters>
+            <updatefreq/>
+            <content>10.34.28.101</content>
+            <password/>
+            <username/>
+            <authtype/>
+            <categories/>
+            <description/>
+          </alias>
+          <alias uuid="240e76c3-875b-48b1-bfbe-52d6959ba2a8">
+            <enabled>1</enabled>
+            <name>HOST_DNS_AnsibleSource</name>
+            <type>host</type>
+            <path_expression/>
+            <proto/>
+            <interface/>
+            <counters>0</counters>
+            <updatefreq/>
+            <content>galaxy.ansible.com
+github.com
+ansible-galaxy.s3.amazonaws.com</content>
+            <password/>
+            <username/>
+            <authtype/>
+            <categories/>
+            <description/>
+          </alias>
+          <alias uuid="9d55a3f5-f9dd-4101-b0f3-31d865eddd81">
+            <enabled>1</enabled>
+            <name>HOST_DNS_REPO_OPN</name>
+            <type>host</type>
+            <path_expression/>
+            <proto/>
+            <interface/>
+            <counters>0</counters>
+            <updatefreq/>
+            <content>pkg.opnsense.org
+rules.emergingthreats.net</content>
+            <password/>
+            <username/>
+            <authtype/>
+            <categories/>
+            <description/>
+          </alias>
+          <alias uuid="8dfabe3b-97d3-4a0d-994e-8168df193907">
+            <enabled>1</enabled>
+            <name>HOST_SRV93</name>
+            <type>host</type>
+            <path_expression/>
+            <proto/>
+            <interface/>
+            <counters>0</counters>
+            <updatefreq/>
+            <content>10.38.13.201</content>
+            <password/>
+            <username/>
+            <authtype/>
+            <categories/>
+            <description/>
+          </alias>
+          <alias uuid="592766a7-5d11-4c35-8371-ff60607e4b82">
+            <enabled>1</enabled>
+            <name>SVC_19</name>
+            <type>port</type>
+            <path_expression/>
+            <proto/>
+            <interface/>
+            <counters>0</counters>
+            <updatefreq/>
+            <content>8001</content>
+            <password/>
+            <username/>
+            <authtype/>
+            <categories/>
+            <description/>
+          </alias>
+          <alias uuid="54e37c1a-69c2-4cdc-839e-50cf127c3bd8">
+            <enabled>1</enabled>
+            <name>HOST_SRV39</name>
+            <type>host</type>
+            <path_expression/>
+            <proto/>
+            <interface/>
+            <counters>0</counters>
+            <updatefreq/>
+            <content>10.34.28.201</content>
+            <password/>
+            <username/>
+            <authtype/>
+            <categories/>
+            <description/>
+          </alias>
+          <alias uuid="339bcdeb-4c87-4684-bd47-ed0d510dc524">
+            <enabled>1</enabled>
+            <name>HOST_DNS_GITHUB</name>
+            <type>host</type>
+            <path_expression/>
+            <proto/>
+            <interface/>
+            <counters>0</counters>
+            <updatefreq/>
+            <content>objects.githubusercontent.com
+github.com
+codeload.github.com
+cdn.github.com</content>
+            <password/>
+            <username/>
+            <authtype/>
+            <categories/>
+            <description/>
+          </alias>
+          <alias uuid="81e09462-19e8-4180-80f6-1808f792aba8">
+            <enabled>1</enabled>
+            <name>NET_GITHUB</name>
+            <type>network</type>
+            <path_expression/>
+            <proto/>
+            <interface/>
+            <counters>0</counters>
+            <updatefreq/>
+            <content>140.82.112.0/20
+185.199.110.0/24</content>
+            <password/>
+            <username/>
+            <authtype/>
+            <categories/>
+            <description/>
+          </alias>
+          <alias uuid="debd64ae-1e2e-4512-8f1f-5c5eebf9bb41">
+            <enabled>1</enabled>
+            <name>NET_PRIVATE</name>
+            <type>network</type>
+            <path_expression/>
+            <proto/>
+            <interface/>
+            <counters>0</counters>
+            <updatefreq/>
+            <content>10.38.0.0/16
+10.0.0.0/8
+172.16.0.0/12</content>
+            <password/>
+            <username/>
+            <authtype/>
+            <categories/>
+            <description/>
+          </alias>
+          <alias uuid="4298e4c9-9d2e-4c98-b4d8-12349272eb35">
+            <enabled>1</enabled>
+            <name>HOST_DNS_GEOIP</name>
+            <type>host</type>
+            <path_expression/>
+            <proto/>
+            <interface/>
+            <counters>0</counters>
+            <updatefreq/>
+            <content>thyme.apnic.net
+peeringdb.com
+cdn.github.com
+raw.githubusercontent.com
+ipinfo.io
+dl.ipinfo.io</content>
+            <password/>
+            <username/>
+            <authtype/>
+            <categories/>
+            <description/>
+          </alias>
+          <alias uuid="b2f7374f-cb40-4456-bd58-c53dd1767551">
+            <enabled>1</enabled>
+            <name>HOST_DOCKER</name>
+            <type>host</type>
+            <path_expression/>
+            <proto/>
+            <interface/>
+            <counters>0</counters>
+            <updatefreq/>
+            <content>10.34.28.202</content>
+            <password/>
+            <username/>
+            <authtype/>
+            <categories/>
+            <description/>
+          </alias>
+          <alias uuid="037d4723-f450-46fb-8970-b84cea776aae">
+            <enabled>1</enabled>
+            <name>HOST_SVC37</name>
+            <type>host</type>
+            <path_expression/>
+            <proto/>
+            <interface/>
+            <counters>0</counters>
+            <updatefreq/>
+            <content>HOST_SRV93
+HOST_DOCKER
+HOST_SRV96
+HOST_SRV21</content>
+            <password/>
+            <username/>
+            <authtype/>
+            <categories/>
+            <description/>
+          </alias>
+          <alias uuid="15bdd45f-1196-4ee2-8dd6-7902624fc5b5">
+            <enabled>1</enabled>
+            <name>HOST_DNS_SVC2</name>
+            <type>host</type>
+            <path_expression/>
+            <proto/>
+            <interface/>
+            <counters>0</counters>
+            <updatefreq/>
+            <content>nightly.odoo.com
+apps.odoo.com
+partner-autocomplete.odoo.com
+www.odoo.com</content>
+            <password/>
+            <username/>
+            <authtype/>
+            <categories/>
+            <description/>
+          </alias>
+          <alias uuid="640d6591-7d37-4e28-8d02-8fa408040c00">
+            <enabled>1</enabled>
+            <name>HOST_SRV63</name>
+            <type>host</type>
+            <path_expression/>
+            <proto/>
+            <interface/>
+            <counters>0</counters>
+            <updatefreq/>
+            <content>10.34.28.203</content>
+            <password/>
+            <username/>
+            <authtype/>
+            <categories/>
+            <description/>
+          </alias>
+          <alias uuid="4b17c01b-56e9-4b0c-8ad1-ddc54e6cdff4">
+            <enabled>1</enabled>
+            <name>HOST_WAN3</name>
+            <type>host</type>
+            <path_expression/>
+            <proto/>
+            <interface/>
+            <counters>0</counters>
+            <updatefreq/>
+            <content>169.169.169.5</content>
+            <password/>
+            <username/>
+            <authtype/>
+            <categories/>
+            <description/>
+          </alias>
+          <alias uuid="9e0e31a4-5b25-47fa-be53-7ab44b13b26e">
+            <enabled>1</enabled>
+            <name>HOST_WAN11</name>
+            <type>host</type>
+            <path_expression/>
+            <proto/>
+            <interface/>
+            <counters>0</counters>
+            <updatefreq/>
+            <content>169.169.169.6</content>
+            <password/>
+            <username/>
+            <authtype/>
+            <categories/>
+            <description/>
+          </alias>
+          <alias uuid="252b863a-113a-4038-835d-11b6fb3b74f7">
+            <enabled>1</enabled>
+            <name>PORT_SVC_59</name>
+            <type>port</type>
+            <path_expression/>
+            <proto/>
+            <interface/>
+            <counters>0</counters>
+            <updatefreq/>
+            <content>10223</content>
+            <password/>
+            <username/>
+            <authtype/>
+            <categories/>
+            <description/>
+          </alias>
+          <alias uuid="47b58fa6-a268-44a0-a9a8-35cc247090ad">
+            <enabled>1</enabled>
+            <name>PORT_SVC_55</name>
+            <type>port</type>
+            <path_expression/>
+            <proto/>
+            <interface/>
+            <counters>0</counters>
+            <updatefreq/>
+            <content>35762</content>
+            <password/>
+            <username/>
+            <authtype/>
+            <categories/>
+            <description/>
+          </alias>
+          <alias uuid="386b6fb3-5db3-424d-b6ed-4699603733d7">
+            <enabled>1</enabled>
+            <name>PORT_SVC85</name>
+            <type>port</type>
+            <path_expression/>
+            <proto/>
+            <interface/>
+            <counters>0</counters>
+            <updatefreq/>
+            <content>12547</content>
+            <password/>
+            <username/>
+            <authtype/>
+            <categories/>
+            <description/>
+          </alias>
+          <alias uuid="b8dc0645-ff92-4a86-a58b-1fdfaed0eee9">
+            <enabled>1</enabled>
+            <name>HOST_SRV67</name>
+            <type>host</type>
+            <path_expression/>
+            <proto/>
+            <interface/>
+            <counters>0</counters>
+            <updatefreq/>
+            <content>10.57.65.10</content>
+            <password/>
+            <username/>
+            <authtype/>
+            <categories/>
+            <description/>
+          </alias>
+          <alias uuid="986b450b-7cbf-4ade-9f6a-ab00f042e14a">
+            <enabled>1</enabled>
+            <name>GROUP_MAILCOW</name>
+            <type>host</type>
+            <path_expression/>
+            <proto/>
+            <interface/>
+            <counters>0</counters>
+            <updatefreq/>
+            <content>HOST_SRV48</content>
+            <password/>
+            <username/>
+            <authtype/>
+            <categories/>
+            <description/>
+          </alias>
+          <alias uuid="9d81a33c-51b7-41a7-8133-ea5286d3dc7d">
+            <enabled>1</enabled>
+            <name>HOST_WAN2</name>
+            <type>host</type>
+            <path_expression/>
+            <proto/>
+            <interface/>
+            <counters>0</counters>
+            <updatefreq/>
+            <content>169.169.169.8</content>
+            <password/>
+            <username/>
+            <authtype/>
+            <categories/>
+            <description/>
+          </alias>
+          <alias uuid="ed6d0f88-d93b-4e29-b772-cf5060ae4e40">
+            <enabled>1</enabled>
+            <name>HOST_WAN6</name>
+            <type>host</type>
+            <path_expression/>
+            <proto/>
+            <interface/>
+            <counters>0</counters>
+            <updatefreq/>
+            <content>169.169.169.8</content>
+            <password/>
+            <username/>
+            <authtype/>
+            <categories/>
+            <description/>
+          </alias>
+          <alias uuid="d6e020b6-5d3f-407d-ab93-54a505b7f594">
+            <enabled>1</enabled>
+            <name>HOST_SVC43</name>
+            <type>host</type>
+            <path_expression/>
+            <proto/>
+            <interface/>
+            <counters>0</counters>
+            <updatefreq/>
+            <content>HOST_SRV93
+HOST_SRV96</content>
+            <password/>
+            <username/>
+            <authtype/>
+            <categories/>
+            <description/>
+          </alias>
+          <alias uuid="52bd58d7-8943-4cc2-957e-fc7aad2e754b">
+            <enabled>1</enabled>
+            <name>HOST_DNS_GOOGLE_SMTP</name>
+            <type>host</type>
+            <path_expression/>
+            <proto/>
+            <interface/>
+            <counters>0</counters>
+            <updatefreq/>
+            <content>smtp-relay.gmail.com</content>
+            <password/>
+            <username/>
+            <authtype/>
+            <categories/>
+            <description/>
+          </alias>
+          <alias uuid="70c87288-af14-4fe0-989e-8e7e190be557">
+            <enabled>1</enabled>
+            <name>GROUP_MAIL_SEND</name>
+            <type>host</type>
+            <path_expression/>
+            <proto/>
+            <interface/>
+            <counters>0</counters>
+            <updatefreq/>
+            <content>HOST_SVC1
+HOST_SVC43
+HOST_SRV39</content>
+            <password/>
+            <username/>
+            <authtype/>
+            <categories/>
+            <description/>
+          </alias>
+          <alias uuid="70c7a49e-35ff-44bf-b116-0c4f7a734069">
+            <enabled>1</enabled>
+            <name>HOST_DNS_IPLIST_DL</name>
+            <type>host</type>
+            <path_expression/>
+            <proto/>
+            <interface/>
+            <counters>0</counters>
+            <updatefreq/>
+            <content>check.torproject.org</content>
+            <password/>
+            <username/>
+            <authtype/>
+            <categories/>
+            <description/>
+          </alias>
+          <alias uuid="888298b9-febf-440f-a8de-a93ee101925e">
+            <enabled>1</enabled>
+            <name>HOST_DNS_DOCKER</name>
+            <type>host</type>
+            <path_expression/>
+            <proto/>
+            <interface/>
+            <counters>0</counters>
+            <updatefreq/>
+            <content>docker.io
+registry-1.docker.io
+production.cloudflare.docker.com
+docker-images-prod.6aa30f8b08e16409b46e0173d6de2f56.r2.cloudflarestorage.com</content>
+            <password/>
+            <username/>
+            <authtype/>
+            <categories/>
+            <description>https://docs.docker.com/desktop/setup/allow-list/</description>
+          </alias>
+          <alias uuid="0fe30363-397b-4395-8588-64536b134519">
+            <enabled>1</enabled>
+            <name>GRP_DOCKER</name>
+            <type>host</type>
+            <path_expression/>
+            <proto/>
+            <interface/>
+            <counters>0</counters>
+            <updatefreq/>
+            <content>HOST_SVC1
+HOST_LAN2_DOCKER
+HOST_SRV39
+HOST_DOCKER
+HOST_SRV21</content>
+            <password/>
+            <username/>
+            <authtype/>
+            <categories/>
+            <description/>
+          </alias>
+          <alias uuid="95634241-636e-467b-b13a-71ef191bc1bb">
+            <enabled>1</enabled>
+            <name>HOST_DNS_CMP</name>
+            <type>host</type>
+            <path_expression/>
+            <proto/>
+            <interface/>
+            <counters>0</counters>
+            <updatefreq/>
+            <content>www.oxl.at</content>
+            <password/>
+            <username/>
+            <authtype/>
+            <categories/>
+            <description/>
+          </alias>
+          <alias uuid="2331645c-09e5-4399-909c-d6a6b78d9f39">
+            <enabled>1</enabled>
+            <name>HOST_SRV21</name>
+            <type>host</type>
+            <path_expression/>
+            <proto/>
+            <interface/>
+            <counters>0</counters>
+            <updatefreq/>
+            <content>10.86.21.101</content>
+            <password/>
+            <username/>
+            <authtype/>
+            <categories/>
+            <description/>
+          </alias>
+          <alias uuid="f4c2f0c7-9e0f-4303-a543-763bdb3add32">
+            <enabled>1</enabled>
+            <name>HOST_WAN4</name>
+            <type>host</type>
+            <path_expression/>
+            <proto/>
+            <interface/>
+            <counters>0</counters>
+            <updatefreq/>
+            <content>169.169.169.7</content>
+            <password/>
+            <username/>
+            <authtype/>
+            <categories/>
+            <description/>
+          </alias>
+          <alias uuid="eb2fda8f-19b3-4f9b-8bf0-667d46c95c41">
+            <enabled>1</enabled>
+            <name>SVC_SVC1_PROXY</name>
+            <type>port</type>
+            <path_expression/>
+            <proto/>
+            <interface/>
+            <counters>0</counters>
+            <updatefreq/>
+            <content>20151</content>
+            <password/>
+            <username/>
+            <authtype/>
+            <categories/>
+            <description/>
+          </alias>
+          <alias uuid="ebed3a57-7f93-423d-9f89-260dfa51f3fb">
+            <enabled>0</enabled>
+            <name>HOST_DNS_SVC2_TEST</name>
+            <type>host</type>
+            <path_expression/>
+            <proto/>
+            <interface/>
+            <counters>0</counters>
+            <updatefreq/>
+            <content>auth.tesla.com
+fleet-api.prd.eu.vn.cloud.tesla.com
+52.211.84.165
+18.203.70.200
+54.228.206.56</content>
+            <password/>
+            <username/>
+            <authtype/>
+            <categories/>
+            <description/>
+          </alias>
+          <alias uuid="c2b23f6a-2c8f-43ea-830b-b4cec8cb5d42">
+            <enabled>1</enabled>
+            <name>HOST_DNS_NODEJS</name>
+            <type>host</type>
+            <path_expression/>
+            <proto/>
+            <interface/>
+            <counters>0</counters>
+            <updatefreq/>
+            <content>deb.nodesource.com
+registry.npmjs.org</content>
+            <password/>
+            <username/>
+            <authtype/>
+            <categories/>
+            <description/>
+          </alias>
+          <alias uuid="004debb6-cd85-4f72-a1e0-6e2af3d92df1">
+            <enabled>1</enabled>
+            <name>GRP_CI</name>
+            <type>host</type>
+            <path_expression/>
+            <proto/>
+            <interface/>
+            <counters>0</counters>
+            <updatefreq/>
+            <content>HOST_LAN2_DOCKER
+10.86.21.51
+10.86.21.52</content>
+            <password/>
+            <username/>
+            <authtype/>
+            <categories/>
+            <description/>
+          </alias>
+          <alias uuid="327f0afc-885d-4d76-9e06-4ae2a34334ae">
+            <enabled>1</enabled>
+            <name>HOST_DNS_IPLISTS</name>
+            <type>host</type>
+            <path_expression/>
+            <proto/>
+            <interface/>
+            <counters>0</counters>
+            <updatefreq/>
+            <content>mask-api.icloud.com
+api.mullvad.net
+check.torproject.org
+raw.githubusercontent.com</content>
+            <password/>
+            <username/>
+            <authtype/>
+            <categories/>
+            <description/>
+          </alias>
+        </aliases>
+      </Alias>
+      <Filter version="1.0.4">
+        <rules/>
+        <snatrules/>
+        <npt/>
+        <onetoone/>
+      </Filter>
+    </Firewall>
+    <Interfaces>
+      <loopbacks version="1.0.0"/>
+      <vxlans version="1.0.2"/>
+      <neighbors version="1.0.0"/>
+    </Interfaces>
+    <Gateways version="1.0.0">
+      <gateway_item uuid="e7ca22a0-6836-4601-a6c3-f1c521836a36">
+        <disabled>1</disabled>
+        <name>WAN_GW</name>
+        <descr>HetznerGW</descr>
+        <interface>wan</interface>
+        <ipprotocol>inet</ipprotocol>
+        <gateway>65.108.131.1</gateway>
+        <defaultgw>1</defaultgw>
+        <fargw>0</fargw>
+        <monitor_disable>0</monitor_disable>
+        <monitor_noroute>0</monitor_noroute>
+        <monitor/>
+        <force_down>0</force_down>
+        <priority>255</priority>
+        <weight>1</weight>
+        <latencylow/>
+        <latencyhigh/>
+        <losslow/>
+        <losshigh/>
+        <interval>1</interval>
+        <time_period/>
+        <loss_interval/>
+        <data_length/>
+      </gateway_item>
+      <gateway_item uuid="64729a18-9d07-4096-812f-a7c47aae6e9a">
+        <disabled>1</disabled>
+        <name>WAN_GWv6</name>
+        <descr>HetznerGWv6</descr>
+        <interface>wan</interface>
+        <ipprotocol>inet6</ipprotocol>
+        <gateway>fe80::1</gateway>
+        <defaultgw>0</defaultgw>
+        <fargw>0</fargw>
+        <monitor_disable>0</monitor_disable>
+        <monitor_noroute>0</monitor_noroute>
+        <monitor/>
+        <force_down>0</force_down>
+        <priority>255</priority>
+        <weight>1</weight>
+        <latencylow/>
+        <latencyhigh/>
+        <losslow/>
+        <losshigh/>
+        <interval/>
+        <time_period/>
+        <loss_interval/>
+        <data_length/>
+      </gateway_item>
+      <gateway_item uuid="04bf6c06-0c44-4e03-a94f-824be3677d81">
+        <disabled>0</disabled>
+        <name>WAN2_GW</name>
+        <descr/>
+        <interface>opt5</interface>
+        <ipprotocol>inet</ipprotocol>
+        <gateway>169.169.169.1</gateway>
+        <defaultgw>1</defaultgw>
+        <fargw>0</fargw>
+        <monitor_disable>0</monitor_disable>
+        <monitor_noroute>0</monitor_noroute>
+        <monitor>8.8.8.8</monitor>
+        <force_down>0</force_down>
+        <priority>250</priority>
+        <weight>1</weight>
+        <latencylow/>
+        <latencyhigh/>
+        <losslow/>
+        <losshigh/>
+        <interval/>
+        <time_period/>
+        <loss_interval/>
+        <data_length/>
+      </gateway_item>
+      <gateway_item uuid="a1e2fa3a-32da-4e2b-be1d-89ece20acbe9">
+        <disabled>0</disabled>
+        <name>VPN101</name>
+        <descr/>
+        <interface>opt1</interface>
+        <ipprotocol>inet</ipprotocol>
+        <gateway>10.56.10.1</gateway>
+        <defaultgw>0</defaultgw>
+        <fargw>0</fargw>
+        <monitor_disable>0</monitor_disable>
+        <monitor_noroute>0</monitor_noroute>
+        <monitor/>
+        <force_down>0</force_down>
+        <priority>255</priority>
+        <weight>1</weight>
+        <latencylow/>
+        <latencyhigh/>
+        <losslow/>
+        <losshigh/>
+        <interval/>
+        <time_period/>
+        <loss_interval/>
+        <data_length/>
+      </gateway_item>
+    </Gateways>
+  </OPNsense>
+  <staticroutes version="1.0.0">
+    <route uuid="43363050-f763-49ff-a256-25ecd882ca51">
+      <network>10.56.14.0/24</network>
+      <gateway>VPN101</gateway>
+      <descr>VPS TEST1</descr>
+      <disabled>0</disabled>
+    </route>
+    <route uuid="ed73a939-7972-4c02-8b18-1eae7dd91a6c">
+      <network>10.56.15.0/24</network>
+      <gateway>VPN101</gateway>
+      <descr>VPS TEST2</descr>
+      <disabled>0</disabled>
+    </route>
+  </staticroutes>
+  <virtualip version="1.0.0">
+    <vip uuid="3f08292f-dee6-4c6f-82bd-817d9c61b8c7">
+      <interface>lan</interface>
+      <mode>carp</mode>
+      <subnet>10.34.28.254</subnet>
+      <subnet_bits>32</subnet_bits>
+      <gateway/>
+      <noexpand>0</noexpand>
+      <nobind>0</nobind>
+      <password>dummy-pwd</password>
+      <vhid>2</vhid>
+      <advbase>1</advbase>
+      <advskew>0</advskew>
+      <peer/>
+      <peer6/>
+      <descr/>
+    </vip>
+    <vip uuid="34c229ce-05ca-411b-9056-27ac201a28b6">
+      <interface>opt3</interface>
+      <mode>carp</mode>
+      <subnet>10.86.21.254</subnet>
+      <subnet_bits>32</subnet_bits>
+      <gateway/>
+      <noexpand>0</noexpand>
+      <nobind>0</nobind>
+      <password>dummy-pwd</password>
+      <vhid>3</vhid>
+      <advbase>1</advbase>
+      <advskew>0</advskew>
+      <peer/>
+      <peer6/>
+      <descr/>
+    </vip>
+    <vip uuid="306718d2-a682-440b-a03e-0a1f72814a07">
+      <interface>opt5</interface>
+      <mode>carp</mode>
+      <subnet>169.169.169.5</subnet>
+      <subnet_bits>32</subnet_bits>
+      <gateway/>
+      <noexpand>0</noexpand>
+      <nobind>1</nobind>
+      <password>dummy-pwd</password>
+      <vhid>4</vhid>
+      <advbase>1</advbase>
+      <advskew>0</advskew>
+      <peer/>
+      <peer6/>
+      <descr>CMP Mailing</descr>
+    </vip>
+    <vip uuid="62c3b2e9-ac7e-4420-a9e0-73d1010e4774">
+      <interface>opt6</interface>
+      <mode>carp</mode>
+      <subnet>10.57.65.254</subnet>
+      <subnet_bits>32</subnet_bits>
+      <gateway/>
+      <noexpand>0</noexpand>
+      <nobind>0</nobind>
+      <password>dummy-pwd</password>
+      <vhid>6</vhid>
+      <advbase>1</advbase>
+      <advskew>0</advskew>
+      <peer/>
+      <peer6/>
+      <descr/>
+    </vip>
+    <vip uuid="33b2be08-2281-430d-9c07-8be43fed536c">
+      <interface>opt5</interface>
+      <mode>carp</mode>
+      <subnet>169.169.169.8</subnet>
+      <subnet_bits>32</subnet_bits>
+      <gateway/>
+      <noexpand>0</noexpand>
+      <nobind>0</nobind>
+      <password>dummy-pwd</password>
+      <vhid>7</vhid>
+      <advbase>1</advbase>
+      <advskew>0</advskew>
+      <peer/>
+      <peer6/>
+      <descr>VPN</descr>
+    </vip>
+    <vip uuid="a2d0cd18-fc41-4d86-9de5-359952cb9a23">
+      <interface>opt5</interface>
+      <mode>carp</mode>
+      <subnet>169.169.169.7</subnet>
+      <subnet_bits>32</subnet_bits>
+      <gateway/>
+      <noexpand>0</noexpand>
+      <nobind>0</nobind>
+      <password>dummy-pwd</password>
+      <vhid>8</vhid>
+      <advbase>1</advbase>
+      <advskew>0</advskew>
+      <peer/>
+      <peer6/>
+      <descr/>
+    </vip>
+    <vip uuid="c1059a0b-1ac0-432a-a07b-74e929bf0e64">
+      <interface>opt5</interface>
+      <mode>carp</mode>
+      <subnet>169.169.169.6</subnet>
+      <subnet_bits>32</subnet_bits>
+      <gateway/>
+      <noexpand>0</noexpand>
+      <nobind>0</nobind>
+      <password>dummy-pwd</password>
+      <vhid>9</vhid>
+      <advbase>1</advbase>
+      <advskew>0</advskew>
+      <peer/>
+      <peer6/>
+      <descr/>
+    </vip>
+  </virtualip>
+  <ifgroups version="1.0.0">
+    <ifgroupentry uuid="b49367b2-b8f3-4bb0-83f7-cc6adbff2753">
+      <ifname>GRP_MAIL</ifname>
+      <members>lan</members>
+      <nogroup>0</nogroup>
+      <sequence>10</sequence>
+      <descr/>
+    </ifgroupentry>
+  </ifgroups>
+</opnsense>

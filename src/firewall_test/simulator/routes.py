@@ -96,6 +96,7 @@ class Router:
         # prio by: table-prio, direct-attached, route-metric, route-subnet-size
         sorted_routes: list[StaticRoute] = []
 
+        # todo: handle duplicate routes with scope=link (fe80)
         for table in self.table_priority:
             for route in matching_routes:
                 if route.scope == 'link' and route not in sorted_routes:
