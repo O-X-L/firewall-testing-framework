@@ -34,7 +34,7 @@ Here is an example on how to run supply the exported config:
 
 .. code-block:: bash
 
-    ftf-cli --firewall-system 'linux_netfilter' \
+    ftf-cli --firewall-system 'opnsense' \
             --file-ruleset 'config.xml' \
             --file-interfaces 'network.json' \
             --file-routes 'network.json' \
