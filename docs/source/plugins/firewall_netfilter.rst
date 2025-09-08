@@ -28,7 +28,7 @@ Optional: To get a more readable JSON-output, you can use the :code:`jq` tool to
 Run
 ###
 
-Here is an example on how to run supply the exported config:
+Here is an example on how to run it with the exported config:
 
 .. code-block:: bash
 

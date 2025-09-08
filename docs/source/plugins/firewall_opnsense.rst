@@ -30,7 +30,7 @@ Config Export
 Run
 ###
 
-Here is an example on how to run supply the exported config:
+Here is an example on how to run it with the exported config:
 
 .. code-block:: bash
 
