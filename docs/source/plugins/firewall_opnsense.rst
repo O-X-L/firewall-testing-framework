@@ -1,10 +1,10 @@
 .. _plugins_fw_opnsense:
 
 .. |export_backup| image:: ../_static/img/plugin-opnsense-backup.png
-   :class: wiki-img
+   :class: wiki-img-sm
 
 .. |export_network| image:: ../_static/img/plugin-opnsense-export.png
-   :class: wiki-img
+   :class: wiki-img-sm
 
 .. include:: ../_include/head.rst
 

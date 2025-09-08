@@ -27,7 +27,7 @@ class NetfilterRule(TranslatePluginRule):
 
 class NetfilterChainOutput(Chain):
     def _validate_hooks(self):
-        assert self.hook is None or self.hook in SystemLinuxNetfilter.FIREWALL_HOOKS
+        assert self.hook is None or self.hook in SystemLinuxNetfilter.FIREWALL_HOOKS['full']
 
 
 class NetfilterChain(TranslatePluginChain):

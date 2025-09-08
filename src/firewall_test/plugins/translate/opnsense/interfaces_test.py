@@ -30,6 +30,7 @@ def test_opnsense_nis():
 
         elif ni.name == 'opt5':
             assert ni.up
+            assert ni.desc == 'WAN2'
             is_ips = [str(ip) for ip in ni.ip4]
             is_ips.sort()
             want_ips = [

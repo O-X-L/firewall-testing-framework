@@ -6,6 +6,8 @@ from config import ProtoL3, ProtoL3IP4, ProtoL3IP6, MatchPort, ProtoL4ICMP, Prot
 from plugins.translate.netfilter.parts import RULE_ACTIONS, IGNORE_RULE_EXPRESSIONS, IGNORE_LEFT
 from utils.logger import log_warn
 
+# pylint: disable=R0801
+
 # for schema see: https://www.mankier.com/5/libnftables-json
 
 def translate_family(family: str) -> type[ProtoL3]:

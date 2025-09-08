@@ -11,6 +11,47 @@ DEFAULT_ROUTE_IP4 = ip_network('0.0.0.0/0')
 DEFAULT_ROUTE_IP6 = ip_network('::/0')
 DEFAULT_ROUTES = [DEFAULT_ROUTE_IP4, DEFAULT_ROUTE_IP6]
 LINK_LOCAL_IP6 = ip_network('fe80::/64')
+BOGONS_IP4 = [
+    ip_network('0.0.0.0/8'),
+    ip_network('10.0.0.0/8'),
+    ip_network('100.64.0.0/10'),
+    ip_network('127.0.0.0/8'),
+    ip_network('127.0.53.53'),
+    ip_network('169.254.0.0/16'),
+    ip_network('172.16.0.0/12'),
+    ip_network('192.0.0.0/24'),
+    ip_network('192.0.2.0/24'),
+    ip_network('192.168.0.0/16'),
+    ip_network('198.18.0.0/15'),
+    ip_network('198.51.100.0/24'),
+    ip_network('203.0.113.0/24'),
+    ip_network('224.0.0.0/4'),
+    ip_network('240.0.0.0/4'),
+    ip_network('255.255.255.255/32'),
+]
+BOGONS_IP6 = [
+    ip_network('::/128'),
+    ip_network('::1/128'),
+    ip_network('::ffff:0:0/96'),
+    ip_network('::/96'),
+    ip_network('100::/64'),
+    ip_network('2001:10::/28'),
+    ip_network('2001:db8::/32'),
+    ip_network('3fff::/20'),
+    ip_network('fc00::/7'),
+    ip_network('fe80::/10'),
+    ip_network('fec0::/10'),
+    ip_network('ff00::/8'),
+]
+BOGONS = BOGONS_IP4.copy()
+BOGONS.extend(BOGONS_IP6)
+
+# dns-resolving firewall-rule content
+DNS_RESOLVE_TIMEOUT = 1
+DNS_RESOLVE_THREADS = 50
+
+IPLIST_DOWNLOAD_TIMEOUT = 3
+IPLIST_COMMENT_CHARS = ['#', ';']
 
 
 class Proto(ABC):
@@ -33,10 +74,11 @@ class ProtoL3IP4IP6(ProtoL3):
     N = 'ip'
 
 
-PROTOS_L3 = [ProtoL3IP4, ProtoL3IP6]
+PROTOS_L3 = [ProtoL3IP4, ProtoL3IP6, ProtoL3IP4IP6]
 PROTO_L3_MAPPING = {
     ProtoL3IP4.N: ProtoL3IP4,
     ProtoL3IP6.N: ProtoL3IP6,
+    ProtoL3IP4IP6.N: ProtoL3IP4IP6,
 }
 
 class ProtoL4(Proto):

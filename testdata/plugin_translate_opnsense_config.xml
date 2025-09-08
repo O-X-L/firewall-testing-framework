@@ -179,7 +179,7 @@
       </rule>
       <rule>
         <source>
-          <network>HOST_SRV48</network>
+          <network>HOST_SRV48,HOST_SVC1</network>
         </source>
         <destination>
           <network>bogons</network>
@@ -2623,6 +2623,7 @@ download.proxmox.com
 enterprise.proxmox.com
 security.debian.org
 debian.map.fastlydns.net
+test.some-invalid-domain.oxl.aaaa
 download.docker.com</content>
             <password/>
             <username/>
@@ -2895,9 +2896,7 @@ download.docker.com</content>
             <interface/>
             <counters>0</counters>
             <updatefreq/>
-            <content>acme-v02.api.letsencrypt.org
-staging-v02.api.letsencrypt.org
-r3.o.lencr.org</content>
+            <content>acme-v02.api.letsencrypt.org</content>
             <password/>
             <username/>
             <authtype/>
@@ -2916,7 +2915,6 @@ r3.o.lencr.org</content>
             <content>spamassassin.apache.org
 sa-update.dnswl.org
 sa-update.spamassassin.org
-sa-update.mailfud.org
 sa-update.fossies.org
 www.spamassassin.heinlein-support.de</content>
             <password/>
@@ -3205,8 +3203,7 @@ rules.emergingthreats.net</content>
             <updatefreq/>
             <content>objects.githubusercontent.com
 github.com
-codeload.github.com
-cdn.github.com</content>
+codeload.github.com</content>
             <password/>
             <username/>
             <authtype/>
@@ -3259,7 +3256,6 @@ cdn.github.com</content>
             <updatefreq/>
             <content>thyme.apnic.net
 peeringdb.com
-cdn.github.com
 raw.githubusercontent.com
 ipinfo.io
 dl.ipinfo.io</content>
