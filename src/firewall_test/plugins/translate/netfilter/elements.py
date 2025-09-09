@@ -441,6 +441,9 @@ class NftRule(NftBase):
         if self.comment is not None:
             cmt = f' "{self.comment}"'
 
+        if self.handle is not None:
+            cmt += f' (handle {self.handle})'
+
         matches = str(self.matches)
         if len(matches) > 500:
             matches = matches[:500] + '...'
