@@ -33,7 +33,7 @@ class RunFirewallChain:
             lazy_action = ' (lazy)'
 
         msg = f'> Chain {chain.name} | Rule {rule.seq} | Match => {rule.action.N}{lazy_action}'
-        v2 = f' | {rule.dump()}'
+        v2 = f' | {rule.log()}'
         if debug:
             log_debug('Firewall', msg + v2)
 
@@ -116,7 +116,7 @@ class RunFirewallChain:
 
                 log_info(
                     label='Firewall',
-                    v1=f'> Chain {chain.name} | Sub-Chain: {target_chain.name}',
+                    v1=f'> Chain {chain.name} | Sub-Chain: {target_chain.name} ({len(target_chain.rules)} rules)',
                     v3=f' {target_chain.family.N} {target_chain.type}'
                 )
                 target_chain.run_table = chain.run_table

@@ -82,34 +82,34 @@ Pass Example
     > 🛈 ROUTER: Packet inbound-route: 172.17.0.0/16, scope link
     > 🛈 FIREWALL: Processing Chain: Table nat ip4 | Chain PREROUTING ip4 nat
     > 🛈 FIREWALL: > Chain PREROUTING | Rule 0 | Match => jump
-    > 🛈 FIREWALL: > Chain PREROUTING | Sub-Chain: DOCKER
+    > 🛈 FIREWALL: > Chain PREROUTING | Sub-Chain: DOCKER (2 rules)
     > 🛈 FIREWALL: > Chain DOCKER | Rule 0 | Match => return
     > 🛈 ROUTER: Packet outbound-interface: wan
-    > 🛈 ROUTER: Packet outbound-route: 0.0.0.0/0, gw 10.255.255.254, metric 600, scope remote
+    > 🛈 ROUTER: Packet outbound-route: 0.0.0.0/0, gw 10.255.255.254, metric 600, scope global
     > 🛈 FIREWALL: Processing Chain: Table filter ip4 | Chain FORWARD ip4 filter
     > 🛈 FIREWALL: > Chain FORWARD | Rule 0 | Match => jump
-    > 🛈 FIREWALL: > Chain FORWARD | Sub-Chain: DOCKER-USER
+    > 🛈 FIREWALL: > Chain FORWARD | Sub-Chain: DOCKER-USER (1 rules)
     > 🛈 FIREWALL: > Chain DOCKER-USER | Rule 0 | Match => return
     > 🛈 FIREWALL: > Chain FORWARD | Rule 1
     > 🛈 FIREWALL: > Chain FORWARD | Rule 2
     > 🛈 FIREWALL: > Chain FORWARD | Rule 3
     > 🛈 FIREWALL: > Chain FORWARD | Rule 4 | Match => jump
-    > 🛈 FIREWALL: > Chain FORWARD | Sub-Chain: DOCKER-FORWARD
+    > 🛈 FIREWALL: > Chain FORWARD | Sub-Chain: DOCKER-FORWARD (4 rules)
     > 🛈 FIREWALL: > Chain DOCKER-FORWARD | Rule 0 | Match => jump
-    > 🛈 FIREWALL: > Chain DOCKER-FORWARD | Sub-Chain: DOCKER-CT
+    > 🛈 FIREWALL: > Chain DOCKER-FORWARD | Sub-Chain: DOCKER-CT (1 rules)
     > 🛈 FIREWALL: > Chain DOCKER-CT | Rule 0
     > 🛈 FIREWALL: > Chain DOCKER-FORWARD | Rule 1 | Match => jump
-    > 🛈 FIREWALL: > Chain DOCKER-FORWARD | Sub-Chain: DOCKER-ISOLATION-STAGE-1
+    > 🛈 FIREWALL: > Chain DOCKER-FORWARD | Sub-Chain: DOCKER-ISOLATION-STAGE-1 (1 rules)
     > 🛈 FIREWALL: > Chain DOCKER-ISOLATION-STAGE-1 | Rule 0 | Match => jump
-    > 🛈 FIREWALL: > Chain DOCKER-ISOLATION-STAGE-1 | Sub-Chain: DOCKER-ISOLATION-STAGE-2
+    > 🛈 FIREWALL: > Chain DOCKER-ISOLATION-STAGE-1 | Sub-Chain: DOCKER-ISOLATION-STAGE-2 (1 rules)
     > 🛈 FIREWALL: > Chain DOCKER-ISOLATION-STAGE-2 | Rule 0
     > 🛈 FIREWALL: > Chain DOCKER-FORWARD | Rule 2 | Match => jump
-    > 🛈 FIREWALL: > Chain DOCKER-FORWARD | Sub-Chain: DOCKER-BRIDGE
+    > 🛈 FIREWALL: > Chain DOCKER-FORWARD | Sub-Chain: DOCKER-BRIDGE (1 rules)
     > 🛈 FIREWALL: > Chain DOCKER-BRIDGE | Rule 0
     > 🛈 FIREWALL: > Chain DOCKER-FORWARD | Rule 3 | Match => accept
     > 🛈 FIREWALL: Processing Chain: Table nat ip4 | Chain POSTROUTING ip4 nat
     > 🛈 FIREWALL: > Chain POSTROUTING | Rule 0 | Match => snat
-    > 🛈 FIREWALL: Performed SNAT
+    > 🛈 FIREWALL: Performed SNAT: 172.17.11.5 => 10.255.255.48
     > ✓ FIREWALL: Packet passed
 
 ----
@@ -125,16 +125,17 @@ Block Example
     > 🛈 ROUTER: Packet inbound-route: 172.17.0.0/16, scope link
     > 🛈 FIREWALL: Processing Chain: Table nat ip4 | Chain PREROUTING ip4 nat
     > 🛈 FIREWALL: > Chain PREROUTING | Rule 0 | Match => jump
-    > 🛈 FIREWALL: > Chain PREROUTING | Sub-Chain: DOCKER
+    > 🛈 FIREWALL: > Chain PREROUTING | Sub-Chain: DOCKER (2 rules)
     > 🛈 FIREWALL: > Chain DOCKER | Rule 0 | Match => return
     > 🛈 ROUTER: Packet outbound-interface: wan
-    > 🛈 ROUTER: Packet outbound-route: 0.0.0.0/0, gw 10.255.255.254, metric 600, scope remote
+    > 🛈 ROUTER: Packet outbound-route: 0.0.0.0/0, gw 10.255.255.254, metric 600, scope global
     > 🛈 FIREWALL: Processing Chain: Table filter ip4 | Chain FORWARD ip4 filter
     > 🛈 FIREWALL: > Chain FORWARD | Rule 0 | Match => jump
-    > 🛈 FIREWALL: > Chain FORWARD | Sub-Chain: DOCKER-USER
+    > 🛈 FIREWALL: > Chain FORWARD | Sub-Chain: DOCKER-USER (1 rules)
     > 🛈 FIREWALL: > Chain DOCKER-USER | Rule 0 | Match => return
     > 🛈 FIREWALL: > Chain FORWARD | Rule 1 | Match => drop
-    > ✖ FIREWALL: Packet blocked by rule: {'action': 'drop', 'seq': 1, 'raw': Rule: #101 "TEST DROP" | Matches: [proto_l3 == ip4 & ip_daddr == ['2.2.2.2/32']]}
+    > ✖ FIREWALL: Packet blocked by rule: Seq 1, Action: drop, Rule: #101 "TEST IP4-DADDR DROP"
+    >              > Matches: {'proto_l3': {'==': 'ip4'}, 'ip_daddr': {'==': ['2.2.2.2/32']}}
 
 ----
 
@@ -150,18 +151,29 @@ You can get more detailed output by increasing the verbosity:
     > 🛈 ROUTER: Packet inbound-interface: docker0
     > 🛈 ROUTER: Packet inbound-route: 172.17.0.0/16, scope link
     > 🛈 FIREWALL: Processing Chain: Table nat ip4 | Chain PREROUTING ip4 nat
-    > 🛈 FIREWALL: > Chain PREROUTING | Rule 0 | Match => jump | {'action': 'jump', 'seq': 0, 'raw': Rule: #3 | Matches: []}
-    > 🛈 FIREWALL: > Chain PREROUTING | Sub-Chain: DOCKER
-    > 🛈 FIREWALL: > Chain DOCKER | Rule 0 | Match => return | {'action': 'return', 'seq': 0, 'raw': Rule: #10 | Matches: [ni_in == ['docker0']]}
+    > 🛈 FIREWALL: > Chain PREROUTING | Rule 0 | Match => jump | Seq 0, Action: jump, Rule: #3
+    >              > Matches: {}
+    >
+    > 🛈 FIREWALL: > Chain PREROUTING | Sub-Chain: DOCKER (2 rules)
+    > 🛈 FIREWALL: > Chain DOCKER | Rule 0 | Match => return | Seq 0, Action: return, Rule: #10
+    >              > Matches: {'ni_in': {'==': ['docker0']}}
+    >
     > 🛈 FIREWALL: Flow-type: forward
     > 🛈 ROUTER: Packet outbound-interface: wan
-    > 🛈 ROUTER: Packet outbound-route: 0.0.0.0/0, gw 10.255.255.254, metric 600, scope remote
+    > 🛈 ROUTER: Packet outbound-route: 0.0.0.0/0, gw 10.255.255.254, metric 600, scope global
     > 🛈 FIREWALL: Processing Chain: Table filter ip4 | Chain FORWARD ip4 filter
-    > 🛈 FIREWALL: > Chain FORWARD | Rule 0 | Match => jump | {'action': 'jump', 'seq': 0, 'raw': Rule: #20 | Matches: []}
-    > 🛈 FIREWALL: > Chain FORWARD | Sub-Chain: DOCKER-USER
-    > 🛈 FIREWALL: > Chain DOCKER-USER | Rule 0 | Match => return | {'action': 'return', 'seq': 0, 'raw': Rule: #19 | Matches: []}
-    > 🛈 FIREWALL: > Chain FORWARD | Rule 1 | Match => drop | {'action': 'drop', 'seq': 1, 'raw': Rule: #101 "TEST IP4-DADDR DROP" | Matches: [proto_l3 == ip4 & ip_daddr == ['2.2.2.2/32']]}
-    > ✖ FIREWALL: Packet blocked by rule: {'action': 'drop', 'seq': 1, 'raw': Rule: #101 "TEST IP4-DADDR DROP" | Matches: [proto_l3 == ip4 & ip_daddr == ['2.2.2.2/32']]}
+    > 🛈 FIREWALL: > Chain FORWARD | Rule 0 | Match => jump | Seq 0, Action: jump, Rule: #20
+    >              > Matches: {}
+    >
+    > 🛈 FIREWALL: > Chain FORWARD | Sub-Chain: DOCKER-USER (1 rules)
+    > 🛈 FIREWALL: > Chain DOCKER-USER | Rule 0 | Match => return | Seq 0, Action: return, Rule: #19
+    >              > Matches: {}
+    >
+    > 🛈 FIREWALL: > Chain FORWARD | Rule 1 | Match => drop | Seq 1, Action: drop, Rule: #101 "TEST IP4-DADDR DROP"
+    >              > Matches: {'proto_l3': {'==': 'ip4'}, 'ip_daddr': {'==': ['2.2.2.2/32']}}
+    >
+    > ✖ FIREWALL: Packet blocked by rule: Seq 1, Action: drop, Rule: #101 "TEST IP4-DADDR DROP"
+    >              > Matches: {'proto_l3': {'==': 'ip4'}, 'ip_daddr': {'==': ['2.2.2.2/32']}}
 
 Or use the silent-mode:
 
@@ -169,7 +181,8 @@ Or use the silent-mode:
 
     ftf-cli ... --src-ip 172.17.11.5 --dst-ip 2.2.2.2 --verbosity silent
 
-    > ✖ FIREWALL: Packet blocked by rule: {'action': 'drop', 'seq': 1, 'raw': Rule: #101 "TEST IP4-DADDR DROP" | Matches: [proto_l3 == ip4 & ip_daddr == ['2.2.2.2/32']]}
+    > ✖ FIREWALL: Packet blocked by rule: Seq 1, Action: drop, Rule: #101 "TEST IP4-DADDR DROP"
+    >              > Matches: {'proto_l3': {'==': 'ip4'}, 'ip_daddr': {'==': ['2.2.2.2/32']}}
 
 ----
 
@@ -186,7 +199,7 @@ Depending on the system-specific configuration traffic can be dropped by non-fir
     > 🛈 ROUTER: Packet inbound-route: 172.17.0.0/16, scope link
     > 🛈 FIREWALL: Processing Chain: Table nat ip4 | Chain PREROUTING ip4 nat
     > 🛈 FIREWALL: > Chain PREROUTING | Rule 0 | Match => jump
-    > 🛈 FIREWALL: > Chain PREROUTING | Sub-Chain: DOCKER
+    > 🛈 FIREWALL: > Chain PREROUTING | Sub-Chain: DOCKER (2 rules)
     > 🛈 FIREWALL: > Chain DOCKER | Rule 0 | Match => return
     > 🛈 ROUTER: Packet outbound-interface: wan
     > 🛈 ROUTER: Packet outbound-route: 0.0.0.0/0, gw 10.255.255.254, metric 600, scope remote

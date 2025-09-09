@@ -59,7 +59,7 @@ class SimulatorRun:
         _, self.dnat = self._s.fw.process_dnat(packet=packet, flow=self.flow_type)
         self._dnat_done = True
         if self.dnat is not None:
-            log_info(label='Firewall', v1='Performed DNAT', v2=f': {self.packet.dnat_str}')
+            log_info(label='Firewall', v1=f'Performed DNAT: {self.packet.dnat_str}')
 
         ### UPDATE TRAFFIC FLOW AND OUTBOUND-NETWORK-INTERFACE ###
 
@@ -114,7 +114,7 @@ class SimulatorRun:
                 else:
                     self.packet.src = self._get_snat_masquerade_ip()
 
-            log_info(label='Firewall', v1='Performed SNAT', v2=f': {self.packet.snat_str()}')
+            log_info(label='Firewall', v1=f'Performed SNAT: {self.packet.snat_str()}')
 
         elif self.flow_type == FlowOutput:
             # use the correct outbound-IP if the traffic originated from this host itself
@@ -261,7 +261,7 @@ class SimulatorRun:
             log_error(label='Firewall', v1='Packet blocked by chain default-policy', final=True)
 
         else:
-            log_error(label='Firewall', v1='Packet blocked by rule', v2=f': {rule.dump()}', final=True)
+            log_error(label='Firewall', v1='Packet blocked by rule', v2=f': {rule.log()}', final=True)
 
 
 class Simulator:

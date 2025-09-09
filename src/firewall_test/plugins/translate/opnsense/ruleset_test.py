@@ -23,7 +23,7 @@ def test_opnsense_ruleset():
     for c in table.chains:
         c.validate()
 
-    assert len(r.aliases) == 73  # todo: find missing 1 alias!
+    assert len(r.aliases) == 72  # todo: find missing 1 alias!
     assert len(r.aliases['HOST_DNS_TRUSTED_REPOS']) > 0
     for e in r.aliases['HOST_DNS_TRUSTED_REPOS']:
         assert isinstance(e, (IPv4Network, IPv6Network))
@@ -55,23 +55,65 @@ def test_opnsense_ruleset():
     ]
 
     assert len(r.chain_dnat.rules) == 0
-    assert len(r.chain_floating.rules) == 17
+    assert len(r.chain_floating.rules) == 14
     assert len(r.chain_ni_grp.rules) == 7
-    assert len(r.chain_ni.rules) == 87
+    assert len(r.chain_ni.rules) == 82
     assert len(r.chain_snat.rules) == 0
 
+    # todo: mock external responses (IPLists, DNS-resolution) for stable tests
     # todo: validate that matches are correct..
+
+    # drop any traffic to blacklisted targets (dst = iplist/urltable)
     r1 = r.chain_floating.rules[1]
     assert r1.seq == 2
     assert r1.action == RuleActionDrop
-    assert r1.raw.get_match_types() == ['proto_l3', 'ip_saddr']
+    m = r1.raw.get_matches()
+    assert 'ip_daddr' in m
+    assert '==' in m['ip_daddr']
+    assert len(m['ip_daddr']['==']) > 10  # IP-List content
+    assert 'ip_saddr' in m
+    assert '==' in m['ip_saddr'] and m['ip_saddr']['=='] == 'any'
+    assert 'proto_l3' in m
+    assert m['proto_l3'] == 'ip4'
 
+    # allow some server to sync with external pop3s
     r2 = r.chain_ni_grp.rules[4]
     assert r2.seq == 5
     assert r2.action == RuleActionAccept
-    assert r2.raw.get_match_types() == ['proto_l3', 'proto_l4', 'ip_saddr', 'ip_daddr', 'dst-port']
+    m = r2.raw.get_matches()
+    for e in ['dst_port', 'ip_daddr', 'ip_saddr', 'proto_l3', 'proto_l4']:
+        assert e in m
 
+    assert m['dst_port'] == [993]
+    assert '!=' in m['ip_daddr']
+    assert m['ip_daddr']['!='] == [
+        '10.38.0.0/16',
+        '10.0.0.0/8',
+        '172.16.0.0/12',
+    ]
+    assert '==' in m['ip_saddr']
+    assert m['ip_saddr']['=='] == ['10.34.28.206/32']
+    assert m['proto_l3'] == 'ip4'
+    assert m['proto_l4'] == ['tcp']
+
+    # allow some internal hosts http+s to an external service via DNS
     r3 = r.chain_ni.rules[42]
-    assert r3.seq == 43
+    assert r3.seq == 44
     assert r3.action == RuleActionAccept
-    assert r3.raw.get_match_types() == ['proto_l3', 'proto_l4', 'ip_saddr', 'ip_daddr', 'dst-port']
+    m = r3.raw.get_matches()
+    for e in ['dst_port', 'ip_daddr', 'ip_saddr', 'proto_l3', 'proto_l4']:
+        assert e in m
+
+    assert m['dst_port'] == [80, 443]
+    assert '==' in m['ip_daddr']
+    assert len(m['ip_daddr']['==']) > 10  # DNS-resolved alias
+    assert '==' in m['ip_saddr']
+    assert m['ip_saddr']['=='] == [
+        '10.38.13.201/32',
+        '10.34.28.101/32',
+    ]
+    assert m['proto_l3'] == 'ip4'
+    assert m['proto_l4'] == ['tcp']
+
+
+# todo: add tests for many possible real-life rule-expression-combinations to catch edge-cases

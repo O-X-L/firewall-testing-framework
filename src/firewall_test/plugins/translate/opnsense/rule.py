@@ -1,6 +1,7 @@
 from ipaddress import IPv4Network, IPv6Network
 
 from config import ProtoL3IP4IP6, PROTOS_L3, PROTOS_L4
+from utils.logger import rule_repr
 
 # pylint: disable=R0801
 
@@ -10,13 +11,16 @@ class OPNsenseRule:
     DIRECTION_OUT = 'out'
     DIRECTION_ANY = 'any'
 
+    OP_EQ = '=='
+    OP_NE = '!='
+
     def __init__(
             self,
             nr: int,
+            uuid: str,
             nis: list[str] = None,
             ni_direction: str = None,
             desc: str = None,
-            quick: bool = True,
             ipprotocol: PROTOS_L3 = ProtoL3IP4IP6,
             protocol: PROTOS_L4 = None,
             source: list[(IPv4Network, IPv6Network)] = None,
@@ -29,10 +33,10 @@ class OPNsenseRule:
             destination_any: bool = False,
     ):
         self.nr = nr
+        self.uuid = uuid
         self.nis = nis
         self.ni_direction = ni_direction
         self.desc = desc
-        self.quick = quick
         self.ipp = ipprotocol
         self.proto = protocol
         self.src = source
@@ -73,42 +77,49 @@ class OPNsenseRule:
 
     @property
     def match_ip_daddr(self) -> bool:
-        if self.dst_any or (self.src is not None and len(self.src) > 0):
+        if self.dst_any or (self.dst is not None and len(self.dst) > 0):
             return True
 
         return False
 
-    def get_match_types(self) -> (list[str], None):
-        match = []
+    def get_matches(self) -> (dict, None):
+        matches = {}
         if self.ipp is not None:
-            match.append('proto_l3')
+            matches['proto_l3'] = self.ipp.N
 
         if self.proto is not None:
-            match.append('proto_l4')
+            matches['proto_l4'] = [v.N for v in self.proto]
 
         if self.match_ip_saddr:
-            match.append('ip_saddr')
+            op = self.OP_NE if self.src_invert else self.OP_EQ
+            src = 'any' if self.src_any else [str(v) for v in self.src]
+            matches['ip_saddr'] = {op: src}
 
         if self.match_ip_daddr:
-            match.append('ip_daddr')
+            op = self.OP_NE if self.dst_invert else self.OP_EQ
+            dst = 'any' if self.dst_any else [str(v) for v in self.dst]
+            matches['ip_daddr'] = {op: dst}
 
         if self.match_ni_in:
-            match.append('ni_in')
+            matches['ni_in'] = self.nis
 
         if self.match_ni_out:
-            match.append('ni_out')
+            matches['ni_out'] = self.nis
 
         if self.src_port is not None and len(self.src_port) > 0:
-            match.append('src-port')
+            matches['src_port'] = self.src_port
 
         if self.dst_port is not None and len(self.dst_port) > 0:
-            match.append('dst-port')
+            matches['dst_port'] = self.dst_port
 
-        if len(match) == 0:
-            match = None
+        if len(matches) == 0:
+            return None
 
-        return match
+        return matches
 
     def __repr__(self) -> str:
-        desc = '' if self.desc is None else f' ({self.desc})'
-        return f"Rule: #{self.nr}{desc} | Matches: {self.get_match_types()}"
+        cmt = '' if self.desc is None else f' "{self.desc}"'
+        if self.uuid is not None:
+            cmt += f' (UUID: {self.uuid})'
+
+        return rule_repr(uid=self.nr, matches=self.get_matches(), cmt=cmt)

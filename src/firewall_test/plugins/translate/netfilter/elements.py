@@ -4,7 +4,7 @@ from ipaddress import ip_network, summarize_address_range, ip_address
 from config import ProtoL3, ProtoL3IP4, ProtoL3IP6, MatchPort, ProtoL4ICMP, ProtoL4TCP, ProtoL4UDP, ProtoL3IP4IP6, \
     PROTO_L4_MAPPING, PROTO_L3_MAPPING
 from plugins.translate.netfilter.parts import RULE_ACTIONS, IGNORE_RULE_EXPRESSIONS, IGNORE_LEFT
-from utils.logger import log_warn
+from utils.logger import log_warn, rule_repr
 
 # pylint: disable=R0801
 
@@ -437,15 +437,4 @@ class NftRule(NftBase):
         return matches
 
     def __repr__(self) -> str:
-        cmt = ''
-        if self.comment is not None:
-            cmt = f' "{self.comment}"'
-
-        if self.handle is not None:
-            cmt += f' (handle {self.handle})'
-
-        matches = str(self.matches)
-        if len(matches) > 500:
-            matches = matches[:500] + '...'
-
-        return f"Rule: #{self.handle}{cmt} | Matches: {matches}"
+        return rule_repr(uid=self.handle, matches=self.get_matches(), cmt=self.comment)

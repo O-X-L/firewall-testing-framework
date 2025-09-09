@@ -10,6 +10,8 @@ COLOR_ERROR = '\x1b[1;31m'
 COLOR_DEBUG = '\x1b[35m'
 RESET_STYLE = '\x1b[0m'
 
+LOG_MAX_CHAR_RULE_MATCHES = 500 if ENV_DEBUG not in environ else 1_500
+
 
 def _build_msg_by_verbosity(v1: (str, None), v2: (str, None), v3: (str, None), v4: (str, None), final: bool) -> str:
     verbosity = environ.get(ENV_VERBOSITY, VERBOSITY_DEFAULT)
@@ -113,3 +115,21 @@ def log_error(label: str, v1: str = None, v2: str = None, v3: str = None, v4: st
         v4=v4,
         final=final,
     )
+
+
+def rule_repr(uid: (int, str), matches: any, cmt: str = None) -> str:
+    # to make sure all plugins have a similar log-format
+
+    if cmt is None:
+        cmt = ''
+
+    elif not cmt.startswith(' '):
+        cmt = f' "{cmt}"'
+
+    if not isinstance(matches, str):
+        matches = str(matches)
+
+    if len(matches) > LOG_MAX_CHAR_RULE_MATCHES:
+        matches = matches[:LOG_MAX_CHAR_RULE_MATCHES] + '...'
+
+    return f"Rule: #{uid}{cmt}" + '\n' + f'             > Matches: {matches}' + '\n'
