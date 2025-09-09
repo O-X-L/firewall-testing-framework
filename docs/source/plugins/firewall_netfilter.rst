@@ -99,3 +99,4 @@ These rule-expressions are unsupported for now:
 * :code:`ct helper`
 * :code:`&`
 * TCP flags
+* ICMP Types (codes are supported)

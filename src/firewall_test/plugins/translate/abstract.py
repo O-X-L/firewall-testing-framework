@@ -266,6 +266,9 @@ class Rule(TranslateOutput):
             'raw': self.raw,
         }
 
+    def log(self) -> str:
+        return f'Seq {self.seq}, Action: {self.action.N}, {self.raw}'
+
     def validate(self):
         r = self.dump()
         if self.action is not None:

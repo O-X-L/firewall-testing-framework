@@ -5,6 +5,7 @@ from xml.etree.ElementTree import Element
 
 from requests import get as http_get
 from requests import Response as HttpResponse
+from requests.exceptions import Timeout as HttpTimeout
 from oxl_utils.net import resolve_dns
 from oxl_utils.valid.dns import valid_domain
 from oxl_utils.ps import process_list_in_threads
@@ -45,10 +46,10 @@ RULE_MAPPING = {
         '_default': RuleActionAccept,
     },
     'protocol': {
-        'icmp': ProtoL4ICMP,
-        'ipv6-icmp': ProtoL4ICMP,
-        'tcp': ProtoL4TCP,
-        'udp': ProtoL4UDP,
+        'icmp': [ProtoL4ICMP],
+        'ipv6-icmp': [ProtoL4ICMP],
+        'tcp': [ProtoL4TCP],
+        'udp': [ProtoL4UDP],
         'tcp/udp': [ProtoL4TCP, ProtoL4UDP],
     },
     'ipprotocol': {
@@ -78,6 +79,9 @@ def split_csv(value: str) -> list:
 
 def xml_to_dict(element: Element) -> dict:
     out = {}
+    if hasattr(element, 'uuid'):
+        out['uuid'] = element.uuid
+
     for c in element:
         if len(list(c)) > 0:
             out[c.tag] = xml_to_dict(c)
@@ -140,7 +144,7 @@ class OPNsenseRuleset(TranslatePluginRuleset):
 
     ### RULES ###
 
-    def _parse_rule_address(self, value: str) -> list:
+    def _parse_rule_address(self, value: str) -> (list, None):
         values = split_csv(value)
         out = []
 
@@ -158,10 +162,11 @@ class OPNsenseRuleset(TranslatePluginRuleset):
 
             except ValueError:
                 log_warn('Firewall Plugin', f'Unable to parse rule-address: "{value}"')
+                return None
 
         return out
 
-    def _parse_rule_network(self, value: str) -> list:
+    def _parse_rule_network(self, value: str) -> (list, None):
         values = split_csv(value)
         out = []
 
@@ -179,10 +184,11 @@ class OPNsenseRuleset(TranslatePluginRuleset):
 
             except ValueError:
                 log_warn('Firewall Plugin', f'Unable to parse rule-network: "{value}"')
+                return None
 
         return out
 
-    def _parse_rule_port(self, value: str) -> list:
+    def _parse_rule_port(self, value: str) -> (list, None):
         values = split_csv(value)
         out = []
 
@@ -202,19 +208,48 @@ class OPNsenseRuleset(TranslatePluginRuleset):
 
             except TypeError:
                 log_warn('Firewall Plugin', f'Unable to parse rule-port: "{value}"')
+                return None
 
         return out
+
+    @staticmethod
+    def log_unsupported_rule(chain: Chain, rule_raw: dict, rule: dict, result: (any, None), invalid: bool) -> bool:
+        if invalid:
+            return invalid
+
+        if result is None:
+            desc = '' if rule['desc'] is None else f" ({rule['desc']})"
+            log_warn(
+                'Firewall Plugin',
+                f'Unsupported rule: Chain {chain.name}, Rule {rule["seq"]}{desc}',
+                v4=f' | {rule_raw}'
+            )
+            return True
+
+        return False
 
     # pylint: disable=R0912,R0914,R0915
     def _parse_rules_old(self):
         rules_raw = self.raw.getroot().find(XML_ELEMENT_RULESET_OLD)
         seq_float, seq_grp, seq_ni, nr = 0, 0, 0, 0
         for rule_raw in rules_raw:
+            invalid_matches = False
             rule = xml_to_dict(rule_raw)
             build = {}
             chain_floating = rule.get('floating', None) == 'yes'
             nis = split_csv(rule.get('interface', ''))
             chain_grp = len(nis) == 1 and nis[0] in self.ni_grp
+            if chain_floating:
+                chain = self.chain_floating
+
+            elif chain_grp:
+                chain = self.chain_ni_grp
+
+            else:
+                chain = self.chain_ni
+
+            build['uuid'] = rule.get('uuid', None)
+            build['desc'] = rule.get('descr', None)
 
             ### SEQUENCE ###
             nr += 1
@@ -247,8 +282,12 @@ class OPNsenseRuleset(TranslatePluginRuleset):
                     continue
 
                 if rule[field] not in mapping:
-                    log_warn('Firewall Plugin', f'Unable to parse rule-field value: "{field}" => "{rule[field]}"')
+                    log_warn(
+                        'Firewall Plugin',
+                        f'Unable to parse rule-field value: "{field}" => "{rule[field]}"',
+                    )
                     build[field] = None
+                    invalid_matches = True
 
                 else:
                     build[field] = mapping[rule[field]]
@@ -261,44 +300,54 @@ class OPNsenseRuleset(TranslatePluginRuleset):
 
                 if 'address' in value:
                     build[key] = self._parse_rule_address(value['address'])
+                    invalid_matches = self.log_unsupported_rule(
+                        chain=chain, rule_raw=rule, rule=build, result=build[key], invalid=invalid_matches
+                    )
 
                 elif 'network' in value:
                     build[key] = self._parse_rule_network(value['network'])
+                    invalid_matches = self.log_unsupported_rule(
+                        chain=chain, rule_raw=rule, rule=build, result=build[key], invalid=invalid_matches
+                    )
 
                 else:
                     build[key] = None
 
                 if 'port' in value:
                     build[f'{key}_port'] = self._parse_rule_port(value['port'])
+                    invalid_matches = self.log_unsupported_rule(
+                        chain=chain, rule_raw=rule, rule=build, result=build[f'{key}_port'], invalid=invalid_matches
+                    )
 
             # weird DNAT overrides..
             if 'targetip' in rule:
                 build['destination'] = self._parse_rule_address(rule['targetip'])
+                invalid_matches = self.log_unsupported_rule(
+                    chain=chain, rule_raw=rule, rule=build, result=build['destination'], invalid=invalid_matches
+                )
 
             elif 'target' in rule:
                 build['destination'] = self._parse_rule_address(rule['target'])
+                invalid_matches = self.log_unsupported_rule(
+                    chain=chain, rule_raw=rule, rule=build, result=build['destination'], invalid=invalid_matches
+                )
 
             if 'local-port' in rule:
                 build['destination_port'] = self._parse_rule_port(rule['local-port'])
+                invalid_matches = self.log_unsupported_rule(
+                    chain=chain, rule_raw=rule, rule=build, result=build['destination_port'], invalid=invalid_matches
+                )
 
-            ### MISC ###
-            build['desc'] = rule.get('descr', None)
+            if invalid_matches:
+                continue
 
-            ### BUILD ###
-            build_rule = Rule(
+            ### CREATE RULE ###
+            chain.rules.append(Rule(
                 action=build.pop('type'),
                 seq=build.pop('seq'),
-                action_lazy=not build['quick'],
+                action_lazy=not build.pop('quick'),
                 raw=OPNsenseRule(**build),
-            )
-            if chain_floating:
-                self.chain_floating.rules.append(build_rule)
-
-            elif chain_grp:
-                self.chain_ni_grp.rules.append(build_rule)
-
-            else:
-                self.chain_ni.rules.append(build_rule)
+            ))
 
     ### NETWORK INTERFACES ###
 
@@ -418,6 +467,9 @@ class OPNsenseRuleset(TranslatePluginRuleset):
             except ValueError:
                 log_warn('Firewall Plugin', f'Unable to parse alias-type "urltable" line: "{l}"')
 
+        if len(content) == 0:
+            log_warn('Firewall Plugin', f'Alias-type "urltable" resulted in empty list: "{url}"')
+
         return content
 
     @staticmethod
@@ -427,7 +479,12 @@ class OPNsenseRuleset(TranslatePluginRuleset):
             log_warn('Firewall Plugin', f'Unsupported alias-type "urltable" URL: {url}')
             return None
 
-        return http_get(url.strip(), timeout=IPLIST_DOWNLOAD_TIMEOUT)
+        try:
+            return http_get(url.strip(), timeout=IPLIST_DOWNLOAD_TIMEOUT)
+
+        except HttpTimeout:
+            log_warn('Firewall Plugin', f'Unable to download IP-List from URL: "{url}"')
+            return None
 
     def _parse_aliases(self):
         aliases_raw = self.raw.getroot().find(XML_ELEMENT_ALIASES)
@@ -485,7 +542,7 @@ class OPNsenseRuleset(TranslatePluginRuleset):
                     self.aliases[name] = nets
 
             elif t == 'urltable':
-                self.aliases[name] = self._parse_alias_iplist_plain(p['content'][0])
+                self.aliases[name] = self._parse_alias_iplist_plain(p['content'][0].strip())
 
             else:
                 # todo: geoip => download via link found in OPNsense config (XML_ELEMENT_GEOIP_URL)

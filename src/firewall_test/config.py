@@ -74,7 +74,7 @@ class ProtoL3IP4IP6(ProtoL3):
     N = 'ip'
 
 
-PROTOS_L3 = [ProtoL3IP4, ProtoL3IP6, ProtoL3IP4IP6]
+PROTOS_L3 = (ProtoL3IP4, ProtoL3IP6, ProtoL3IP4IP6)
 PROTO_L3_MAPPING = {
     ProtoL3IP4.N: ProtoL3IP4,
     ProtoL3IP6.N: ProtoL3IP6,
@@ -97,7 +97,7 @@ class ProtoL4ICMP(ProtoL4):
     N = 'icmp'
 
 
-PROTOS_L4 = [ProtoL4TCP, ProtoL4UDP, ProtoL4ICMP]
+PROTOS_L4 = (ProtoL4TCP, ProtoL4UDP, ProtoL4ICMP)
 PROTO_L4_MAPPING = {
     ProtoL4TCP.N: ProtoL4TCP,
     ProtoL4UDP.N: ProtoL4UDP,
@@ -190,11 +190,11 @@ class RuleActionSNAT(RuleActionKindNAT):
     N = 'snat'
 
 
-RULE_ACTIONS = [
+RULE_ACTIONS = (
     RuleActionAccept, RuleActionDrop, RuleActionReject,
     RuleActionJump, RuleActionGoTo, RuleActionContinue, RuleActionReturn,
     RuleActionDNAT, RuleActionSNAT,
-]
+)
 RULE_ACTION_MAPPING = {
     RuleActionAccept.N: RuleActionAccept,
     RuleActionDrop.N: RuleActionDrop,

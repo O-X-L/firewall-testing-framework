@@ -558,40 +558,6 @@
         <any>1</any>
       </destination>
     </rule>
-    <rule uuid="96a253d5-2aa9-465c-8df4-04953e098c39">
-      <type>block</type>
-      <ipprotocol>inet</ipprotocol>
-      <statetype>keep state</statetype>
-      <descr>SpamHaus EDROP Block Outbound</descr>
-      <direction>in</direction>
-      <category>Inet,Security</category>
-      <floating>yes</floating>
-      <log>1</log>
-      <quick>1</quick>
-      <source>
-        <any>1</any>
-      </source>
-      <destination>
-        <address>IPLIST_SpamHaus_EDROP</address>
-      </destination>
-    </rule>
-    <rule uuid="e92342c3-862f-49a3-9109-4d0713706287">
-      <type>block</type>
-      <ipprotocol>inet</ipprotocol>
-      <statetype>keep state</statetype>
-      <descr>SpamHaus EDROP Block Inbound</descr>
-      <direction>in</direction>
-      <category>Inet,Security</category>
-      <floating>yes</floating>
-      <log>1</log>
-      <quick>1</quick>
-      <source>
-        <address>IPLIST_SpamHaus_EDROP</address>
-      </source>
-      <destination>
-        <any>1</any>
-      </destination>
-    </rule>
     <rule uuid="5d79d76c-9e45-4fce-b99b-a79ca89a6529">
       <type>block</type>
       <ipprotocol>inet6</ipprotocol>
@@ -823,23 +789,6 @@
       <quick>1</quick>
       <source>
         <address>IPLIST_TOR_EXIT_NODES</address>
-      </source>
-      <destination>
-        <any>1</any>
-      </destination>
-    </rule>
-    <rule uuid="4e1b405d-43f2-49b5-9dc4-cc2c09281896">
-      <type>block</type>
-      <interface>wan</interface>
-      <ipprotocol>inet</ipprotocol>
-      <statetype>keep state</statetype>
-      <descr>SpamHaus EDROP Block</descr>
-      <direction>in</direction>
-      <category>Security</category>
-      <log>1</log>
-      <quick>1</quick>
-      <source>
-        <address>IPLIST_SpamHaus_EDROP</address>
       </source>
       <destination>
         <any>1</any>
@@ -1954,23 +1903,6 @@
         <address>IPLIST_SpamHaus_DROP</address>
       </destination>
     </rule>
-    <rule uuid="bdf85170-4e5b-4591-8cf0-f7f4c44c3941">
-      <type>block</type>
-      <interface>opt3</interface>
-      <ipprotocol>inet</ipprotocol>
-      <statetype>keep state</statetype>
-      <descr>SpamHaus EDROP Block Outbound</descr>
-      <direction>in</direction>
-      <category>Inet,Security</category>
-      <log>1</log>
-      <quick>1</quick>
-      <source>
-        <any>1</any>
-      </source>
-      <destination>
-        <address>IPLIST_SpamHaus_EDROP</address>
-      </destination>
-    </rule>
     <rule uuid="ae93661d-23c2-4140-8484-070e773c7df2">
       <type>block</type>
       <interface>opt3</interface>
@@ -2708,22 +2640,6 @@ download.docker.com</content>
             <counters>0</counters>
             <updatefreq>7</updatefreq>
             <content>https://www.spamhaus.org/drop/dropv6.txt</content>
-            <password/>
-            <username/>
-            <authtype/>
-            <categories/>
-            <description/>
-          </alias>
-          <alias uuid="1c359f0a-b664-4aa2-bf24-e9f3247f8379">
-            <enabled>1</enabled>
-            <name>IPLIST_SpamHaus_EDROP</name>
-            <type>urltable</type>
-            <path_expression/>
-            <proto/>
-            <interface/>
-            <counters>0</counters>
-            <updatefreq>7</updatefreq>
-            <content>	https://www.spamhaus.org/drop/edrop.txt</content>
             <password/>
             <username/>
             <authtype/>
