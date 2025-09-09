@@ -1,8 +1,8 @@
 from abc import ABC
-from ipaddress import ip_network, summarize_address_range, ip_address, IPv4Network, IPv6Network
+from ipaddress import ip_network, summarize_address_range, ip_address
 
 from config import ProtoL3, ProtoL3IP4, ProtoL3IP6, MatchPort, ProtoL4ICMP, ProtoL4TCP, ProtoL4UDP, ProtoL3IP4IP6, \
-    PROTO_L4_MAPPING, PROTO_L3_MAPPING, PROTOS_L3, PROTOS_L4
+    PROTO_L4_MAPPING, PROTO_L3_MAPPING
 from plugins.translate.netfilter.parts import RULE_ACTIONS, IGNORE_RULE_EXPRESSIONS, IGNORE_LEFT
 from utils.logger import log_warn
 
@@ -191,6 +191,11 @@ class NftMatch:
                 return
 
             if 'prefix' in self._right:
+                # parsed in 'update_value_type'
+                self.value = [self._right]
+
+            if 'range' in self._right:
+                # parsed in 'update_value_type'
                 self.value = [self._right]
 
         if isinstance(self._right, (str, int)):
@@ -198,7 +203,9 @@ class NftMatch:
 
         if self.value is None:
             if 'range' not in self._right and 'fin' not in self._right:
-                raise ValueError(self._right)
+                log_warn('Firewall Plugin', f'Unable to parse match (right): "{self._right}"')
+                return
+
             self.value = self._right
 
     def update_value_type(self):
@@ -220,11 +227,16 @@ class NftMatch:
                         values.append(ip_network(f"{v['addr']}/{v['len']}"))
 
                     elif 'range' in v:
-                        range_nets = list(summarize_address_range(
-                            ip_address(v['range'][0]),
-                            ip_address(v['range'][1]),
-                        ))
-                        values.extend(range_nets)
+                        if str(v['range'][0]).isnumeric():
+                            range_ports = range(v['range'][0], v['range'][1])
+                            values.extend(range_ports)
+
+                        else:
+                            range_nets = list(summarize_address_range(
+                                ip_address(v['range'][0]),
+                                ip_address(v['range'][1]),
+                            ))
+                            values.extend(range_nets)
 
                     else:
                         raise ValueError(self.value)
@@ -258,86 +270,54 @@ class NftMatch:
 
         self.value = values
 
-    def get_match_types(self) -> (list[str], None):
-        match = []
+    def get_matches(self) -> (dict, None):
+        matches = {}
         if self.match_proto_l3:
-            match.append('proto_l3')
-
-        if self.match_proto_l4:
-            match.append('proto_l4')
-
-        if self.match_ip_saddr:
-            match.append('ip_saddr')
-
-        if self.match_ip_daddr:
-            match.append('ip_daddr')
-
-        if self.match_ni_in:
-            match.append('ni_in')
-
-        if self.match_ni_out:
-            match.append('ni_out')
-
-        if self.match_sport:
-            match.append('src-port')
-
-        if self.match_dport:
-            match.append('dst-port')
-
-        if self.match_ct:
-            match.append('ct')
-
-        if len(match) == 0:
-            match = None
-
-        return match
-
-    def __repr__(self) -> str:
-        values = []
-        for v in self.value:
-            if isinstance(v, (IPv4Network, IPv6Network)):
-                values.append(str(v))
-
-            elif v in PROTOS_L3 or v in PROTOS_L4:
-                values.append(v.N)
+            if self.value_proto_l3:
+                matches['proto_l3'] = {self.OP_EQ: self.value_proto_l3.N}
 
             else:
-                values.append(v)
+                matches['proto_l3'] = {self.operator: [v.N for v in self.value]}
 
-        if self.value_proto_l3 is not None:
-            values.append(self.value_proto_l3.N)
+        if self.match_proto_l4:
+            if self.value_proto_l4:
+                matches['proto_l4'] = {self.OP_EQ: self.value_proto_l4.N}
 
-        if self.value_proto_l4 is not None:
-            values.append(self.value_proto_l4.N)
+            else:
+                matches['proto_l4'] = {self.operator: [v.N for v in self.value]}
 
-        matches = self.get_match_types()
+        if self.match_ip_saddr:
+            matches['ip_saddr'] = { self.operator: [str(v) for v in self.value]}
+
+        if self.match_ip_daddr:
+            matches['ip_daddr'] = {self.operator: [str(v) for v in self.value]}
+
+        if self.match_ni_in:
+            matches['ni_in'] = {self.operator: self.value}
+
+        if self.match_ni_out:
+            matches['ni_out'] = {self.operator: self.value}
+
+        if self.match_sport:
+            matches['src_port'] = {self.operator: self.value}
+
+        if self.match_dport:
+            matches['dst_port'] = {self.operator: self.value}
+
+        if self.match_ct:
+            matches['ct'] = {self.operator: self.value}
+
+        if len(matches) == 0:
+            return None
+
+        return matches
+
+    def __repr__(self) -> str:
+        matches = self.get_matches()
         if matches is None:
             return 'None (unsupported)'
 
-        if len(matches) == 1:
-            return f"{matches[0]} {self.operator} {values}"
-
-        match_proto = None
-        value_proto = None
-        for proto_kind, proto_mapping in {
-            'proto_l3': PROTO_L3_MAPPING,
-            'proto_l4': PROTO_L4_MAPPING,
-        }.items():
-            if proto_kind in matches:
-                match_proto = proto_kind
-                for v in values:
-                    if v in proto_mapping:
-                        value_proto = v
-
-        if match_proto is not None and value_proto is not None:
-            matches.remove(match_proto)
-            values.remove(value_proto)
-            if len(matches) == 1:
-                matches = matches[0]
-
-            return f"{match_proto} {self.OP_EQ} {value_proto} & {matches} {self.operator} {values}"
-
-        return f"{matches} {self.operator} {values}"
+        return f"{self.operator} {matches}"
 
 
 class NftRule(NftBase):
@@ -349,6 +329,7 @@ class NftRule(NftBase):
 
         self.comment = raw.get('comment', None)
         self.family = raw.get('family', None)
+        self.handle = raw.get('handle', None)
 
         self.action = None
         self.matches: list[NftMatch] = []
@@ -411,7 +392,7 @@ class NftRule(NftBase):
                 left=e['match']['left'],
                 right=e['match']['right'],
             )
-            if match.get_match_types() is None:
+            if match.get_matches() is None:
                 self.invalid_matches = True
 
             else:
@@ -448,10 +429,10 @@ class NftRule(NftBase):
 
         return False
 
-    def get_match_types(self) -> list[str]:
-        matches = []
+    def get_matches(self) -> dict:
+        matches = {}
         for m in self.matches:
-            matches.extend(m.get_match_types())
+            matches = {**matches, **m.get_matches()}
 
         return matches
 

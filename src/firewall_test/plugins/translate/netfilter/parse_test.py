@@ -79,3 +79,6 @@ def test_nf_parse():
     assert len(fwd_rules) == 5
     assert fwd_rules[0].seq == 0
     assert fwd_rules[1].seq == 1
+
+
+# todo: add tests for many possible real-life rule-expression-combinations to catch edge-cases

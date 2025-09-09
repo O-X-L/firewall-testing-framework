@@ -99,7 +99,7 @@ class LinuxNetworkInterfaces(TranslatePluginNetworkInterfaces):
     def _parse_ni(raw: dict) -> dict:
         r = {
             'name': raw['ifname'],
-            'mac': raw['address'],
+            'mac': raw.get('address', None),
             ProtoL3IP4.N: [],
             ProtoL3IP6.N: [],
             'net4': [],
