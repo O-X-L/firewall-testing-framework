@@ -55,8 +55,8 @@ def test_opnsense_ruleset():
     ]
 
     assert len(r.chain_dnat.rules) == 0
-    assert len(r.chain_floating.rules) == 14
-    assert len(r.chain_ni_grp.rules) == 7
+    assert len(r.chain_floating.rules) == 15
+    assert len(r.chain_ni_grp.rules) == 8
     assert len(r.chain_ni.rules) == 82
     assert len(r.chain_snat.rules) == 0
 
