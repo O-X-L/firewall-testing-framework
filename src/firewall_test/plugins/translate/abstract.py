@@ -304,7 +304,7 @@ class Chain(TranslateOutput):
 
     # pylint: disable=W0622
     def __init__(
-        self, name: str, hook: str, policy: (None, RuleActionAccept, RuleActionDrop, RuleActionReject),
+        self, name: str, hook: (str, None), policy: (None, RuleActionAccept, RuleActionDrop, RuleActionReject),
             rules: list[Rule], priority: int = 0, type: str = 'filter', family: type[ProtoL3] = ProtoL3IP4IP6,
     ):
         self.name = name

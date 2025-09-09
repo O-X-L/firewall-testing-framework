@@ -21,10 +21,10 @@ class SystemOPNsense(FirewallSystem):
 
     # see: https://docs.opnsense.org/manual/firewall.html#processing-order
     FIREWALL_HOOKS = {
-        FlowInput: ['dnat', 'floating', 'interface_groups', 'interfaces'],
-        FlowForward: ['dnat', 'floating', 'interface_groups', 'interfaces', 'snat'],
-        FlowOutput: ['dnat', 'floating', 'interface_groups', 'interfaces', 'snat'],
-        'full': ['dnat', 'floating', 'interface_groups', 'interfaces', 'snat'],
+        FlowInput: ['dnat', 'filters'],
+        FlowForward: ['dnat', 'filters', 'snat'],
+        FlowOutput: ['dnat', 'filters', 'snat'],
+        'full': ['dnat', 'filters', 'snat'],
     }
     FIREWALL_INGRESS = {
         FlowInput: {'hook': 'prerouting', 'priority': 1000},

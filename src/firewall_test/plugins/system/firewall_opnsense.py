@@ -1,8 +1,8 @@
-from config import ProtoL3IP4IP6
+from config import ProtoL3IP4IP6, RuleActionGoTo
 from simulator.packet import PACKET_KINDS, PacketTCPUDP
 from plugins.translate.abstract import Rule
 from plugins.system.abstract_rule_match import RuleMatcher, RuleMatchResult
-from plugins.translate.opnsense.rule import OPNsenseRule
+from plugins.translate.opnsense.rule import OPNsenseRule, RULE_SEQUENCE_NEXT_CHAIN
 from utils.logger import log_warn, log_debug
 
 # todo: add explicit match-tests
@@ -16,8 +16,17 @@ class RuleMatcherOPNsense(RuleMatcher):
         :param rule: Rule to check
         :return: RuleMatchResult
         """
-        opn_rule: OPNsenseRule = rule.raw
 
+        if rule.action == RuleActionGoTo and rule.seq == RULE_SEQUENCE_NEXT_CHAIN:
+            return RuleMatchResult(
+                matched=True,
+                action=rule.action,
+                target_chain_name=rule.raw,  # will only contain chain-name in that case
+                target_nat_ip=None,
+                target_nat_port=None,
+            )
+
+        opn_rule: OPNsenseRule = rule.raw
         results = []
         ### NETWORK INTERFACES ###
         if opn_rule.match_ni_in:

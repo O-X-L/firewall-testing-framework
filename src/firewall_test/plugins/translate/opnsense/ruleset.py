@@ -14,8 +14,8 @@ from config import ProtoL3IP4IP6, DNS_RESOLVE_TIMEOUT, DNS_RESOLVE_THREADS, IPLI
     IPLIST_COMMENT_CHARS, ProtoL4ICMP, ProtoL4TCP, ProtoL4UDP, ProtoL3IP4, ProtoL3IP6, BOGONS
 from plugins.system.system_opnsense import SystemOPNsense
 from plugins.translate.abstract import Ruleset, TranslatePluginRuleset, Table, Chain, Rule, \
-    RuleActionAccept, RuleActionDrop
-from plugins.translate.opnsense.rule import OPNsenseRule
+    RuleActionAccept, RuleActionDrop, RuleActionGoTo
+from plugins.translate.opnsense.rule import OPNsenseRule, RULE_SEQUENCE_NEXT_CHAIN
 from utils.logger import log_warn
 
 XML_ELEMENT_NIS = 'interfaces'
@@ -100,13 +100,13 @@ class OPNsenseRuleset(TranslatePluginRuleset):
             name='dnat', hook='dnat', policy=RuleActionAccept, type='nat', rules=[],
         )
         self.chain_floating = OPNsenseChainOutput(
-            name='floating', hook='floating', policy=RuleActionAccept, rules=[],
+            name='floating', hook='filters', policy=RuleActionDrop, rules=[],
         )
         self.chain_ni_grp = OPNsenseChainOutput(
-            name='interface_groups', hook='interface_groups', policy=RuleActionAccept, rules=[],
+            name='interface_groups', hook=None, policy=RuleActionAccept, rules=[],
         )
         self.chain_ni = OPNsenseChainOutput(
-            name='interfaces', hook='interfaces', policy=RuleActionDrop, rules=[],
+            name='interfaces', hook=None, policy=RuleActionDrop, rules=[],
         )
         self.chain_snat = OPNsenseChainOutput(
             name='snat', hook='snat', policy=RuleActionAccept, type='nat', rules=[],
@@ -133,6 +133,16 @@ class OPNsenseRuleset(TranslatePluginRuleset):
         self.aliases['bogons'] = BOGONS
 
         self._parse_rules_old()
+        self.chain_floating.rules.append(Rule(
+            action=RuleActionGoTo,
+            seq=RULE_SEQUENCE_NEXT_CHAIN,
+            raw='interface_groups',
+        ))
+        self.chain_ni_grp.rules.append(Rule(
+            action=RuleActionGoTo,
+            seq=RULE_SEQUENCE_NEXT_CHAIN,
+            raw='interfaces',
+        ))
 
         return Ruleset(tables=[
             Table(

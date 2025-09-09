@@ -5,6 +5,9 @@ from utils.logger import rule_repr
 
 # pylint: disable=R0801
 
+RULE_SEQUENCE_NEXT_CHAIN = 1_000_000
+
+
 # pylint: disable=R0912,R0913,R0914,R0915,R0917
 class OPNsenseRule:
     DIRECTION_IN = 'in'
