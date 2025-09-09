@@ -66,6 +66,7 @@ Example
     > ⚠ FIREWALL PLUGIN: Unsupported rule: Chain interfaces, Rule 80
     > ⚠ FIREWALL PLUGIN: Unable to parse rule-address: "GEOIP_NEARBY"
     > ⚠ FIREWALL PLUGIN: Unsupported rule: Chain interfaces, Rule 85 (SVC_1 Proxies)
+    > 🛈 SYSTEM: Processing packet: [10.34.28.206]:50000 =tcp=> [1.1.1.1]:993
     > 🛈 ROUTER: Packet inbound-interface: lan (LAN)
     > 🛈 ROUTER: Packet inbound-route: 10.34.28.0/24, scope link
     > 🛈 FIREWALL: Processing Chain: Table "default" ip | Chain "dnat" ip nat (0 rules)
@@ -104,6 +105,7 @@ Example
     ftf-cli ... --src-ip 10.34.28.206 --dst-ip 1.10.16.4
 
     ...
+    > 🛈 SYSTEM: Processing packet: [10.34.28.206]:50000 =tcp=> [1.10.16.4]:443
     > 🛈 ROUTER: Packet inbound-interface: lan (LAN)
     > 🛈 ROUTER: Packet inbound-route: 10.34.28.0/24, scope link
     > 🛈 FIREWALL: Processing Chain: Table "default" ip | Chain "dnat" ip nat (0 rules)
@@ -124,6 +126,7 @@ Use the :code:`verbosity` flag to get more information about the rules and match
     ftf-cli ... --src-ip 10.34.28.206 --dst-ip 1.10.16.4 --verbosity 2
 
     ...
+    > 🛈 SYSTEM: Processing packet: [10.34.28.206]:50000 =tcp=> [1.10.16.4]:443
     > 🛈 ROUTER: Packet inbound-interface: lan (LAN)
     > 🛈 ROUTER: Packet inbound-route: 10.34.28.0/24, scope link
     > 🛈 FIREWALL: Processing Chain: Table "default" ip | Chain "dnat" ip nat (0 rules)

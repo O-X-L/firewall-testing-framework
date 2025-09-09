@@ -28,6 +28,8 @@ class SimulatorRun:
         self.dnat = None
         self.snat = None
 
+        log_info(label='System', v1=f'Processing packet: {packet}')
+
         ### CATEGORIZE TRAFFIC FLOW ###
 
         self.local_src, packet.ni_in = self._is_ip_local(packet.src)

@@ -14,6 +14,12 @@ class Packet:
             'ni_out': self.ni_out,
         }
 
+    def __repr__(self) -> str:
+        if self.ni_in is not None and self.ni_out is not None:
+            return f'{self.ni_in} => {self.ni_out}'
+
+        return ''
+
 
 class PacketIP(Packet):
     def __init__(self, src: str, dst: str):
@@ -55,6 +61,15 @@ class PacketIP(Packet):
 
     def snat_str(self) -> str:
         return f'{self.pre_nat_src} => {self.src}'
+
+    def _repr_ni(self) -> str:
+        if self.ni_in is not None and self.ni_out is not None:
+            return f'{self.ni_in} => {self.ni_out} => '
+
+        return ''
+
+    def __repr__(self) -> str:
+        return f'{self.src} => {self._repr_ni()}{self.dst}'
 
 
 class PacketTCPUDP(PacketIP):
@@ -101,6 +116,9 @@ class PacketTCPUDP(PacketIP):
     def dnat_str(self) -> str:
         return f'{self.pre_nat_dst}:{self.pre_nat_dst_port} => {self.dst}:{self.dport}'
 
+    def __repr__(self) -> str:
+        return f'[{self.src}]:{self.sport} ={self.proto_l4.N}=> {self._repr_ni()}[{self.dst}]:{self.dport}'
+
 
 class PacketICMP(PacketIP):
     CODE_ECHO_REPLY = 0
@@ -132,6 +150,9 @@ class PacketICMP(PacketIP):
             'proto_l4': 'icmp' if self.proto_l3 == ProtoL3IP4 else 'icmpv6',
             'icmp_code': self.icmp_code,
         }
+
+    def __repr__(self) -> str:
+        return f'{self.src} ={self.proto_l4.N}-{self.icmp_code}=> {self._repr_ni()}{self.dst}'
 
 
 PACKET_KINDS = (PacketIP, PacketTCPUDP, PacketICMP)

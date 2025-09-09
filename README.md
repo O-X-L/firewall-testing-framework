@@ -31,20 +31,22 @@ ftf-cli --firewall-system 'linux_netfilter' \
         --src-ip 172.17.11.5 \
         --dst-ip 2.2.2.2
 
+> 🛈 SYSTEM: Processing packet: [172.17.11.5]:50000 =tcp=> [2.2.2.2]:443
 > 🛈 ROUTER: Packet inbound-interface: docker0
 > 🛈 ROUTER: Packet inbound-route: 172.17.0.0/16, scope link
-> 🛈 FIREWALL: Processing Chain: Table nat ip4 | Chain PREROUTING ip4 nat
+> 🛈 FIREWALL: Processing Chain: Table "nat" ip4 | Chain "PREROUTING" ip4 nat (1 rules)
 > 🛈 FIREWALL: > Chain PREROUTING | Rule 0 | Match => jump
-> 🛈 FIREWALL: > Chain PREROUTING | Sub-Chain: DOCKER
+> 🛈 FIREWALL: > Chain PREROUTING | Sub-Chain: DOCKER (2 rules)
 > 🛈 FIREWALL: > Chain DOCKER | Rule 0 | Match => return
 > 🛈 ROUTER: Packet outbound-interface: wan
-> 🛈 ROUTER: Packet outbound-route: 0.0.0.0/0, gw 10.255.255.254, metric 600, scope remote
-> 🛈 FIREWALL: Processing Chain: Table filter ip4 | Chain FORWARD ip4 filter
+> 🛈 ROUTER: Packet outbound-route: 0.0.0.0/0, gw 10.255.255.254, metric 600, scope global
+> 🛈 FIREWALL: Processing Chain: Table "filter" ip4 | Chain "FORWARD" ip4 filter (5 rules)
 > 🛈 FIREWALL: > Chain FORWARD | Rule 0 | Match => jump
-> 🛈 FIREWALL: > Chain FORWARD | Sub-Chain: DOCKER-USER
+> 🛈 FIREWALL: > Chain FORWARD | Sub-Chain: DOCKER-USER (1 rules)
 > 🛈 FIREWALL: > Chain DOCKER-USER | Rule 0 | Match => return
 > 🛈 FIREWALL: > Chain FORWARD | Rule 1 | Match => drop
-> ✖ FIREWALL: Packet blocked by rule: {'action': 'drop', 'seq': 1, 'raw': Rule: #101 "TEST DROP" | Matches: [proto_l3 == ip4 & ip_daddr == ['2.2.2.2/32']]}
+> ✖ FIREWALL: Packet blocked by rule: Seq 1, Action: drop, Rule: #101 "TEST IP4-DADDR DROP"
+>              > Matches: {'proto_l3': {'==': 'ip4'}, 'ip_daddr': {'==': ['2.2.2.2/32']}}
 ```
 
 ----

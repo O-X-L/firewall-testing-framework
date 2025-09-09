@@ -78,6 +78,7 @@ Pass Example
             --src-ip 172.17.11.5 \
             --dst-ip 1.1.1.1
 
+    > 🛈 SYSTEM: Processing packet: [172.17.11.5]:50000 =tcp=> [1.1.1.1]:443
     > 🛈 ROUTER: Packet inbound-interface: docker0
     > 🛈 ROUTER: Packet inbound-route: 172.17.0.0/16, scope link
     > 🛈 FIREWALL: Processing Chain: Table nat ip4 | Chain PREROUTING ip4 nat
@@ -121,6 +122,7 @@ Block Example
 
     ftf-cli ... --src-ip 172.17.11.5 --dst-ip 2.2.2.2
 
+    > 🛈 SYSTEM: Processing packet: [172.17.11.5]:50000 =tcp=> [2.2.2.2]:443
     > 🛈 ROUTER: Packet inbound-interface: docker0
     > 🛈 ROUTER: Packet inbound-route: 172.17.0.0/16, scope link
     > 🛈 FIREWALL: Processing Chain: Table nat ip4 | Chain PREROUTING ip4 nat
@@ -148,6 +150,7 @@ You can get more detailed output by increasing the verbosity:
 
     ftf-cli ... --src-ip 172.17.11.5 --dst-ip 2.2.2.2 --verbosity 2
 
+    > 🛈 SYSTEM: Processing packet: [172.17.11.5]:50000 =tcp=> [2.2.2.2]:443
     > 🛈 ROUTER: Packet inbound-interface: docker0
     > 🛈 ROUTER: Packet inbound-route: 172.17.0.0/16, scope link
     > 🛈 FIREWALL: Processing Chain: Table nat ip4 | Chain PREROUTING ip4 nat
@@ -195,6 +198,7 @@ Depending on the system-specific configuration traffic can be dropped by non-fir
 
     ftf-cli ... --src-ip 172.17.11.5 --dst-ip 10.100.1.1
 
+    > 🛈 SYSTEM: Processing packet: [172.17.11.5]:50000 =tcp=> [10.100.1.1]:443
     > 🛈 ROUTER: Packet inbound-interface: docker0
     > 🛈 ROUTER: Packet inbound-route: 172.17.0.0/16, scope link
     > 🛈 FIREWALL: Processing Chain: Table nat ip4 | Chain PREROUTING ip4 nat
