@@ -81,6 +81,7 @@ def main():
             src=args.src_ip,
             dst=args.dst_ip,
             proto_l4=args.proto,
+            dport=args.port,
         )
 
     else:

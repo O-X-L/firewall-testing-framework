@@ -123,7 +123,7 @@ def rule_repr(uid: (int, str), matches: any, cmt: str = None) -> str:
     if cmt is None:
         cmt = ''
 
-    elif not cmt.startswith(' '):
+    elif not cmt.startswith(' ') and cmt.strip() != '':
         cmt = f' "{cmt}"'
 
     if not isinstance(matches, str):

@@ -62,7 +62,7 @@ class RunFirewallChain:
                 log_info(
                     label='Firewall',
                     v1=f'> Chain {chain.name} | Rule {rule.seq}',
-                    v2=f' | {rule.dump()}'
+                    v2=f' | {rule.log()}'
                 )
                 continue
 
@@ -331,8 +331,8 @@ class RunFirewallTables:
         log_info(
             'Firewall',
             f'Processing Chain: '
-            f'Table {chain.run_table.name} {chain.run_table.family.N} | '
-            f'Chain {chain.name} {chain.family.N} {chain.type}'
+            f'Table "{chain.run_table.name}" {chain.run_table.family.N} | '
+            f'Chain "{chain.name}" {chain.family.N} {chain.type} ({len(chain.rules)} rules)'
         )
         return self._run_chains.process(chain=chain, packet=packet)
 
