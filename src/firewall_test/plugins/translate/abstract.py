@@ -14,13 +14,13 @@ class TranslatePlugin(ABC):
         self.raw = raw
 
     @abstractmethod
-    def get(self) -> (dict, list[dict]):
+    def get(self) -> dict|list[dict]:
         pass
 
 
 class TranslateOutput(ABC):
     @abstractmethod
-    def dump(self) -> (dict, list[dict]):
+    def dump(self) -> dict|list[dict]:
         pass
 
     @abstractmethod
@@ -304,12 +304,12 @@ class Chain(TranslateOutput):
 
     # pylint: disable=W0622
     def __init__(
-        self, name: str, hook: (str, None), policy: (None, RuleActionAccept, RuleActionDrop, RuleActionReject),
+        self, name: str, hook: str|None, policy: RuleActionAccept|RuleActionDrop|RuleActionReject|None,
             rules: list[Rule], priority: int = 0, type: str = 'filter', family: type[ProtoL3] = ProtoL3IP4IP6,
     ):
         self.name = name
         self.type = type
-        self.family: type[ProtoL3] = family
+        self.family = family
         self.hook = hook
         self.priority = priority
         self.policy = policy
@@ -388,7 +388,7 @@ class Table(TranslateOutput):
         self.type = type
         self.priority = priority
         self.chains = chains
-        self.family: type[ProtoL3] = family
+        self.family = family
 
     def dump(self) -> dict:
         return {

@@ -94,7 +94,7 @@ class NftMatch:
     OP_GT = '>'
     OP_LT = '<'
 
-    def __init__(self, operator: str, left: (str, dict), right: (str, dict, list)):
+    def __init__(self, operator: str, left: str|dict, right: str|dict|list):
         self.operator = operator
         self._left = left
 
@@ -270,7 +270,7 @@ class NftMatch:
 
         self.value = values
 
-    def get_matches(self) -> (dict, None):
+    def get_matches(self) -> dict|None:
         matches = {}
         if self.match_proto_l3:
             if self.value_proto_l3:

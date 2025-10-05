@@ -1,7 +1,7 @@
 from json import dumps as json_dumps
 from ipaddress import IPv4Address, IPv6Address
 
-from simulator.packet import PACKET_KINDS
+from simulator.packet import PacketIP
 from simulator.routes import Router
 from simulator.firewall import Firewall
 from utils.logger import log_info, log_error, log_ok, log_warn
@@ -18,7 +18,7 @@ MODE_CI = 2
 
 # pylint: disable=R0911,R0912,R0915
 class SimulatorRun:
-    def __init__(self, packet: PACKET_KINDS, simulator):
+    def __init__(self, packet: PacketIP, simulator):
         self.packet = packet
         self.passed = False
         self._s = simulator
@@ -152,7 +152,7 @@ class SimulatorRun:
     def to_json(self) -> str:
         return json_dumps(self.dump(), indent=2, default=str)
 
-    def _is_ip_local(self, ip: (IPv4Address, IPv6Address)) -> (bool, (str, None)):
+    def _is_ip_local(self, ip: IPv4Address|IPv6Address) -> tuple[bool, str|None]:
         for ni in self._s.nis:
             ni_ips = ni.ip4 if self._ipp == 4 else ni.ip6
             if ip in ni_ips:
@@ -181,7 +181,7 @@ class SimulatorRun:
 
         self.packet.ni_in = self.route_src.ni
 
-    def _update_packet_ni_out(self) -> (str, None):
+    def _update_packet_ni_out(self) -> str|None:
         if self.packet.ni_out is not None:
             return
 
@@ -210,13 +210,13 @@ class SimulatorRun:
 
         return False
 
-    def _get_output_outbound_ip(self) -> (IPv4Address, IPv6Address, None):
+    def _get_output_outbound_ip(self) -> IPv4Address|IPv6Address|None:
         if self.flow_type != FlowOutput:
             return None
 
         return self._get_snat_masquerade_ip()
 
-    def _get_snat_masquerade_ip(self) -> (IPv4Address, IPv6Address, None):
+    def _get_snat_masquerade_ip(self) -> IPv4Address|IPv6Address|None:
         if ip_is_bogon(self.packet.dst):
             return None
 
@@ -258,7 +258,7 @@ class SimulatorRun:
         log_info('Router', f'Packet {in_out}bound-interface: {name}{desc}')
 
     @staticmethod
-    def _log_block(rule: (Rule, None)):
+    def _log_block(rule: Rule|None):
         if rule is None:
             log_error(label='Firewall', v1='Packet blocked by chain default-policy', final=True)
 
@@ -289,7 +289,7 @@ class Simulator:
             ruleset=ruleset,
         )
 
-    def run(self, packet: PACKET_KINDS) -> SimulatorRun:
+    def run(self, packet: PacketIP) -> SimulatorRun:
         # todo: implement multi-run handling
         #   for traffic that is flow-type 'output => input' (local to local)
         #   for multiple firewalls

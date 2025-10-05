@@ -13,7 +13,7 @@ RESET_STYLE = '\x1b[0m'
 LOG_MAX_CHAR_RULE_MATCHES = 500 if ENV_DEBUG not in environ else 1_500
 
 
-def _build_msg_by_verbosity(v1: (str, None), v2: (str, None), v3: (str, None), v4: (str, None), final: bool) -> str:
+def _build_msg_by_verbosity(v1: str|None, v2: str|None, v3: str|None, v4: str|None, final: bool) -> str:
     verbosity = environ.get(ENV_VERBOSITY, VERBOSITY_DEFAULT)
     if final or ENV_DEBUG in environ:
         # always output it - ignore user-provided verbosity (end result)
@@ -56,7 +56,7 @@ def log_debug(label: str, msg: str):
 
 def _log_with_verbosity(
         label: str, color: str, symbol: str,
-        v1: (str, None), v2: (str, None), v3: (str, None), v4: (str, None), final: bool,
+        v1: str|None, v2: str|None, v3: str|None, v4: str|None, final: bool,
 ):
     _log(
         label=label,
@@ -117,7 +117,7 @@ def log_error(label: str, v1: str = None, v2: str = None, v3: str = None, v4: st
     )
 
 
-def rule_repr(uid: (int, str), matches: any, cmt: str = None) -> str:
+def rule_repr(uid: int|str, matches: any, cmt: str|None = None) -> str:
     # to make sure all plugins have a similar log-format
 
     if cmt is None:

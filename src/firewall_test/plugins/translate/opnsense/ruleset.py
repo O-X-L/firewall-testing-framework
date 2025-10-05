@@ -2,6 +2,7 @@ from threading import Lock
 from ipaddress import ip_network
 import xml.etree.ElementTree as ET
 from xml.etree.ElementTree import Element
+from typing import Any
 
 from requests import get as http_get
 from requests import Response as HttpResponse
@@ -154,7 +155,7 @@ class OPNsenseRuleset(TranslatePluginRuleset):
 
     ### RULES ###
 
-    def _parse_rule_address(self, value: str) -> (list, None):
+    def _parse_rule_address(self, value: str) -> list|None:
         values = split_csv(value)
         out = []
 
@@ -176,7 +177,7 @@ class OPNsenseRuleset(TranslatePluginRuleset):
 
         return out
 
-    def _parse_rule_network(self, value: str) -> (list, None):
+    def _parse_rule_network(self, value: str) -> list|None:
         values = split_csv(value)
         out = []
 
@@ -198,7 +199,7 @@ class OPNsenseRuleset(TranslatePluginRuleset):
 
         return out
 
-    def _parse_rule_port(self, value: str) -> (list, None):
+    def _parse_rule_port(self, value: str) -> list|None:
         values = split_csv(value)
         out = []
 
@@ -223,7 +224,7 @@ class OPNsenseRuleset(TranslatePluginRuleset):
         return out
 
     @staticmethod
-    def log_unsupported_rule(chain: Chain, rule_raw: dict, rule: dict, result: (any, None), invalid: bool) -> bool:
+    def log_unsupported_rule(chain: Chain, rule_raw: dict, rule: dict, result: Any, invalid: bool) -> bool:
         if invalid:
             return invalid
 
@@ -483,7 +484,7 @@ class OPNsenseRuleset(TranslatePluginRuleset):
         return content
 
     @staticmethod
-    def _download_alias_iplist(url: str) -> (HttpResponse, None):
+    def _download_alias_iplist(url: str) -> HttpResponse|None:
         url = url.strip()
         if not url.startswith('http'):
             log_warn('Firewall Plugin', f'Unsupported alias-type "urltable" URL: {url}')

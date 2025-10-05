@@ -3,7 +3,7 @@ from os import environ
 from plugins.system.abstract import FirewallSystem
 from plugins.translate.abstract import StaticRouteRule, StaticRoute
 
-from simulator.packet import PACKET_KINDS
+from simulator.packet import PacketIP
 from utils.logger import log_debug
 
 
@@ -27,7 +27,7 @@ class Router:
             return m
 
         for rule in self.route_rules:
-            m[rule]: list[StaticRoute] = []
+            m[rule] = []
             for route in self.routes:
                 if rule.table == route.table:
                     m[rule].append(route)
@@ -59,7 +59,7 @@ class Router:
 
         return tables
 
-    def _get_matching_rules(self, packet: PACKET_KINDS) -> list[StaticRouteRule]:
+    def _get_matching_rules(self, packet: PacketIP) -> list[StaticRouteRule]:
         if not self.system.ROUTE_STATIC_RULES:
             return []
 
@@ -71,7 +71,7 @@ class Router:
 
         return rules
 
-    def _get_matching_routes(self, packet: PACKET_KINDS, matching_rules: list[StaticRouteRule], src_route: bool = False) -> list[StaticRoute]:
+    def _get_matching_routes(self, packet: PacketIP, matching_rules: list[StaticRouteRule], src_route: bool = False) -> list[StaticRoute]:
         # todo: ignore routes of interfaces that are down
 
         route_for = packet.dst
@@ -128,7 +128,7 @@ class Router:
 
         return sorted_routes
 
-    def get_route(self, packet: PACKET_KINDS) -> (StaticRoute, None):
+    def get_route(self, packet: PacketIP) -> StaticRoute|None:
         rules = self._get_matching_rules(packet)
         routes = self._get_matching_routes(packet, rules)
         routes = self._sort_routes(routes)
@@ -140,7 +140,7 @@ class Router:
 
         return routes[0]
 
-    def get_src_route(self, packet: PACKET_KINDS) -> (StaticRoute, None):
+    def get_src_route(self, packet: PacketIP) -> StaticRoute|None:
         routes = self._get_matching_routes(packet, [], src_route=True)
         routes = self._sort_routes(routes)
         if 'DEBUG' in environ:

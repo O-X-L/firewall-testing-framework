@@ -5,10 +5,10 @@ from plugins.system.config import SYSTEM_MAPPING, COMPONENT_MAPPING
 
 def load(
         system: str,
-        file_interfaces: (str, Path),
-        file_ruleset: (str, Path),
-        file_routes: (str, Path),
-        file_route_rules: (str, Path) = None,
+        file_interfaces: str|Path,
+        file_ruleset: str|Path,
+        file_routes: str|Path,
+        file_route_rules: str|Path = None,
 ) -> dict:
     system = SYSTEM_MAPPING.get(system, None)
     if system is None:

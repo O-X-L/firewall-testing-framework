@@ -153,6 +153,3 @@ class PacketICMP(PacketIP):
 
     def __repr__(self) -> str:
         return f'{self.src} ={self.proto_l4.N}-{self.icmp_code}=> {self._repr_ni()}{self.dst}'
-
-
-PACKET_KINDS = (PacketIP, PacketTCPUDP, PacketICMP)

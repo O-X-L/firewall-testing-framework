@@ -1,5 +1,5 @@
 from config import ProtoL3IP4IP6, RuleActionGoTo
-from simulator.packet import PACKET_KINDS, PacketTCPUDP
+from simulator.packet import PacketIP, PacketTCPUDP
 from plugins.translate.abstract import Rule
 from plugins.system.abstract_rule_match import RuleMatcher, RuleMatchResult
 from plugins.translate.opnsense.rule import OPNsenseRule, RULE_SEQUENCE_NEXT_CHAIN
@@ -10,7 +10,7 @@ from utils.logger import log_warn, log_debug
 
 # pylint: disable=R0912
 class RuleMatcherOPNsense(RuleMatcher):
-    def matches(self, packet: PACKET_KINDS, rule: Rule) -> RuleMatchResult:
+    def matches(self, packet: PacketIP, rule: Rule) -> RuleMatchResult:
         """
         :param packet: Packet to match
         :param rule: Rule to check
