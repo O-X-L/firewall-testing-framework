@@ -11,10 +11,10 @@ class RuleMatchResult:
     def __init__(
             self,
             matched: bool,
-            action: RuleAction|None,
+            action: type[RuleAction]|None,
             target_chain_name: str|None,
             target_nat_ip: IPv4Address|IPv6Address|None,
-            target_nat_port:int|None,
+            target_nat_port: int|None,
     ):
         self.matched = matched
         self.action = action
