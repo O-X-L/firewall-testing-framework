@@ -4,6 +4,8 @@ from ipaddress import ip_address, ip_network, IPv4Address
 from config import DEFAULT_ROUTE_IP4, DEFAULT_ROUTE_IP6
 from plugins.translate.abstract import StaticRoute, TranslatePluginStaticRoutes
 
+# pylint: disable=R0912
+
 
 class OPNsenseRoutes(TranslatePluginStaticRoutes):
     def __init__(self, raw: str):
