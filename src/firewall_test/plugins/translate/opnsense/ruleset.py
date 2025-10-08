@@ -1,7 +1,8 @@
 from threading import Lock
-from ipaddress import ip_network, summarize_address_range, ip_address
+from ipaddress import ip_network
 import xml.etree.ElementTree as ET
 from xml.etree.ElementTree import Element
+from typing import Any
 
 from requests import get as http_get
 from requests import Response as HttpResponse
@@ -74,22 +75,13 @@ NI_IPP_MAPPING = {
 
 
 def split_csv(value: str) -> list:
-    if value is None:
-        return []
-
     return [v for v in value.split(',') if v.strip() != '']
 
 
-def split_nlsv(value: list) -> list:
-    out = []
-    for v in value:
-        out.extend([v2.strip() for v2 in v.split('\n')])
-
-    return out
-
-
 def xml_to_dict(element: Element) -> dict:
-    out = {'uuid': element.get('uuid', None)}
+    out = {}
+    if hasattr(element, 'uuid'):
+        out['uuid'] = element.uuid
 
     for c in element:
         if len(list(c)) > 0:
@@ -163,24 +155,16 @@ class OPNsenseRuleset(TranslatePluginRuleset):
 
     ### RULES ###
 
-    def _parse_rule_address(self, value: str) -> (list, None):
+    def _parse_rule_address(self, value: str) -> list|None:
         values = split_csv(value)
         out = []
 
         for v in values:
             if v in self.aliases:
-                if self.aliases[v] is None:
-                    log_warn('Firewall Plugin', f'Unable to parse rule-address: "{value}"')
-                    return None
-
                 out.extend(self.aliases[v])
                 continue
 
-            if v in self.nis_ips:
-                out.extend(self.nis_ips[v])
-                continue
-
-            if v in self.nis_nets:
+            if f'{v}ip' in self.nis_ips:
                 out.extend(self.nis_nets[v])
                 continue
 
@@ -193,21 +177,13 @@ class OPNsenseRuleset(TranslatePluginRuleset):
 
         return out
 
-    def _parse_rule_network(self, value: str) -> (list, None):
+    def _parse_rule_network(self, value: str) -> list|None:
         values = split_csv(value)
         out = []
 
         for v in values:
             if v in self.aliases:
-                if self.aliases[v] is None:
-                    log_warn('Firewall Plugin', f'Unable to parse rule-network: "{value}"')
-                    return None
-
                 out.extend(self.aliases[v])
-                continue
-
-            if v in self.nis_ips:
-                out.extend(self.nis_ips[v])
                 continue
 
             if v in self.nis_nets:
@@ -223,7 +199,7 @@ class OPNsenseRuleset(TranslatePluginRuleset):
 
         return out
 
-    def _parse_rule_port(self, value: str) -> (list, None):
+    def _parse_rule_port(self, value: str) -> list|None:
         values = split_csv(value)
         out = []
 
@@ -248,7 +224,7 @@ class OPNsenseRuleset(TranslatePluginRuleset):
         return out
 
     @staticmethod
-    def log_unsupported_rule(chain: Chain, rule_raw: dict, rule: dict, result: (any, None), invalid: bool) -> bool:
+    def log_unsupported_rule(chain: Chain, rule_raw: dict, rule: dict, result: Any, invalid: bool) -> bool:
         if invalid:
             return invalid
 
@@ -283,10 +259,8 @@ class OPNsenseRuleset(TranslatePluginRuleset):
             else:
                 chain = self.chain_ni
 
-            build['desc'] = rule.get('descr', None)
             build['uuid'] = rule.get('uuid', None)
-            if build['uuid'] is None:
-                continue
+            build['desc'] = rule.get('descr', None)
 
             ### SEQUENCE ###
             nr += 1
@@ -305,7 +279,6 @@ class OPNsenseRuleset(TranslatePluginRuleset):
 
             ### RESOLVE NETWORK-INTERFACE GROUPS ###
             build['nis'] = []
-            build['ni_direction'] = rule.get('direction', 'any')
             for ni in nis:
                 if ni in self.ni_grp:
                     build['nis'].extend(self.ni_grp[ni])
@@ -404,27 +377,18 @@ class OPNsenseRuleset(TranslatePluginRuleset):
                 ip = p.get(ipp, None)
                 cidr = p.get(subnet, '32')
                 if ip is not None and ip.strip() != '':
-                    try:
-                        nets.append(ip_network(f'{ip}/{cidr}', strict=False))
+                    nets.append(ip_network(f'{ip}/{cidr}', strict=False))
+                    ip = ip_network(ip)
+                    self.local_ips.append(ip)
+                    ips.append(ip)
 
-                    except ValueError:
-                        log_warn('Firewall Plugin', f'Unable to parse IP: "{ip}/{cidr}"')
-
-                    try:
-                        ip = ip_network(ip)
-                        self.local_ips.append(ip)
-                        ips.append(ip)
-
-                    except ValueError:
-                        log_warn('Firewall Plugin', f'Unable to parse IP: "{ip}"')
-
-            self.nis_ips[f'{ni.tag}ip'] = ips
+            self.nis_ips[ni.tag] = ips
             self.nis_nets[ni.tag] = nets
 
         vips_raw = self.raw.getroot().find(XML_ELEMENT_VIPS)
         for vip in vips_raw:
             p = xml_to_dict(vip)
-            self.local_ips.append(ip_network(p['subnet'], strict=False))
+            self.local_ips.append(ip_network(f"{p['subnet']}/{p['subnet_bits']}"))
 
     ### ALIASES ###
 
@@ -483,7 +447,7 @@ class OPNsenseRuleset(TranslatePluginRuleset):
             parallel=DNS_RESOLVE_THREADS,
         )
 
-    def _parse_alias_iplist_plain(self, url: str) -> (list[str], None):
+    def _parse_alias_iplist_plain(self, url: str) -> list[str]:
         content = []
         res = self._download_alias_iplist(url)
         if res is None:
@@ -516,12 +480,11 @@ class OPNsenseRuleset(TranslatePluginRuleset):
 
         if len(content) == 0:
             log_warn('Firewall Plugin', f'Alias-type "urltable" resulted in empty list: "{url}"')
-            return None
 
         return content
 
     @staticmethod
-    def _download_alias_iplist(url: str) -> (HttpResponse, None):
+    def _download_alias_iplist(url: str) -> HttpResponse|None:
         url = url.strip()
         if not url.startswith('http'):
             log_warn('Firewall Plugin', f'Unsupported alias-type "urltable" URL: {url}')
@@ -563,16 +526,11 @@ class OPNsenseRuleset(TranslatePluginRuleset):
                 self.aliases[name] = ports
 
             elif t == 'network':
-                try:
-                    self.aliases[name] = [ip_network(n) for n in split_nlsv(p['content'])]
-
-                except ValueError:
-                    invalid = True
-                    possible_nested[name] = p['content']
+                self.aliases[name] = [ip_network(n) for n in p['content']]
 
             elif t == 'host':
                 content = []
-                for c in split_nlsv(p['content']):
+                for c in p['content']:
                     if valid_domain(c):
                         if c in self._dns_cache:
                             content.extend(self._dns_cache[c])
@@ -584,15 +542,6 @@ class OPNsenseRuleset(TranslatePluginRuleset):
                 invalid = False
                 for c in content:
                     try:
-                        if c.find('-') != -1:
-                            ip_range1, ip_range2 = c.split('-', 1)
-                            range_nets = list(summarize_address_range(
-                                ip_address(ip_range1),
-                                ip_address(ip_range2),
-                            ))
-                            nets.extend(range_nets)
-                            continue
-
                         nets.append(ip_network(c))
 
                     except ValueError:
