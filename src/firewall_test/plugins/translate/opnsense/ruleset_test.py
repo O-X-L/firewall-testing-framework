@@ -48,8 +48,8 @@ def test_opnsense_ruleset():
     ]
 
     assert len(r.nis_ips) == 12
-    assert r.nis_ips['lan'] == [ip_network('10.34.28.251/32')]
-    assert r.nis_ips['opt5'] == [
+    assert r.nis_ips['lanip'] == [ip_network('10.34.28.251/32')]
+    assert r.nis_ips['opt5ip'] == [
         ip_network('169.169.169.4/32'),
         ip_network('2a01:beef:beef:f5::1:1/128')
     ]
