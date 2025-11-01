@@ -11,23 +11,25 @@ from oxl_utils.valid.dns import valid_domain
 from oxl_utils.ps import process_list_in_threads
 
 from config import ProtoL3IP4IP6, DNS_RESOLVE_TIMEOUT, DNS_RESOLVE_THREADS, IPLIST_DOWNLOAD_TIMEOUT, \
-    IPLIST_COMMENT_CHARS, ProtoL4ICMP, ProtoL4TCP, ProtoL4UDP, ProtoL3IP4, ProtoL3IP6, BOGONS
+    IPLIST_COMMENT_CHARS, ProtoL4ICMP, ProtoL4TCP, ProtoL4UDP, ProtoL3IP4, ProtoL3IP6, BOGONS, \
+    RuleActionSNAT, RuleActionDNAT
 from plugins.system.system_opnsense import SystemOPNsense
 from plugins.translate.abstract import Ruleset, TranslatePluginRuleset, Table, Chain, Rule, \
     RuleActionAccept, RuleActionDrop, RuleActionGoTo
 from plugins.translate.opnsense.rule import OPNsenseRule, RULE_SEQUENCE_NEXT_CHAIN
-from utils.logger import log_warn
+from utils.logger import log_warn, log_info
 
 XML_ELEMENT_NIS = 'interfaces'
 XML_ELEMENT_NI_GROUPS = 'ifgroups'
 XML_ELEMENT_VIPS = 'virtualip'
-XML_ELEMENT_RULESET_OLD = 'filter'
-XML_ELEMENT_RULESET_NEW = 'OPNsense/Firewall/Filter/rules'
+XML_ELEMENT_RULESET_OLD = 'filter'  # Firewall - Rules
+XML_ELEMENT_RULESET_NEW = 'OPNsense/Firewall/Filter/rules'  # Firewall - Automation - Filter
 XML_ELEMENT_ALIASES = 'OPNsense/Firewall/Alias/aliases'
 XML_ELEMENT_GEOIP_URL = 'OPNsense/Firewall/Alias/geoip'
-XML_ELEMENT_NAT_SNAT_OLD = 'nat'
-XML_ELEMENT_NAT_SNAT_NEW = 'OPNsense/Firewall/Filter/snatrules'
-XML_ELEMENT_NAT_DNAT = 'nat/outbound'
+XML_ELEMENT_NAT_DNAT_OLD = 'nat'  # Firewall - NAT - Port Forward
+XML_ELEMENT_NAT_SNAT_NEW = 'OPNsense/Firewall/Filter/snatrules'  # Firewall - Automation - Source NAT
+XML_ELEMENT_NAT_SNAT_OLD = 'nat/outbound'  # Firewall - NAT - Outbound
+XML_ELEMENT_NAT_SNAT_MODE = 'nat/outbound/mode'
 XML_ELEMENT_NAT_O2O_NEW = 'OPNsense/Firewall/Filter/onetoone'
 XML_ELEMENT_NAT_NPT_NEW = 'OPNsense/Firewall/Filter/npt'
 
@@ -141,6 +143,8 @@ class OPNsenseRuleset(TranslatePluginRuleset):
         self.aliases['(self)'] = self.local_ips
         self.aliases['bogons'] = BOGONS
 
+        self._parse_snat_old()
+        self._parse_dnat_old()
         self._parse_rules_old()
         self.chain_floating.rules.append(Rule(
             action=RuleActionGoTo,
@@ -256,21 +260,121 @@ class OPNsenseRuleset(TranslatePluginRuleset):
             desc = '' if rule['desc'] is None else f" ({rule['desc']})"
             log_warn(
                 'Firewall Plugin',
-                f'Unsupported rule: Chain {chain.name}, Rule {rule["seq"]}{desc}',
+                f'Unsupported rule: Chain {chain.name}, Rule {rule_raw["seq"]}{desc}',
                 v4=f' | {rule_raw}'
             )
             return True
 
         return False
 
-    # pylint: disable=R0912,R0914,R0915
+    # pylint: disable=R0912
+    def _build_rule_old(self, rule: dict, chain: Chain, nr: int, nis: list = None) -> tuple[bool, dict]:
+        if nis is None:
+            nis = split_csv(rule.get('interface', ''))
+
+        if 'rule' in rule:
+            # edge-case: snat has rule nested sometimes?
+            rule = rule['rule']
+
+        invalid_matches = False
+        build = {
+            'uuid': rule.get('uuid', None),
+            'desc': rule.get('descr', None),
+            'nr': nr,
+
+            ### RESOLVE NETWORK-INTERFACE GROUPS ###
+            'nis': [],
+            'ni_direction': rule.get('direction', 'any'),
+        }
+        for ni in nis:
+            if ni in self.ni_grp:
+                build['nis'].extend(self.ni_grp[ni])
+
+            else:
+                build['nis'].append(ni)
+
+        ### SIMPLE VALUE-MAPPING ###
+        for field, mapping in RULE_MAPPING.items():
+            if field not in rule:
+                build[field] = mapping.get('_default', None)
+                continue
+
+            if rule[field] not in mapping:
+                log_warn(
+                    'Firewall Plugin',
+                    f'Unable to parse rule-field value: "{field}" => "{rule[field]}"',
+                )
+                build[field] = None
+                invalid_matches = True
+
+            else:
+                build[field] = mapping[rule[field]]
+
+        ### SRC / DST ###
+        for key in ['source', 'destination']:
+            value = rule.get(key, {})
+            build[f'{key}_invert'] = 'not' in value and value['not'] == '1'
+            build[f'{key}_any'] = 'any' in value and value['any'] == '1'
+
+            if 'address' in value:
+                build[key] = self._parse_rule_address(value['address'])
+                invalid_matches = self.log_unsupported_rule(
+                    chain=chain, rule_raw=rule, rule=build, result=build[key], invalid=invalid_matches
+                )
+
+            elif 'network' in value:
+                build[key] = self._parse_rule_network(value['network'])
+                invalid_matches = self.log_unsupported_rule(
+                    chain=chain, rule_raw=rule, rule=build, result=build[key], invalid=invalid_matches
+                )
+
+            else:
+                build[key] = None
+
+            if 'port' in value:
+                build[f'{key}_port'] = self._parse_rule_port(value['port'])
+                invalid_matches = self.log_unsupported_rule(
+                    chain=chain, rule_raw=rule, rule=build, result=build[f'{key}_port'], invalid=invalid_matches
+                )
+
+        # weird DNAT overrides..
+        if 'targetip' in rule:
+            build['destination'] = self._parse_rule_address(rule['targetip'])
+            invalid_matches = self.log_unsupported_rule(
+                chain=chain, rule_raw=rule, rule=build, result=build['destination'], invalid=invalid_matches
+            )
+
+        elif 'target' in rule:
+            build['destination'] = self._parse_rule_address(rule['target'])
+            invalid_matches = self.log_unsupported_rule(
+                chain=chain, rule_raw=rule, rule=build, result=build['destination'], invalid=invalid_matches
+            )
+
+        if 'local-port' in rule:
+            build['destination_port'] = self._parse_rule_port(rule['local-port'])
+            invalid_matches = self.log_unsupported_rule(
+                chain=chain, rule_raw=rule, rule=build, result=build['destination_port'], invalid=invalid_matches
+            )
+
+        elif 'dstport' in rule:
+            build['destination_port'] = self._parse_rule_port(rule['dstport'])
+            invalid_matches = self.log_unsupported_rule(
+                chain=chain, rule_raw=rule, rule=build, result=build['destination_port'], invalid=invalid_matches
+            )
+
+        if 'sourceport' in rule:
+            build['source_port'] = self._parse_rule_port(rule['sourceport'])
+            invalid_matches = self.log_unsupported_rule(
+                chain=chain, rule_raw=rule, rule=build, result=build['source_port'], invalid=invalid_matches
+            )
+
+        return invalid_matches, build
+
     def _parse_rules_old(self):
         rules_raw = self.raw.getroot().find(XML_ELEMENT_RULESET_OLD)
         seq_float, seq_grp, seq_ni, nr = 0, 0, 0, 0
         for rule_raw in rules_raw:
-            invalid_matches = False
             rule = xml_to_dict(rule_raw)
-            build = {}
             chain_floating = rule.get('floating', None) == 'yes'
             nis = split_csv(rule.get('interface', ''))
             chain_grp = len(nis) == 1 and nis[0] in self.ni_grp
@@ -283,98 +387,24 @@ class OPNsenseRuleset(TranslatePluginRuleset):
             else:
                 chain = self.chain_ni
 
-            build['desc'] = rule.get('descr', None)
-            build['uuid'] = rule.get('uuid', None)
-            if build['uuid'] is None:
-                continue
-
             ### SEQUENCE ###
             nr += 1
-            build['nr'] = nr
             if chain_floating:
                 seq_float += 1
-                build['seq'] = seq_float
+                seq = seq_float
 
             elif chain_grp:
                 seq_grp += 1
-                build['seq'] = seq_grp
+                seq = seq_grp
 
             else:
                 seq_ni += 1
-                build['seq'] = seq_ni
+                seq = seq_ni
 
-            ### RESOLVE NETWORK-INTERFACE GROUPS ###
-            build['nis'] = []
-            build['ni_direction'] = rule.get('direction', 'any')
-            for ni in nis:
-                if ni in self.ni_grp:
-                    build['nis'].extend(self.ni_grp[ni])
-
-                else:
-                    build['nis'].append(ni)
-
-            ### SIMPLE VALUE-MAPPING ###
-            for field, mapping in RULE_MAPPING.items():
-                if field not in rule:
-                    build[field] = mapping.get('_default', None)
-                    continue
-
-                if rule[field] not in mapping:
-                    log_warn(
-                        'Firewall Plugin',
-                        f'Unable to parse rule-field value: "{field}" => "{rule[field]}"',
-                    )
-                    build[field] = None
-                    invalid_matches = True
-
-                else:
-                    build[field] = mapping[rule[field]]
-
-            ### SRC / DST ###
-            for key in ['source', 'destination']:
-                value = rule.get(key, {})
-                build[f'{key}_invert'] = 'not' in value and value['not'] == '1'
-                build[f'{key}_any'] = 'any' in value and value['any'] == '1'
-
-                if 'address' in value:
-                    build[key] = self._parse_rule_address(value['address'])
-                    invalid_matches = self.log_unsupported_rule(
-                        chain=chain, rule_raw=rule, rule=build, result=build[key], invalid=invalid_matches
-                    )
-
-                elif 'network' in value:
-                    build[key] = self._parse_rule_network(value['network'])
-                    invalid_matches = self.log_unsupported_rule(
-                        chain=chain, rule_raw=rule, rule=build, result=build[key], invalid=invalid_matches
-                    )
-
-                else:
-                    build[key] = None
-
-                if 'port' in value:
-                    build[f'{key}_port'] = self._parse_rule_port(value['port'])
-                    invalid_matches = self.log_unsupported_rule(
-                        chain=chain, rule_raw=rule, rule=build, result=build[f'{key}_port'], invalid=invalid_matches
-                    )
-
-            # weird DNAT overrides..
-            if 'targetip' in rule:
-                build['destination'] = self._parse_rule_address(rule['targetip'])
-                invalid_matches = self.log_unsupported_rule(
-                    chain=chain, rule_raw=rule, rule=build, result=build['destination'], invalid=invalid_matches
-                )
-
-            elif 'target' in rule:
-                build['destination'] = self._parse_rule_address(rule['target'])
-                invalid_matches = self.log_unsupported_rule(
-                    chain=chain, rule_raw=rule, rule=build, result=build['destination'], invalid=invalid_matches
-                )
-
-            if 'local-port' in rule:
-                build['destination_port'] = self._parse_rule_port(rule['local-port'])
-                invalid_matches = self.log_unsupported_rule(
-                    chain=chain, rule_raw=rule, rule=build, result=build['destination_port'], invalid=invalid_matches
-                )
+            rule['seq'] = seq
+            invalid_matches, build = self._build_rule_old(rule=rule, chain=chain, nr=nr, nis=nis)
+            if build['uuid'] is None:
+                continue
 
             if invalid_matches:
                 continue
@@ -382,7 +412,48 @@ class OPNsenseRuleset(TranslatePluginRuleset):
             ### CREATE RULE ###
             chain.rules.append(Rule(
                 action=build.pop('type'),
-                seq=build.pop('seq'),
+                seq=seq,
+                action_lazy=not build.pop('quick'),
+                raw=OPNsenseRule(**build),
+            ))
+
+    def _parse_snat_old(self):
+        snat_mode = self.raw.getroot().find(XML_ELEMENT_NAT_SNAT_MODE).text
+        log_info('Firewall Plugin', f'SNAT MODE: "{snat_mode}"')
+
+        rules_raw = self.raw.getroot().find(XML_ELEMENT_NAT_SNAT_OLD)
+        for seq, rule_raw in enumerate(rules_raw):
+            rule = xml_to_dict(rule_raw)
+            rule['uuid'] = ''  # has no uuid (?)
+            rule['seq'] = seq
+            invalid_matches, build = self._build_rule_old(rule=rule, chain=self.chain_snat, nr=seq)
+            if invalid_matches:
+                continue
+
+            build.pop('type')
+
+            self.chain_snat.rules.append(Rule(
+                action=RuleActionSNAT,
+                seq=seq,
+                action_lazy=not build.pop('quick'),
+                raw=OPNsenseRule(**build),
+            ))
+
+    def _parse_dnat_old(self):
+        rules_raw = self.raw.getroot().find(XML_ELEMENT_NAT_DNAT_OLD)
+        for seq, rule_raw in enumerate(rules_raw):
+            rule = xml_to_dict(rule_raw)
+            rule['uuid'] = ''  # has no uuid (?)
+            rule['seq'] = seq
+            invalid_matches, build = self._build_rule_old(rule=rule, chain=self.chain_dnat, nr=seq)
+            if invalid_matches:
+                continue
+
+            build.pop('type')
+
+            self.chain_dnat.rules.append(Rule(
+                action=RuleActionDNAT,
+                seq=seq,
                 action_lazy=not build.pop('quick'),
                 raw=OPNsenseRule(**build),
             ))
@@ -534,6 +605,7 @@ class OPNsenseRuleset(TranslatePluginRuleset):
             log_warn('Firewall Plugin', f'Unable to download IP-List from URL: "{url}"')
             return None
 
+    # pylint: disable=R0914,R0915
     def _parse_aliases(self):
         aliases_raw = self.raw.getroot().find(XML_ELEMENT_ALIASES)
         aliases = {}

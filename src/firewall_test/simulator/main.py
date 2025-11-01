@@ -61,7 +61,7 @@ class SimulatorRun:
         _, self.dnat = self._s.fw.process_dnat(packet=packet, flow=self.flow_type)
         self._dnat_done = True
         if self.dnat is not None:
-            log_info(label='Firewall', v1=f'Performed DNAT: {self.packet.dnat_str}')
+            log_info(label='Firewall', v1=f'Performed DNAT: {self.packet.dnat_str()}')
 
         ### UPDATE TRAFFIC FLOW AND OUTBOUND-NETWORK-INTERFACE ###
 
