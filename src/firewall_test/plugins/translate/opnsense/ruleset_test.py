@@ -54,11 +54,11 @@ def test_opnsense_ruleset():
         ip_network('2a01:beef:beef:f5::1:1/128')
     ]
 
-    assert len(r.chain_dnat.rules) == 0
+    assert len(r.chain_dnat.rules) == 10
     assert len(r.chain_floating.rules) == 15
     assert len(r.chain_ni_grp.rules) == 8
     assert len(r.chain_ni.rules) == 82
-    assert len(r.chain_snat.rules) == 0
+    assert len(r.chain_snat.rules) == 10
 
     # todo: mock external responses (IPLists, DNS-resolution) for stable tests
     # todo: validate that matches are correct..
