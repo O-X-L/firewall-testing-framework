@@ -44,11 +44,17 @@ Out-of-Scope
 Some of this features might be make sense later on.
 
 * Transparent firewalls (layer 2 interception)
+
 * Non-IP traffic (layer 2 ARP/bridge layer)
+
 * Application-Level Protocols
+
 * Automatic connection-simulation
+
 * Rule-based routing (fwmark with routing-table lookup)
+
 * Simulation of dynamic routing (we only use the routes provided to the translate-plugins - static or runtime export)
+
 * Applying multiple DNAT or SNAT rules for a single packet
 
 Principles
@@ -124,23 +130,23 @@ The entrypoints are designed to be executed by the user.
 
 * :code:`cli` can be executed by the command :code:`ftf-cli`
 
- It is designed to be a one-shot simulation of a packet
+  It is designed to be a one-shot simulation of a packet
 
 * :code:`ci` can be executed by the command :code:`ftf-ci`
 
   .. warning::
 
-     To be implemented.
+    To be implemented.
 
- It is designed to simulate many packets. A test-traffic configuration-file needs to be provided!
+  It is designed to simulate many packets. A test-traffic configuration-file needs to be provided!
 
 * :code:`shell` can be executed by the command :code:`ftf-shell`
 
   .. warning::
 
-     To be implemented.
+    To be implemented.
 
- It is designed to be an interactive shell for simulating multiple packets.
+  It is designed to be an interactive shell for simulating multiple packets.
 
 ----
 
@@ -161,7 +167,9 @@ The network-traffic configuration as provided by the user is parsed to packets.
 The configuration-files provided by the user are loaded and parsed as configured for the target firewall-system.
 
 1. Loading the target-system config (:code:`plugins/system/*`)
+
 2. Reading the config-files provided by the user
+
 3. Parsing the configuration as implemented by the target-system-specific translate-plugins (:code:`plugins/translate/*`)
 
 ----
@@ -188,43 +196,43 @@ The configuration-files provided by the user are loaded and parsed as configured
 
 2. **It is checked which kind of traffic-flow applies**
 
-  * If the source or destination IPs are local to the firewall
+   * If the source or destination IPs are local to the firewall
 
-  * Estimated traffic-flow (:code:`input, forward or output`)
+   * Estimated traffic-flow (:code:`input, forward or output`)
 
 3. **The source-route is looked-up**
 
-  * The routing-simulator is queried for the source-route
+   * The routing-simulator is queried for the source-route
 
-  * Updates the inbound-interface
+   * Updates the inbound-interface
 
-  * Throws an error if no source-route was found
+   * Throws an error if no source-route was found
 
-  .. tip::
+   .. tip::
 
-      The detailed function of the :ref:`routing- and firewall-simulators are covered later on <dev_intro_router>`.
+       The detailed function of the :ref:`routing- and firewall-simulators are covered later on <dev_intro_router>`.
 
 4. **Pre-Routing and Pre-DNAT Firewall-Filters are processed**
 
 5. **Destination-NAT is processed**
 
-  * Updating if the destination IP is local to the firewall
+   * Updating if the destination IP is local to the firewall
 
-  * Updates the traffic-flow
+   * Updates the traffic-flow
 
 6. **The destination-route is looked-up**
 
-  * The routing-simulator is queried for the destination-route
+   * The routing-simulator is queried for the destination-route
 
-  * Updates the outbound-interface
+   * Updates the outbound-interface
 
-  * Throws an error if no destination-route was found
+   * Throws an error if no destination-route was found
 
 7. **System-specific filters**
 
-  * These are custom filters that might be outside the control of the firewall-ruleset itself (like Linux kernel)
+   * These are custom filters that might be outside the control of the firewall-ruleset itself (like Linux kernel)
 
-  * Drops traffic to bogon-networks on WAN - if the firewall-system if configured to
+   * Drops traffic to bogon-networks on WAN - if the firewall-system if configured to
 
 8. **Main Firewall-Filters are processed**
 

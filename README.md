@@ -8,6 +8,8 @@ A framework for **testing and troubleshooting firewall rulesets**.
 
 [Module on pypi.org](https://pypi.org/project/firewall-test/)
 
+<img src="https://raw.githubusercontent.com/O-X-L/firewall-testing-framework/refs/heads/latest/docs/source/_static/img/opnsense.gif" alt="Intro GIF" width="70%"/>
+
 ----
 
 ## Documentation

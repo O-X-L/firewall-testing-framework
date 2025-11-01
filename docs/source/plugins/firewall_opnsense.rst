@@ -6,6 +6,9 @@
 .. |export_network| image:: ../_static/img/plugin-opnsense-export.png
    :class: wiki-img-sm
 
+.. |intro_gif| image:: ../_static/img/opnsense.gif
+   :class: wiki-img-sm
+
 .. include:: ../_include/head.rst
 
 ===================
@@ -14,16 +17,31 @@ Firewall - OPNsense
 
 .. include:: ../_include/warn_develop.rst
 
+|intro_gif|
+
+Limitations
+###########
+
+* Currently only the main Firewall-Ruleset (:code:`Firewall - Rules`) is supported.
+
+  Support for the new Ruleset (:code:`Firewall - Automation - Filter`) will get added later on - if you have demand for it feel free to `open a feature-request <https://github.com/O-X-L/firewall-testing-framework/issues>`_.
+
+* Only the main match-expressions are currently supported.
+
+  See: :ref:`Config Parsing <plugins_fw_opnsense_cnf>`
+
+----
+
 Config Export
 #############
 
 1. `Download a Config-Backup <https://docs.opnsense.org/manual/backups.html>`_ (referenced as :code:`config.xml`)
 
-    |export_backup|
+   |export_backup|
 
 2. Download the current network status via the WebUI: :code:`Interfaces - Overview - Download Buttom` (referenced as :code:`network.json`)
 
-    |export_network|
+   |export_network|
 
 ----
 
@@ -155,6 +173,8 @@ Source Code
 * **Traffic Matching**: `system/firewall_opnsense.py <https://github.com/O-X-L/firewall-testing-framework/blob/latest/src/firewall_test/plugins/system/firewall_opnsense.py>`_
 
 ----
+
+.. _plugins_fw_opnsense_cnf:
 
 Config-Parsing
 ##############
