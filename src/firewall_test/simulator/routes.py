@@ -4,7 +4,7 @@ from plugins.system.abstract import FirewallSystem
 from plugins.translate.abstract import StaticRouteRule, StaticRoute
 
 from simulator.packet import PACKET_KINDS
-from utils.logger import log_debug
+from utils.logger import log_debug, log_warn
 
 
 class Router:
@@ -77,6 +77,10 @@ class Router:
         route_for = packet.dst
         if src_route:
             route_for = packet.src
+
+        if route_for is None:
+            log_warn('Router', 'Got bad routing-lookup request - this might hint to a plugin-issue!')
+            return []
 
         routes = []
         if len(matching_rules) > 0:
