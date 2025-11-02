@@ -1,7 +1,7 @@
 from ipaddress import IPv4Address, IPv6Address
 
 
-def ip_is_bogon(ip: (IPv4Address, IPv6Address)) -> bool:
+def ip_is_bogon(ip: IPv4Address|IPv6Address) -> bool:
     return any([
         ip.is_multicast,
         ip.is_private,

@@ -5,6 +5,7 @@ src/*.egg-info
 dist/
 .idea/
 .vscode/
+__pycache__
 
 testdata/custom_*
 scripts/cli_custom.sh

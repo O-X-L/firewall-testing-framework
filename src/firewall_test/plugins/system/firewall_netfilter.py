@@ -2,7 +2,7 @@ from config import RuleActionKindTerminal, RuleActionKindToChain, RuleActionKind
 from plugins.system.abstract_rule_match import RuleMatcher, RuleMatchResult
 from plugins.translate.abstract import Rule
 from plugins.translate.netfilter.parse import NftRule
-from simulator.packet import PacketIP, PacketTCPUDP, PacketICMP
+from simulator.packet import PacketIP, PacketTCPUDP
 from utils.logger import log_debug, log_warn
 
 # todo: add explicit match-tests
@@ -10,7 +10,7 @@ from utils.logger import log_debug, log_warn
 
 # pylint: disable=R0912
 class RuleMatcherNetfilter(RuleMatcher):
-    def matches(self, packet: (PacketIP, PacketTCPUDP, PacketICMP), rule: Rule) -> RuleMatchResult:
+    def matches(self, packet: PacketIP, rule: Rule) -> RuleMatchResult:
         """
         :param packet: Packet to match
         :param rule: Rule to check

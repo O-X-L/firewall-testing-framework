@@ -7,7 +7,7 @@ from config import Flow, FlowInputForward, FlowInput, ProtoL3IP4, ProtoL3IP6, Pr
 from plugins.system.abstract import FirewallSystem
 from plugins.system.abstract_rule_match import RuleMatchResult
 from plugins.translate.abstract import Ruleset, Table, Chain, Rule
-from simulator.packet import PACKET_KINDS, PacketTCPUDP
+from simulator.packet import PacketIP, PacketTCPUDP
 from utils.logger import log_debug, log_info, log_warn
 
 
@@ -16,7 +16,7 @@ class RunFirewallChain:
         self._fw = fw
         self._run_tables = run_tables
 
-    def _get_chain_by_name_and_family(self, packet: PACKET_KINDS, table: Table, name: str, family: str) -> (Chain, None):
+    def _get_chain_by_name_and_family(self, packet: PacketIP, table: Table, name: str, family: str) -> Chain|None:
         for t in self._run_tables.get_tables(packet):
             if t.name != table.name or t.family != table.family or t.priority != table.priority:
                 continue
@@ -41,7 +41,7 @@ class RunFirewallChain:
             log_info(label='Firewall', v1=msg, v2=v2)
 
     # pylint: disable=R0911,R0912
-    def process(self, chain: Chain, packet: PACKET_KINDS) -> (bool, (Rule, None)):
+    def process(self, chain: Chain, packet: PacketIP) -> tuple[bool, Rule|None]:
         """
         :param chain: Firewall chain to process; if any rule has an action that targets another chain - it will also be processed
         :param packet: Packet to match
@@ -52,8 +52,8 @@ class RunFirewallChain:
 
         rule_matcher = self._fw.system.get_rule_matcher()(chain.run_table)
         chain.rules.sort(key=lambda r: r.seq, reverse=False)
-        lazy_action: (None, RuleAction) = None
-        lazy_rule: (None, Rule) = None
+        lazy_action: RuleAction|None = None
+        lazy_rule: Rule|None = None
 
         for rule in chain.rules:
             result: RuleMatchResult = rule_matcher.matches(packet=packet, rule=rule)
@@ -162,7 +162,7 @@ class RunFirewallTables:
         self._run_chains = RunFirewallChain(fw=fw, run_tables=self)
 
     @staticmethod
-    def _is_matching_table(packet: PACKET_KINDS, table: Table, ignore_type: list[str] = None) -> bool:
+    def _is_matching_table(packet: PacketIP, table: Table, ignore_type: list[str] = None) -> bool:
         if ignore_type is not None and table.type in ignore_type:
             return False
 
@@ -177,14 +177,14 @@ class RunFirewallTables:
 
         return False
 
-    def get_tables(self, packet: PACKET_KINDS, ignore_type: list[str] = None) -> list[Table]:
+    def get_tables(self, packet: PacketIP, ignore_type: list[str] = None) -> list[Table]:
         return [
             t for t in self._fw.ruleset.tables
             if self._is_matching_table(packet=packet, table=t, ignore_type=ignore_type)
         ]
 
     @staticmethod
-    def _is_matching_chain(packet: PACKET_KINDS, chain: Chain, ignore_type: list[str] = None) -> bool:
+    def _is_matching_chain(packet: PacketIP, chain: Chain, ignore_type: list[str] = None) -> bool:
         if ignore_type is not None and chain.type in ignore_type:
             return False
 
@@ -200,7 +200,7 @@ class RunFirewallTables:
 
         return False
 
-    def get_chains(self, packet: PACKET_KINDS, table: Table, ignore_type: list[str] = None):
+    def get_chains(self, packet: PacketIP, table: Table, ignore_type: list[str] = None):
         return [
             c for c in table.chains
             if self._is_matching_chain(packet=packet, chain=c, ignore_type=ignore_type)
@@ -283,8 +283,8 @@ class RunFirewallTables:
             chain.priority = table.priority
 
     def _process_by_table_prio(
-            self, tables: list[Table], callback_chain_filter: Callable[[Chain], bool], packet: PACKET_KINDS,
-    ) -> (bool, (Rule, None)):
+            self, tables: list[Table], callback_chain_filter: Callable[[Chain], bool], packet: PacketIP,
+    ) -> tuple[bool, Rule|None]:
         for table in self._sort_tables_by_priority(tables):
             chains = [
                 c for c in self.get_chains(packet=packet, table=table)
@@ -300,8 +300,8 @@ class RunFirewallTables:
         return True, None
 
     def _process_by_chain_prio(
-            self, tables: list[Table], callback_chain_filter: Callable[[Chain], bool], packet: PACKET_KINDS,
-    ) -> (bool, (Rule, None)):
+            self, tables: list[Table], callback_chain_filter: Callable[[Chain], bool], packet: PacketIP,
+    ) -> tuple[bool, Rule|None]:
         chains: list[Chain] = []
         for table in tables:
             for chain in self.get_chains(packet=packet, table=table):
@@ -323,7 +323,7 @@ class RunFirewallTables:
 
         return True, None
 
-    def _process_chain(self, chain: Chain, packet: PACKET_KINDS) -> (bool, (Rule, None)):
+    def _process_chain(self, chain: Chain, packet: PacketIP) -> tuple[bool, Rule|None]:
         """
         see: RunFirewallChain.process
         """
@@ -343,7 +343,7 @@ class RunFirewallTables:
         before_dnat = self._is_chain_before_eq(chain=chain, **self._fw.system.FIREWALL_NAT[flow]['dnat'])
         return chain.type != chain.TYPE_NAT and before_dnat
 
-    def process_pre_routing(self, packet: PACKET_KINDS, flow: type[Flow]) -> (bool, (Rule, None)):
+    def process_pre_routing(self, packet: PacketIP, flow: type[Flow]) -> tuple[bool, Rule|None]:
         """
         :param packet: Packet to process
         :param flow: traffic flow-type
@@ -368,7 +368,7 @@ class RunFirewallTables:
             chain.hook == chain_dnat['hook'] and \
             chain.priority == chain_dnat['priority']
 
-    def process_dnat(self, packet: PACKET_KINDS, flow: type[Flow]) -> (bool, (Rule, None)):
+    def process_dnat(self, packet: PacketIP, flow: type[Flow]) -> tuple[bool, Rule|None]:
         """
         :param packet: Packet to process
         :param flow: traffic flow-type
@@ -400,7 +400,7 @@ class RunFirewallTables:
 
         return chain.type != chain.TYPE_NAT and after_dnat and before_snat
 
-    def process_main(self, packet: PACKET_KINDS, flow: type[Flow]) -> (bool, (Rule, None)):
+    def process_main(self, packet: PacketIP, flow: type[Flow]) -> tuple[bool, Rule|None]:
         """
         :param packet: Packet to process
         :param flow: traffic flow-type
@@ -425,7 +425,7 @@ class RunFirewallTables:
             chain.hook == chain_snat['hook'] and \
             chain.priority == chain_snat['priority']
 
-    def process_snat(self, packet: PACKET_KINDS, flow: type[Flow]) -> (bool, (Rule, None)):
+    def process_snat(self, packet: PacketIP, flow: type[Flow]) -> tuple[bool, Rule|None]:
         """
         :param packet: Packet to process
         :param flow: traffic flow-type
@@ -451,7 +451,7 @@ class RunFirewallTables:
         after_snat = self._is_chain_after(chain=chain, **self._fw.system.FIREWALL_NAT[flow]['snat'])
         return chain.type != chain.TYPE_NAT and after_snat
 
-    def process_egress(self, packet: PACKET_KINDS, flow: type[Flow]) -> (bool, (Rule, None)):
+    def process_egress(self, packet: PacketIP, flow: type[Flow]) -> tuple[bool, Rule|None]:
         """
         :param packet: Packet to process
         :param flow: traffic flow-type
@@ -475,7 +475,7 @@ class Firewall:
 
         self._run_tables = RunFirewallTables(self)
 
-    def process_pre_routing(self, packet: PACKET_KINDS, flow: type[Flow]) -> (bool, (Rule, None)):
+    def process_pre_routing(self, packet: PacketIP, flow: type[Flow]) -> tuple[bool, Rule|None]:
         log_info('Firewall', v3='Processing Pre-Routing Filter-Hooks')
         if flow == FlowInputForward:
             # before DNAT we cannot know for sure
@@ -483,7 +483,7 @@ class Firewall:
 
         return self._run_tables.process_pre_routing(packet=packet, flow=flow)
 
-    def process_dnat(self, packet: PACKET_KINDS, flow: type[Flow]) -> (bool, (Rule, None)):
+    def process_dnat(self, packet: PacketIP, flow: type[Flow]) -> tuple[bool, Rule|None]:
         if flow == FlowInputForward:
             # before DNAT we cannot know for sure
             flow = FlowInput
@@ -496,12 +496,12 @@ class Firewall:
 
         return self._run_tables.process_dnat(packet=packet, flow=flow)
 
-    def process_main(self, packet: PACKET_KINDS, flow: type[Flow]) -> (bool, (Rule, None)):
+    def process_main(self, packet: PacketIP, flow: type[Flow]) -> tuple[bool, Rule|None]:
         log_info('Firewall', v3='Processing Main Filter-Hooks')
 
         return self._run_tables.process_main(packet=packet, flow=flow)
 
-    def process_snat(self, packet: PACKET_KINDS, flow: type[Flow]) -> (bool, (Rule, None)):
+    def process_snat(self, packet: PacketIP, flow: type[Flow]) -> tuple[bool, Rule|None]:
         if not self.system.FIREWALL_SNAT or 'snat' not in self.system.FIREWALL_NAT[flow]:
             # system or flow has no SNAT capability
             return False, None
@@ -510,7 +510,7 @@ class Firewall:
 
         return self._run_tables.process_snat(packet=packet, flow=flow)
 
-    def process_egress(self, packet: PACKET_KINDS, flow: type[Flow]) -> (bool, (Rule, None)):
+    def process_egress(self, packet: PacketIP, flow: type[Flow]) -> tuple[bool, Rule|None]:
         if 'snat' not in self.system.FIREWALL_NAT[flow]:
             # already processed all chains
             return True, None

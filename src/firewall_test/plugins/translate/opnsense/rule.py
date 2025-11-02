@@ -1,6 +1,6 @@
 from ipaddress import IPv4Network, IPv6Network
 
-from config import ProtoL3IP4IP6, PROTOS_L3, PROTOS_L4
+from config import ProtoL3IP4IP6, ProtoL3, ProtoL4
 from utils.logger import rule_repr
 
 # pylint: disable=R0801
@@ -24,8 +24,8 @@ class OPNsenseRule:
             nis: list[str] = None,
             ni_direction: str = None,
             desc: str = None,
-            ipprotocol: PROTOS_L3 = ProtoL3IP4IP6,
-            protocol: PROTOS_L4 = None,
+            ipprotocol: ProtoL3 = ProtoL3IP4IP6,
+            protocol: ProtoL4 = None,
             source: list[(IPv4Network, IPv6Network)] = None,
             destination: list[(IPv4Network, IPv6Network)] = None,
             source_port: list[int] = None,
@@ -85,7 +85,7 @@ class OPNsenseRule:
 
         return False
 
-    def get_matches(self) -> (dict, None):
+    def get_matches(self) -> dict|None:
         matches = {}
         if self.ipp is not None:
             matches['proto_l3'] = self.ipp.N
