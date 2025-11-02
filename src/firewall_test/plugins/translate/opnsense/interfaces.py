@@ -35,7 +35,13 @@ class OPNsenseNetworkInterfaces(TranslatePluginNetworkInterfaces):
         ips.extend(raw.get('ipv6', []))
         for ip_cnf in ips:
             ip_cidr = ip_cnf['ipaddr']
-            ip, cidr = ip_cidr.split('/', 1)
+            if ip_cidr.find('/') == -1:
+                ip = ip_cidr
+                cidr = str(ip_cnf.get('subnetbits', '32'))
+
+            else:
+                ip, cidr = ip_cidr.split('/', 1)
+
             ip = ip_address(ip)
             if cidr in ['32', '128']:
                 net = None

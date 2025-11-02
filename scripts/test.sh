@@ -15,4 +15,4 @@ echo ''
 echo 'TESTING Python'
 echo ''
 
-python3 -m pytest --cov
+python3 -m pytest --cov $@

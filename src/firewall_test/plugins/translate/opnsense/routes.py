@@ -4,6 +4,8 @@ from ipaddress import ip_address, ip_network, IPv4Address
 from config import DEFAULT_ROUTE_IP4, DEFAULT_ROUTE_IP6
 from plugins.translate.abstract import StaticRoute, TranslatePluginStaticRoutes
 
+# pylint: disable=R0912
+
 
 class OPNsenseRoutes(TranslatePluginStaticRoutes):
     def __init__(self, raw: str):
@@ -33,7 +35,13 @@ class OPNsenseRoutes(TranslatePluginStaticRoutes):
         ni = raw['identifier']
         gws = raw.get('gateways', [])
         routes = []
-        src_pref_ip4, src_pref_ip6 = raw['config'].get('ipaddr', None), raw['config'].get('ipaddrv6', None)
+        src_pref_ip4, src_pref_ip6 = None, None
+        if 'config' in raw:
+            src_pref_ip4 = raw['config'].get('ipaddr', None)
+            src_pref_ip6 = raw['config'].get('ipaddrv6', None)
+            if src_pref_ip6 is not None and src_pref_ip6.find(':') == -1:
+                src_pref_ip6 = None  # track6 ?!
+
         gw_ip4, gw_ip6 = None, None
         default_ip4 = False
 

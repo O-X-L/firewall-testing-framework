@@ -8,6 +8,8 @@ A framework for **testing and troubleshooting firewall rulesets**.
 
 [Module on pypi.org](https://pypi.org/project/firewall-test/)
 
+<img src="https://raw.githubusercontent.com/O-X-L/firewall-testing-framework/refs/heads/latest/docs/source/_static/img/opnsense.gif" alt="Intro GIF" width="70%"/>
+
 ----
 
 ## Documentation
@@ -56,7 +58,7 @@ ftf-cli --firewall-system 'linux_netfilter' \
 ### 2025
 
 **Core Simulator**:
-- [ ] Fundamental Features
+- [x] Fundamental Features
   - [x] Routing
   - [x] Network Interfaces
   - [x] Firewall Tables
@@ -67,13 +69,24 @@ ftf-cli --firewall-system 'linux_netfilter' \
   - [x] System-Specific Rule-Matching
   - [x] Destination-NAT
   - [x] Source-NAT
-- [ ] Run modes:
+- [x] Run modes:
   - [x] One-Shot CLI
+
+**[Firewall Support](https://ftf.oxl.app/usage/2_system_support.html)**:
+- [x] Netfilter (NFTables/IPTables)
+- [x] OPNsense
+
+### 2026
+
+**Core Simulator**:
+- [ ] Run modes:
   - [ ] Basic interactive shell
   - [ ] Automated/CI mode
     - [ ] Run multiple Test-cases from config
-- [ ] Defining basic config-schema (Topology, Rulesets, Tests)
-- [ ] Option to Output results to JSON
+    - [ ] Defining basic config-schema (Topology, Rulesets, Tests)
+- [ ] API
+  - [ ] Option to Output results to JSON
+  - [ ] Create & document API for integration by other tools
 - [ ] Supporting multiple Firewalls
   - [ ] Generating Layer 3 Topology
   - [ ] Detect Firewall-chaining (one firewall routes to another one - p.e. over VPN)
@@ -84,11 +97,13 @@ ftf-cli --firewall-system 'linux_netfilter' \
 
 **[Firewall Support](https://ftf.oxl.app/usage/2_system_support.html)**:
 - [x] Netfilter (NFTables/IPTables)
-- [ ] OPNsense (Information from Config-Backup-File and runtime-infos like routes from API)
+- [ ] OPNsense
 
 ----
 
 ## Contribute
+
+Feel welcome to contribute to this project. (:
 
 See: [CONTRIBUTING](https://github.com/O-X-L/firewall-testing-framework/blob/latest/CONTRIBUTING.md)
 
