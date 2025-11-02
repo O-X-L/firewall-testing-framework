@@ -1,16 +1,16 @@
-from config import ProtoL3IP4IP6, RuleActionGoTo
-from simulator.packet import PacketIP, PacketTCPUDP
 from plugins.translate.abstract import Rule
+from utils.logger import log_warn, log_debug
+from config import ProtoL3IP4IP6, RuleActionGoTo
+from simulator.packet import PacketIP, PacketTCPUDP, PacketICMP
 from plugins.system.abstract_rule_match import RuleMatcher, RuleMatchResult
 from plugins.translate.opnsense.rule import OPNsenseRule, RULE_SEQUENCE_NEXT_CHAIN
-from utils.logger import log_warn, log_debug
 
 # todo: add explicit match-tests
 
 
 # pylint: disable=R0912
 class RuleMatcherOPNsense(RuleMatcher):
-    def matches(self, packet: PacketIP, rule: Rule) -> RuleMatchResult:
+    def matches(self, packet: PacketIP|PacketTCPUDP|PacketICMP, rule: Rule) -> RuleMatchResult:
         """
         :param packet: Packet to match
         :param rule: Rule to check
@@ -78,19 +78,17 @@ class RuleMatcherOPNsense(RuleMatcher):
                 results.append(match)
 
         ### PORTS ###
-        if opn_rule.src_port is not None and len(opn_rule.src_port) > 0:
-            if not isinstance(packet, PacketTCPUDP):
-                results.append(False)
-
-            else:
+        if isinstance(packet, PacketTCPUDP):
+            if opn_rule.src_port is not None and len(opn_rule.src_port) > 0:
                 results.append(packet.sport in opn_rule.src_port)
 
-        if opn_rule.dst_port is not None and len(opn_rule.dst_port) > 0:
-            if not isinstance(packet, PacketTCPUDP):
-                results.append(False)
-
-            else:
+            if opn_rule.dst_port is not None and len(opn_rule.dst_port) > 0:
                 results.append(packet.dport in opn_rule.dst_port)
+
+        ### ICMP ###
+        if isinstance(packet, PacketICMP):
+            log_warn('Firewall Plugin', 'ICMP Packet-matching is not yet implemented')
+            # todo: ICMP
 
         if len(results) == 0:
             log_warn('Firewall Plugin', ' > Matches: Found not matches we could process - skipping rule')
@@ -105,7 +103,5 @@ class RuleMatcherOPNsense(RuleMatcher):
                 target_nat_ip=None,
                 target_nat_port=None,
             )
-
-        # todo: SNAT / DNAT
 
         return RuleMatchResult(False, None, None, None, None)

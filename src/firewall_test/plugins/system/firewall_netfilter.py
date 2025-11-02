@@ -1,16 +1,16 @@
-from config import RuleActionKindTerminal, RuleActionKindToChain, RuleActionKindNAT
-from plugins.system.abstract_rule_match import RuleMatcher, RuleMatchResult
 from plugins.translate.abstract import Rule
-from plugins.translate.netfilter.parse import NftRule
-from simulator.packet import PacketIP, PacketTCPUDP
 from utils.logger import log_debug, log_warn
+from plugins.translate.netfilter.parse import NftRule
+from simulator.packet import PacketIP, PacketTCPUDP, PacketICMP
+from plugins.system.abstract_rule_match import RuleMatcher, RuleMatchResult
+from config import RuleActionKindTerminal, RuleActionKindToChain, RuleActionKindNAT
 
 # todo: add explicit match-tests
 
 
 # pylint: disable=R0912
 class RuleMatcherNetfilter(RuleMatcher):
-    def matches(self, packet: PacketIP, rule: Rule) -> RuleMatchResult:
+    def matches(self, packet: PacketIP|PacketTCPUDP|PacketICMP, rule: Rule) -> RuleMatchResult:
         """
         :param packet: Packet to match
         :param rule: Rule to check
@@ -81,6 +81,11 @@ class RuleMatcherNetfilter(RuleMatcher):
                 # CONNECTION TRACKING STATE
                 if match.match_ct:
                     single_results.append(packet.ct in match.value)
+
+            ### ICMP ###
+            if isinstance(packet, PacketICMP):
+                log_warn('Firewall Plugin', 'ICMP Packet-matching is not yet implemented')
+                # todo: ICMP
 
             # if we need to separate the L3-result from the actual condition as it can impact the match
             results.append(single_l3_result)
