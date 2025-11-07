@@ -403,7 +403,7 @@ class NftRule(NftBase):
         return False
 
     def _init_dnat(self, e: dict) -> bool:
-        if 'dnat' not in e:
+        if 'dnat' not in e or e['dnat'] is None:
             return False
 
         self.target_nat_ip = ip_address(e['dnat']['addr'])
@@ -413,14 +413,14 @@ class NftRule(NftBase):
         return True
 
     def _init_snat(self, e: dict) -> bool:
-        if 'snat' not in e:
+        if 'snat' not in e or e['snat'] is None:
             return False
 
         self.target_nat_ip = ip_address(e['snat']['addr'])
         return True
 
     def _init_nat_xt(self, e: dict) -> bool:
-        if 'xt' not in e:
+        if 'xt' not in e or e['xt'] is None:
             return False
 
         if e['xt'].get('name', None) == 'MASQUERADE':
