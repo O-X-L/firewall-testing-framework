@@ -423,7 +423,7 @@ class NftRule(NftBase):
         if 'xt' not in e:
             return False
 
-        if 'name' in e['xt'] and e['xt']['name'] == 'MASQUERADE':
+        if e['xt'].get('name', None) == 'MASQUERADE':
             self.action = 'masquerade'
             return True
 
