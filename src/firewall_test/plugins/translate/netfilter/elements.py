@@ -250,11 +250,19 @@ class NftMatch:
 
         elif self.match_proto_l4 and not self.value_proto_l4:
             for v in self.value:
-                values.append(PROTO_L4_MAPPING[v])
+                try:
+                    values.append(PROTO_L4_MAPPING[v])
+
+                except KeyError:
+                    log_warn('Firewall Plugin', f"Layer-4 protocol not yet supported: '{v}'")
 
         elif self.match_proto_l3 and not self.value_proto_l3:
             for v in self.value:
-                values.append(PROTO_L3_MAPPING[v])
+                try:
+                    values.append(PROTO_L3_MAPPING[v])
+
+                except KeyError:
+                    log_warn('Firewall Plugin', f"Layer-3 protocol not yet supported: '{v}'")
 
         elif self.match_sport or self.match_dport:
             for v in self.value:
