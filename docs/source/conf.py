@@ -79,7 +79,7 @@ html_theme_options = {
             "aliases": [],
         },
         {
-            "version": "https://www.O-X-L.com",
+            "version": "https://www.OXL.app",
             "title": "About OXL",
             "aliases": [],
         },
@@ -92,7 +92,7 @@ html_theme_options = {
         },
         {
             "icon": "fontawesome/solid/globe",
-            "link": "https://www.O-X-L.com",
+            "link": "https://www.OXL.app",
             "name": "About OXL",
         },
         {
