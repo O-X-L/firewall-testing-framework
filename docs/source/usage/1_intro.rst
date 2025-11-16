@@ -66,8 +66,6 @@ This way you can continuously extend these test-cases and easily verify that the
 Overview
 ########
 
-The full
-
 Please take a took `at the roadmap <https://github.com/O-X-L/firewall-testing-framework/blob/latest/README.md>`_ before submitting any changes.
 
 1. **Provide the firewall configuration**:
